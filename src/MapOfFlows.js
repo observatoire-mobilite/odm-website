@@ -21,19 +21,20 @@ const INITIAL_VIEW_STATE = {
 };
 
 function getLocations() {
-  return load('/data/demand/locations.csv', CSVLoader).data;
-    return [
-
-        { id: 106, name:  "Wilwerwiltz", lat: 49.98, lon: 5.99 },
-    ]
+  return [
+    {id: 1011,name: "Bascharage", lat: 49.574, lon: 5.90563005},
+    {id: 1021, name: "Clemency", lat: 49.603, lon: 5.88867729}
+  ];
+  
+  const dta = load('data/demand/locations.csv', CSVLoader);
+  return dta;
 }
 
 function getFlows() {
-  return load('/data/demand/flows.csv', CSVLoader).data;
-    return [
-        { origin: 69, dest: 25, count: 7475},
-
-    ]
+  return [
+    {origin: 1011, dest: 1021, flow: 100}
+  ]
+  return load('data/demand/flows.csv', CSVLoader);
 }
 
 
@@ -45,14 +46,14 @@ function FlowMap(props) {
     <DeckGL 
         initialViewState={INITIAL_VIEW_STATE} 
         controller={true} 
-        getTooltip={({d}) => d && `<b>Stop:</b> ${d.StopPointShortName}`}
+        getTooltip={({d}) => d && `<b>Lieu:</b> ${d.StopPointShortName}`}
         width="100%"
         height="600px"
         style={{ position: 'relative'}}>
       <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
       <FlowMapLayer
         id="mobility_demand"
-        showOnlyTopFlows={100}
+        showOnlyTopFlows={10}
         clusteringEnabled={true}
         clusteringLevel={2}
         feckDech={true}

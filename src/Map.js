@@ -25,7 +25,7 @@ function DeckGLMap() {
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} getTooltip={({d}) => d && `<b>Stop:</b> ${d.StopPointShortName}`} width="100%" height="100%" style={{ position: 'relative'}}>
       <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
       <ScatterplotLayer 
-        data="stops.csv"
+        data="/data/publictransport/stops.csv"
         loaders={[CSVLoader]}
         loadOptions={{
           csv: {
