@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import DeckGL from '@deck.gl/react';
 import {Map} from 'react-map-gl';
 import maplibregl from 'maplibre-gl';
@@ -10,6 +10,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {CSVLoader} from '@loaders.gl/csv';
 import {load} from '@loaders.gl/core';
 
+import Tooltip from '@mui/material/Tooltip';
 
 // Viewport settings
 const INITIAL_VIEW_STATE = {
@@ -21,13 +22,7 @@ const INITIAL_VIEW_STATE = {
 };
 
 function getLocations() {
-  return [
-    {id: 1011,name: "Bascharage", lat: 49.574, lon: 5.90563005},
-    {id: 1021, name: "Clemency", lat: 49.603, lon: 5.88867729}
-  ];
-  
-  const dta = load('data/demand/locations.csv', CSVLoader);
-  return dta;
+  return []
 }
 
 function getFlows() {
@@ -38,35 +33,70 @@ function getFlows() {
 }
 
 
+function LoadData() {
+  const [locations, setLocations] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+  const [flows, setFlows] = useState([]);
+  const [loadingFlows, setLoadingFlows] = useState(true);
+  const [highlighted, setHighlighted] = useState([]);
+  useEffect(() => {
+    load('data/demand/locations.csv', CSVLoader).then(dta => {
+      setLocations(dta);
+      setLoadingLocations(false)
+    })
+    load('data/demand/flows.csv', CSVLoader).then(dta => {
+      setFlows(dta);
+      setLoadingFlows(false);
+    })
+  }, [])  // empty array: don't call effect on updates
+
+  const multiplier = 1
+  return (
+    <DeckGL 
+      initialViewState={INITIAL_VIEW_STATE} 
+      controller={true} 
+      getTooltip={({d}) => d && `<b>Lieu:</b> ${d.StopPointShortName}`}
+      width="100%"
+      height="600px"
+      style={{ position: 'relative'}}
+    >
+      <p>{highlighted?.name} ({highlighted?.id})</p>
+      <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
+      {(loadingFlows & loadingLocations) ? (<p>Loading...</p>) : (
+        <FlowMapLayer
+          id="mobility_demand"
+          showOnlyTopFlows={20}
+          clusteringEnabled={true}
+          clusteringLevel={2}
+          adaptiveScalesEnabled={true}
+          locations={locations}
+          flows={flows}
+          getFlowMagnitude={(flow) => flow.count}
+          getFlowOriginId={(flow) => flow.origin}
+          getFlowDestId={(flow) => flow.dest}
+          getLocationId={(loc) => loc.id}
+          getLocationName={(loc) => loc.name}
+          getLocationCentroid={(location) => [location.lon, location.lat]}
+          pickable={true} 
+          colorScheme="Teal"
+          highlightColor="orange"
+          maxTopFlowsDisplayNum={5000}
+          visible={true}
+          highlightedLocationId={highlighted?.id}
+          onClick={(info) => setHighlighted(info?.object)}
+        />
+      )}
+    </DeckGL>
+  )
+}
+
+
 function FlowMap(props) {
 
   const {multiplier = 1} = props;
 
   return (
-    <DeckGL 
-        initialViewState={INITIAL_VIEW_STATE} 
-        controller={true} 
-        getTooltip={({d}) => d && `<b>Lieu:</b> ${d.StopPointShortName}`}
-        width="100%"
-        height="600px"
-        style={{ position: 'relative'}}>
-      <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
-      <FlowMapLayer
-        id="mobility_demand"
-        showOnlyTopFlows={10}
-        clusteringEnabled={true}
-        clusteringLevel={2}
-        feckDech={true}
-        locations={getLocations()}
-        flows={getFlows()}
-        getFlowMagnitude={(flow) => flow.count * multiplier || 0}
-        getFlowOriginId={(flow) => flow.origin}
-        getFlowDestId={(flow) => flow.dest}
-        getLocationId={(loc) => loc.id}
-        getLocationCentroid={(location) => [location.lon, location.lat]}
-        pickable={true} 
-      />
-    </DeckGL>
+      <LoadData />
   )
 }
 
