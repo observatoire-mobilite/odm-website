@@ -11,6 +11,7 @@ import Paper from '@mui/material/Paper';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
 import PageDemand from './PageDemand.js'
+import Cycling from './PageCycling.js'
 
 export default function App() {
   return (
@@ -40,18 +41,6 @@ function Home() {
 
     </div>
   );
-}
-
-
-function Cycling() {
-  return (
-    <div>
-      <h2>Cycling Traffic</h2>
-      <Typography variant="body1">
-        Utilisation des vélos selon les systèmes de captage automatisé du trafic de l'APC.
-      </Typography>
-    </div>
-  )
 }
 
 

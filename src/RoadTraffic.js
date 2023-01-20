@@ -59,8 +59,8 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
         opacity={0.8}
         filled={true}
         getPosition={loc => [loc.DDLon, loc.DDLat]}
-        getFillColor={loc => [255, 140, 0]}
-        getLineColor={loc => [255, 255, 255]}
+        getFillColor={loc => countsByStation[loc.POSTE_ID] > 0 ? [255, 140, 0] : [200, 200, 200, 200]}
+        getLineColor={loc => [100, 100, 100]}
         getRadius={(loc) => countsByStation[loc.POSTE_ID]}
         radiusScale={1e-2}
         radiusMinPixels={3}
@@ -70,7 +70,8 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
         onClick={evt => { onSelect(evt.object); setSelectedStationIndex(evt.index) }}
         highlightedObjectIndex={selectedStationIndex}
         updateTriggers={{
-          getRadius: countsByStation
+          getRadius: countsByStation,
+          getFillColor: countsByStation
         }}
       />
     </DeckGL>
@@ -123,7 +124,7 @@ function YearSelect({years, selectedYear=undefined, selectionChanged=((y) => und
 }
 
 
-function TraficData({years=[2016, 2017, 2018, 2019, 2020, 2021], 
+export function TraficData({years=[2016, 2017, 2018, 2019, 2020, 2021], 
                      locationsPath=() => 'data/road/Compteurs_xy.csv',
                      countsByDayPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`,
                      countsByHourPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`
