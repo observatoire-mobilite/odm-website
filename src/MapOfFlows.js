@@ -6,11 +6,20 @@ import {BASEMAP} from '@deck.gl/carto';
 import FlowMapLayer from '@flowmap.gl/core';
 //import FlowMapLayer from '@flowmap.gl/react';
 //import FlowMapLayer from '@flowmap.gl/layers';
+//import {FlowMapLayer, FlowmapLayerPickingInfo, PickingType} from '@flowmap.gl/layers';
+//import {FlowmapData, getViewStateForLocations} from '@flowmap.gl/data';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {CSVLoader} from '@loaders.gl/csv';
 import {load} from '@loaders.gl/core';
 
 import Tooltip from '@mui/material/Tooltip';
+
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
+import Slider from '@mui/material/Slider';
 
 // Viewport settings
 const INITIAL_VIEW_STATE = {
@@ -21,19 +30,8 @@ const INITIAL_VIEW_STATE = {
   bearing: 0
 };
 
-function getLocations() {
-  return []
-}
 
-function getFlows() {
-  return [
-    {origin: 1011, dest: 1021, flow: 100}
-  ]
-  return load('data/demand/flows.csv', CSVLoader);
-}
-
-
-function LoadData() {
+function LoadData(props) {
   const [locations, setLocations] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [flows, setFlows] = useState([]);
@@ -57,33 +55,33 @@ function LoadData() {
       controller={true} 
       getTooltip={({d}) => d && `<b>Lieu:</b> ${d.StopPointShortName}`}
       width="100%"
-      height="600px"
+        height="600px"
       style={{ position: 'relative'}}
     >
-      <p>{highlighted?.name} ({highlighted?.id})</p>
       <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
       {(loadingFlows & loadingLocations) ? (<p>Loading...</p>) : (
         <FlowMapLayer
           id="mobility_demand"
-          showOnlyTopFlows={20}
-          clusteringEnabled={true}
-          clusteringLevel={2}
-          adaptiveScalesEnabled={true}
           locations={locations}
-          flows={flows}
+          flows={flows.filter((d) => d.count > (props.min_flow || 0))}
           getFlowMagnitude={(flow) => flow.count}
           getFlowOriginId={(flow) => flow.origin}
           getFlowDestId={(flow) => flow.dest}
           getLocationId={(loc) => loc.id}
           getLocationName={(loc) => loc.name}
           getLocationCentroid={(location) => [location.lon, location.lat]}
+          autoHighlight={true}
+          showTotals={true}
+          //opacity={0.5}
+          //maxLocationCircleSize={30}
+          maxFlowThickness={30}
+          //flowMagnitudeExtent={[0, 26000]}
           pickable={true} 
           colorScheme="Teal"
           highlightColor="orange"
-          maxTopFlowsDisplayNum={5000}
-          visible={true}
           highlightedLocationId={highlighted?.id}
-          onClick={(info) => setHighlighted(info?.object)}
+          onHover={(info) => setHighlighted(info?.object)}
+          onClick={(evt) => console.log(evt.object)}
         />
       )}
     </DeckGL>
@@ -91,12 +89,23 @@ function LoadData() {
 }
 
 
+
 function FlowMap(props) {
 
   const {multiplier = 1} = props;
+  const [minFlow, setMinFlow] = useState(10);
 
   return (
-      <LoadData />
+    <div>
+      <LoadData min_flow={minFlow} />
+      <Paper sx={{"p": 2}} xs={2}>
+        <FormGroup>
+          <FormControlLabel control={<Switch />} label="Clustering" />
+          <FormControlLabel control={<Slider aria-label="Minimum flow to display" track="inverted" value={minFlow} onChange={(evt) => setMinFlow(evt.target.value)} valueLabelDisplay="auto" min={10} max={1000}  />} label="Minimum flow" />
+        </FormGroup>
+      </Paper>
+      
+    </div>
   )
 }
 

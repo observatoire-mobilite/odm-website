@@ -1,6 +1,7 @@
 import './App.css';
 import React from 'react';
 import PublicTransportStops from './PublicTransport.js';
+import RoadTraffic from './RoadTraffic.js';
 import Layout from './Layout.js';
 import { Routes, Route, Link } from "react-router-dom";
 import Typography from '@mui/material/Typography';
@@ -41,34 +42,6 @@ function Home() {
   );
 }
 
-
-function RoadTraffic() {
-  return (
-    <Grid container direction="column" justifyContent="space-evenly">
-      <Grid item>
-        <h2>Road Traffic</h2>
-        <Typography variant="body1">
-          Trafic sur les routes luxembourgeoises selon les systèmes de captage automatisé du trafic de l'APC.
-        </Typography>      
-      </Grid>
-      <Grid item>
-        <div style={{'width': '800px'}}>
-        <CalendarHeatmap
-          startDate={new Date('2021-01-01')}
-          endDate={new Date('2021-12-30')}
-          values={[
-            { date: '2021-01-01', count: 12 },
-            { date: '2021-01-22', count: 122 },
-            { date: '2021-01-30', count: 38 },
-            { date: '2021-01-30', count: 0 },
-            { date: '2021-2-1', count: 0 }
-          ]}
-        />
-        </div>
-      </Grid>
-    </Grid>
-  )
-}
 
 function Cycling() {
   return (
