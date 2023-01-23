@@ -14,7 +14,7 @@ export default function Cycling() {
         <TraficData
             locationsPath={() => 'data/road/Compteurs_xy.csv'}
             countsByDayPath={(year) => `data/road/Bike/comptage_${year}_velo_days_year.csv`}
-            countsByHourPath={(year) => `data/road/Bike/comptage_${year}_velo_days_year.csv`}
+            countsByHourPath={(year) => `data/road/Bike/comptage_${year}_velo_day_hour.csv`}
         />
       </div>
     )
