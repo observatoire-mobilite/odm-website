@@ -21,7 +21,9 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 
-import * as d3 from "d3";
+import {Chart} from './LineChart/Chart.js';
+import ErrorBoundary from './ErrorBoundary.js';
+
 
 // Viewport settings
 const INITIAL_VIEW_STATE = {
@@ -37,7 +39,7 @@ const INITIAL_VIEW_STATE = {
 function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsPath=() => 'locations.csv'}) {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStationIndex, setSelectedStationIndex] = useState();
+  const [selectedStationIndex, setSelectedStationIndex] = useState(1);
 
   useEffect(() => {
     load(locationsPath(), CSVLoader).then(dta => {
@@ -49,31 +51,30 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
   if (loading || countsByStation.length == 0) return (
     <p>Loading ...</p>
   )
-
+  
   return (
-    <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative'}} getCursor={() => "inherit"}>
-      <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
+    <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
       <ScatterplotLayer 
         data={locations}
-        pickable={true}
         opacity={0.8}
-        filled={true}
-        getPosition={loc => [loc.DDLon, loc.DDLat]}
-        getFillColor={loc => countsByStation[loc.POSTE_ID] > 0 ? [255, 140, 0] : [200, 200, 200, 200]}
-        getLineColor={loc => [100, 100, 100]}
-        getRadius={(loc) => countsByStation[loc.POSTE_ID]}
-        radiusScale={1e-2}
+        getPosition={({DDLon, DDLat}) => [DDLon, DDLat]}
+        getFillColor={({POSTE_ID}) => countsByStation[POSTE_ID] > 0 ? [255, 140, 0] : [200, 200, 200, 200]}
+        getRadius={({POSTE_ID}) => countsByStation[POSTE_ID]}
+        radiusScale={1e-1}
         radiusMinPixels={3}
         radiusMaxPixels={30}
         pickable={true}
         highlightColor={[255, 0, 0]}
-        onClick={evt => { onSelect(evt.object); setSelectedStationIndex(evt.index) }}
         highlightedObjectIndex={selectedStationIndex}
+        onClick={({object, index}) => { onSelect(object); setSelectedStationIndex(index) }}
         updateTriggers={{
           getRadius: countsByStation,
-          getFillColor: countsByStation
+          getFillColor: countsByStation,
+          getPosition: locations
         }}
       />
+      <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
+      
     </DeckGL>
   )
 }
@@ -109,7 +110,6 @@ function HeatMap({countsByDay, year}) {
 
 }
 
-
 function YearSelect({years, selectedYear=undefined, selectionChanged=((y) => undefined)}) {
   if (selectedYear === undefined) { selectedYear = years[0] }
   
@@ -124,17 +124,32 @@ function YearSelect({years, selectedYear=undefined, selectionChanged=((y) => und
 }
 
 
-export function TraficData({years=[2016, 2017, 2018, 2019, 2020, 2021], 
-                     locationsPath=() => 'data/road/Compteurs_xy.csv',
-                     countsByDayPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`,
-                     countsByHourPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`
-                    }) {
+function HourlyTraffic({countsByHour}) {
+  return (
+    <ErrorBoundary>
+      <Chart data={countsByHour.map((c) => { return {x: c.hour, y: c.count_weekday}})}>
+        <Chart.LineSeries data={countsByHour.map((c) => { return {x: c.hour, y: c.count_weekday}})} />
+        <Chart.LineSeries data={countsByHour.map((c) => { return {x: c.hour, y: c.count_weekend}})} />
+      </Chart>
+    </ErrorBoundary>
+  )
+}
+
+
+export function TraficData({
+  years=[2016, 2017, 2018, 2019, 2020, 2021], 
+  locationsPath=() => 'data/road/Compteurs_xy.csv',
+  countsByDayPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`,
+  countsByHourPath=(year) => `data/road/Mot/comptage_${year}_mot_day_hour.csv`,
+  getTimeperiod=(c) => c.ind
+}) {
     const [countsByDay, setCountsByDay] = useState([]);
     const [countsByStation, setCountsByStation] = useState([]);
     const [loadingCountsByDay, setLoadingCountsByDay] = useState(true);
     const [countsByHour, setCountsByHour] = useState([]);
     const [loadingCountsByHour, setLoadingCountsByHour] = useState(true);
     const [filteredCountsByDay, setFilteredCountsByDay] = useState();
+    const [filteredCountsByHour, setFilteredCountsByHour] = useState();
     const [year, setYear] = useState(years.at(-1));
     const [station, setStation] = useState(1);
     useEffect(() => {
@@ -146,6 +161,14 @@ export function TraficData({years=[2016, 2017, 2018, 2019, 2020, 2021],
           stats[cur.POSTE_ID] = (stats[cur.POSTE_ID] || 0) + (cur?.average_values || 0);
           return stats
         }, []))
+        const stats = (dta.reduce((stats, cur) => {
+          if (cur.average_values) {
+            (stats[cur.POSTE_ID] = stats[cur.POSTE_ID] || []).push(cur.average_values);
+          }
+          return stats
+        }, []).map((v, i) => v.reduce((kv, v) => kv + v, 0) / v.length))
+        setCountsByStation(stats);
+
       })
       setLoadingCountsByHour(true);
       load(countsByHourPath(year), CSVLoader).then(dta => {
@@ -158,15 +181,24 @@ export function TraficData({years=[2016, 2017, 2018, 2019, 2020, 2021],
       setFilteredCountsByDay(countsByDay.filter((c) => c.POSTE_ID===station.POSTE_ID).map((c) => { return {date: c.date, count: c.average_values}}))
     }, [station, countsByDay])
 
+    useEffect(() => {
+      const counts = (countsByHour.filter((c) => c.POSTE_ID===station.POSTE_ID).map((c) => { 
+        return {'hour': c.ind, 'count_weekday': c.average_week_day, 'count_weekend': c.average_week_end}
+      }));
+      setFilteredCountsByHour(counts);
+    }, [station, countsByHour])
+
     return (
         <Grid container>
             <Grid item xs={12} lg={6} sx={{'minHeight': '600px'}}>
               <StationMap onSelect={setStation} countsByStation={countsByStation} locationsPath={locationsPath} />
             </Grid>
             <Grid item xs={12} lg={6}>
-              <p>Station: {station.POSTE_ID}, total: {countsByStation[station.POSTE_ID]}</p>
+              <p>Station: {station.ROUTE} {station.LOCALITE} ({station.POSTE_ID}), total: {countsByStation[station.POSTE_ID]}</p>
               <YearSelect years={years.sort().reverse()} selectedYear={year} selectionChanged={setYear} />
               {loadingCountsByDay ? "Loading ..." : <HeatMap countsByDay={filteredCountsByDay} year={year} />}
+              {loadingCountsByHour ? "Loading ..." : <HourlyTraffic countsByHour={filteredCountsByHour} /> }
+              
             </Grid>
         </Grid>
     )
