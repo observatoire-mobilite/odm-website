@@ -1,21 +1,12 @@
 import './App.css';
 import React from 'react';
-import { Routes, Route, Link } from "react-router-dom";
 import Typography from '@mui/material/Typography';
-import PageDemand from './PageDemand.js';
+import { Routes, Route, Link } from "react-router-dom";
+
+import PageDemand from './PageDemand.js'
 import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
 import PublicTransportStops from './PublicTransport.js';
-import RoadTraffic from './RoadTraffic.js';
 import Layout from './Layout.js';
-import { Routes, Route, Link } from "react-router-dom";
-import Typography from '@mui/material/Typography';
-
-import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
-import CalendarHeatmap from 'react-calendar-heatmap';
-import 'react-calendar-heatmap/dist/styles.css';
-import PageDemand from './PageDemand.js'
-import Cycling from './PageCycling.js'
 
 export default function App() {
   return (
@@ -24,7 +15,8 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="publictransport" element={<PublicTransportStops />} />
         <Route path="demand" element={<PageDemand />} />
-        <Route path="roadtraffic" element={<RoadTraffic />} />
+        <Route path="cartraffic" element={<Cars />} />
+        <Route path="trucktraffic" element={<Trucks />} />
         <Route path="cycling" element={<Cycling />} />
         <Route path="fleet" element={<Fleet />} />
         <Route path="*" element={<NoMatch />} />
