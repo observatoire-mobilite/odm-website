@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, createContext, useContext } from "react";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { extent } from "d3-array";
 import {BottomAxis, LeftAxis} from './Axes.js';
@@ -16,6 +16,9 @@ export function Translate({ x = 0, y = 0, children }) {
 };
 
 
+const ChartContext = createContext({x: undefined, y: undefined})
+
+
 export function Chart({
     children,
     viewBoxWidth = 800,
@@ -24,6 +27,8 @@ export function Chart({
     paddingY = 6,
     bottomAxisHeight = 30,
     leftAxisWidth = 20,
+    xExtent=[0, 100],
+    yExtent=[0, 100]
   }) {
   
   const bodyHeight = viewBoxHeight - bottomAxisHeight - 2 * paddingY;
@@ -62,15 +67,6 @@ export function Chart({
     },
   };
   
-  const [clickPt, setClickPt] = useState(undefined);
-  const handleClick = (pt) => {
-    setClickPt(pt);
-    console.log(clickPt);
-  };
-
-  // d3 scales map from your data domain to another domain (in this case, our chart size).
-  const xExtent = extent(data, (d) => d.x);
-  const yExtent = extent(data, (d) => d.y);
   if (xExtent[0] == null || xExtent[1] == null || yExtent[0] == null || yExtent[1] == null) {
     return (
       <Alert severity="error">
@@ -79,8 +75,6 @@ export function Chart({
       </Alert>
     )
   }
-  yExtent[0] = 0
-  
   
   const xScale = scaleLinear().domain(xExtent).range([0, body.size.width]);
   // N.B.: because the svg co-ordinate system starts at the upper left, but
@@ -89,33 +83,12 @@ export function Chart({
   // y values from height to 0, instead of from 0 to height.
   const yScale = scaleLinear().domain(yExtent).range([body.size.height, 0]);
 
-  const mapToDataPoint = (mouse) => {
-    // For larger datasets, consider d3-bisect https://observablehq.com/@d3/d3-bisect
-    const closest = data.reduce(
-      (result, datum, idx) => {
-        const thisDistance = Math.abs(mouse.x - xScale(datum.x));
-        if (thisDistance < result.distance) {
-          return {
-            distance: thisDistance,
-            index: idx,
-          };
-        } else {
-          return result;
-        }
-      },
-      { distance: Infinity, index: -1 },
-    );
-
-    return data[closest.index];
-  };
-
   return (
     <svg width="100%" height={viewBoxHeight} viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}>
       <Translate {...body.pos}>
-        <Chart.LineSeries data={data} xScale={xScale} yScale={yScales} />
-        <Mouse {...body.size} closestDataPoint={(x, y) => { return {x: 0, y: 0}}} onClick={(e) => undefined}>
-
-        </Mouse>
+        <ChartContext.Provider value={{x: xScale, y: yScale}}>
+          {children}
+        </ChartContext.Provider>
       </Translate>
       <Translate {...leftAxis.pos}>
         <LeftAxis scale={yScale} {...leftAxis.size} />
@@ -127,19 +100,24 @@ export function Chart({
   );
 };
 
-Chart.LineSeries = ({ xScale, yScale, data }) => {
-  const props = useSpring({
+function LineSeries ({ data, stroke="#1976d2" }) {
+  /*const props = useSpring({
     from: {strokeWidth: 0},
     to: {strokeWidth: 3},
     config: { duration: 3 }
   });
+  */
+  const scales = useContext(ChartContext);
   const linePath = line()
-    .x((d) => xScale(d.x))
-    .y((d) => yScale(d.y))(data);
+    .x((d) => scales.x(d.x))
+    .y((d) => scales.y(d.y))(data);
   return <animated.path 
-    stroke="#1976d2" // defines the colour of the "line"
-    strokeWidth={props.strokeWidth}
+    stroke={stroke} // defines the colour of the "line"
+    strokeWidth={3} //{props.strokeWidth}
     fill="none"
     className={styles.line}
     d={linePath} />;
 };
+
+
+Chart.LineSeries = LineSeries;
