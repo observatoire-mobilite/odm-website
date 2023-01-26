@@ -1,5 +1,9 @@
 import './App.css';
 import React from 'react';
+import { Routes, Route, Link } from "react-router-dom";
+import Typography from '@mui/material/Typography';
+import PageDemand from './PageDemand.js';
+import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
 import PublicTransportStops from './PublicTransport.js';
 import RoadTraffic from './RoadTraffic.js';
 import Layout from './Layout.js';

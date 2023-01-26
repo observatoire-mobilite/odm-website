@@ -15,6 +15,7 @@ export default function Cycling() {
             locationsPath={() => 'data/road/Compteurs_xy.csv'}
             countsByDayPath={(year) => `data/road/Bike/comptage_${year}_velo_days_year.csv`}
             countsByHourPath={(year) => `data/road/Bike/comptage_${year}_velo_day_hour.csv`}
+            getHourlyCounts={(c) => { return { 'hour': c.ind, 'count_weekday': c.average_week_day, 'count_weekend': c.average_week_end }}}
         />
       </div>
     )

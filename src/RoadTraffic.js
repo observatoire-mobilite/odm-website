@@ -22,6 +22,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 
 import {Chart} from './LineChart/Chart.js';
+import {Plot} from './LineChart/Axes.js';
 import ErrorBoundary from './ErrorBoundary.js';
 
 
@@ -40,7 +41,7 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStationIndex, setSelectedStationIndex] = useState(1);
-
+  
   useEffect(() => {
     load(locationsPath(), CSVLoader).then(dta => {
         setLocations(dta);
@@ -51,7 +52,9 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
   if (loading || countsByStation.length == 0) return (
     <p>Loading ...</p>
   )
-  
+  const maxCount = Math.max(...countsByStation.filter(c => Number.isFinite(c)))
+  console.log(100 / maxCount)
+
   return (
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
       <ScatterplotLayer 
@@ -60,7 +63,7 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
         getPosition={({DDLon, DDLat}) => [DDLon, DDLat]}
         getFillColor={({POSTE_ID}) => countsByStation[POSTE_ID] > 0 ? [255, 140, 0] : [200, 200, 200, 200]}
         getRadius={({POSTE_ID}) => countsByStation[POSTE_ID]}
-        radiusScale={1e-1}
+        radiusScale={10000 / maxCount}
         radiusMinPixels={3}
         radiusMaxPixels={30}
         pickable={true}
@@ -124,12 +127,14 @@ function YearSelect({years, selectedYear=undefined, selectionChanged=((y) => und
 }
 
 
-function HourlyTraffic({countsByHour}) {
+function HourlyTraffic({
+  countsByHour
+}) {
   return (
     <ErrorBoundary>
-      <Chart data={countsByHour.map((c) => { return {x: c.hour, y: c.count_weekday}})}>
-        <Chart.LineSeries data={countsByHour.map((c) => { return {x: c.hour, y: c.count_weekday}})} />
-        <Chart.LineSeries data={countsByHour.map((c) => { return {x: c.hour, y: c.count_weekend}})} />
+      <Chart xExtent={[0, 24]} yExtent={[0, Math.max(...countsByHour.map(c => c.count_weekday), ...countsByHour.map(c => c.count_weekend))]}>
+        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekday}})} stroke="#1976d2" />
+        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekend}})} stroke="gray"/>
       </Chart>
     </ErrorBoundary>
   )
@@ -141,7 +146,8 @@ export function TraficData({
   locationsPath=() => 'data/road/Compteurs_xy.csv',
   countsByDayPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`,
   countsByHourPath=(year) => `data/road/Mot/comptage_${year}_mot_day_hour.csv`,
-  getTimeperiod=(c) => c.ind
+  getHourlyCounts=(c) => { return { 'hour': c.ind, 'count_weekday': c.average_week_day, 'count_weekend': c.average_week_end }},
+  getDailyCount=(c) => { return c.average_values }
 }) {
     const [countsByDay, setCountsByDay] = useState([]);
     const [countsByStation, setCountsByStation] = useState([]);
@@ -158,12 +164,12 @@ export function TraficData({
         setCountsByDay(dta);
         setLoadingCountsByDay(false);
         setCountsByStation(dta.reduce((stats, cur) => {
-          stats[cur.POSTE_ID] = (stats[cur.POSTE_ID] || 0) + (cur?.average_values || 0);
+          stats[cur.POSTE_ID] = (stats[cur.POSTE_ID] || 0) + getDailyCount(cur);
           return stats
         }, []))
         const stats = (dta.reduce((stats, cur) => {
-          if (cur.average_values) {
-            (stats[cur.POSTE_ID] = stats[cur.POSTE_ID] || []).push(cur.average_values);
+          if (getDailyCount(cur)) {
+            (stats[cur.POSTE_ID] = stats[cur.POSTE_ID] || []).push(getDailyCount(cur));
           }
           return stats
         }, []).map((v, i) => v.reduce((kv, v) => kv + v, 0) / v.length))
@@ -178,13 +184,11 @@ export function TraficData({
     }, [year]);
     
     useEffect(() => {
-      setFilteredCountsByDay(countsByDay.filter((c) => c.POSTE_ID===station.POSTE_ID).map((c) => { return {date: c.date, count: c.average_values}}))
+      setFilteredCountsByDay(countsByDay.filter((c) => c.POSTE_ID===station.POSTE_ID).map((c) => { return {date: c.date, count: getDailyCount(c)}}))
     }, [station, countsByDay])
 
     useEffect(() => {
-      const counts = (countsByHour.filter((c) => c.POSTE_ID===station.POSTE_ID).map((c) => { 
-        return {'hour': c.ind, 'count_weekday': c.average_week_day, 'count_weekend': c.average_week_end}
-      }));
+      const counts = countsByHour.filter((c) => c.POSTE_ID===station.POSTE_ID).map(getHourlyCounts);
       setFilteredCountsByHour(counts);
     }, [station, countsByHour])
 
@@ -214,7 +218,10 @@ export default function RoadTraffic() {
           <Typography variant="body1">
             Trafic sur les routes luxembourgeoises selon les systèmes de captage automatisé du trafic de l'APC.
           </Typography>      
-          <TraficData />
+          <TraficData 
+            getHourlyCounts={(c) => { return { 'hour': c.ind, 'count_weekday': c.V_weekday, 'count_weekend': c.V_weekend }}}
+            getDailyCount={(c) => c.V}
+          />
         </Grid>
         <Grid item>
         </Grid>
