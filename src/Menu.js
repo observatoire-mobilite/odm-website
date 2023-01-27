@@ -19,7 +19,6 @@ import { NavLink, useLocation } from "react-router-dom";
 
 
 function NavItem({to, title, icon, ...props}) {
-  console.log(useLocation())
     return (
       <ListItemButton component={NavLink} to={to} selected={useLocation().pathname === to} >
         <ListItemAvatar>

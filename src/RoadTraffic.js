@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -36,7 +36,6 @@ const INITIAL_VIEW_STATE = {
 };
 
 
-
 function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsPath=() => 'locations.csv'}) {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +52,6 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
     <p>Loading ...</p>
   )
   const maxCount = Math.max(...countsByStation.filter(c => Number.isFinite(c)))
-  console.log(100 / maxCount)
 
   return (
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>

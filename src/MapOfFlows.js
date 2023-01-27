@@ -10,6 +10,7 @@ import FlowMapLayer from '@flowmap.gl/core';
 //import {FlowmapData, getViewStateForLocations} from '@flowmap.gl/data';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {CSVLoader} from '@loaders.gl/csv';
+import {ParquetLoader} from '@loaders.gl/parquet';
 import {load} from '@loaders.gl/core';
 
 import Tooltip from '@mui/material/Tooltip';
@@ -45,6 +46,9 @@ function LoadData(props) {
     load('data/demand/flows.csv', CSVLoader).then(dta => {
       setFlows(dta);
       setLoadingFlows(false);
+    })
+    load('data/demand/demand_flows.parquet', ParquetLoader).then(dta => {
+      console.log(dta)
     })
   }, [])  // empty array: don't call effect on updates
 
