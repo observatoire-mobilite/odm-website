@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from "react-router-dom";
+import { Outlet, useSearchParams } from "react-router-dom";
 import { styled, createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import MuiDrawer from '@mui/material/Drawer';
@@ -19,6 +19,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import {MainMenu} from './Menu.js';
+import ErrorBoundary from './ErrorBoundary';
 
 
 function Copyright(props) {
@@ -88,6 +89,32 @@ export default function Layout() {
     setOpen(!open);
   };
   const mdTheme = createTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const embed = searchParams.get("embed")
+
+
+  if (embed) {
+    return (
+    <Box 
+      component="main"
+      sx={{
+        backgroundColor: (theme) =>
+          theme.palette.mode === 'light'
+            ? theme.palette.grey[100]
+            : theme.palette.grey[900],
+        flexGrow: 1,
+        height: '100vh',
+        overflow: 'auto',
+      }}
+    >
+      <Container maxWidth="100vw">
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
+        <Copyright sx={{ pt: 4 }} />
+      </Container>
+    </Box>)
+  }
   
   return (
     <ThemeProvider theme={mdTheme}>
@@ -137,7 +164,9 @@ export default function Layout() {
         >
           <Toolbar />
           <Container maxWidth="100vw">
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
             <Copyright sx={{ pt: 4 }} />
           </Container>
         </Box>
