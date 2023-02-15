@@ -1,1 +1,0 @@
-["Auto", "Marche \u00e0 pied", "Transport en commun", "V\u00e9lo"]
