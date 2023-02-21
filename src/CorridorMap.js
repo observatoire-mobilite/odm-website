@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { useTheme } from '@mui/material/styles';
-import { sum } from 'd3';
+
 
 export function CorridorMap({
     zones,
@@ -13,7 +12,7 @@ export function CorridorMap({
     return (
         <svg width="100%"  height="600px" viewBox="0 0 877 1000">
             <g id="zones" style={{display: 'inline'}}>
-                {zones.map((z) => 
+                {zones.map((z) =>
                     <CorridorMultiPolygon 
                         index={z.index}
                         paths={z.paths}
@@ -44,6 +43,7 @@ function CorridorMultiPolygon({paths, index, opacity=1.0, selected=false, onSele
                 strokeLinejoin: 'round',
                 strokeMiterlimit: 4,
                 strokeDasharray: 'none',
+                cursor: 'pointer'
             }}
             onClick={evt => onSelection(index)}
         >
