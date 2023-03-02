@@ -6,6 +6,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import PageDemand from './PageDemand.js'
 import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
 import PublicTransportStops from './PublicTransport.js';
+import {BusMap} from './BusMap.js';
 import Layout from './Layout.js';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="publictransport" element={<PublicTransportStops />} />
+        <Route path="busmap" element={<BusMap />} />
         <Route path="demand" element={<PageDemand />} />
         <Route path="cartraffic" element={<Cars />} />
         <Route path="trucktraffic" element={<Trucks />} />

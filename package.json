@@ -22,6 +22,7 @@
     "d3": "^7.7.0",
     "deck.gl": "^8.8.20",
     "loaders.gl": "^0.3.5",
+    "luxon": "^3.2.1",
     "mapbox-gl": "npm:empty-npm-package@^1.0.0",
     "maplibre-gl": "^2.4.0",
     "react": "^18.2.0",
@@ -31,6 +32,7 @@
     "react-router-dom": "^6.4.5",
     "react-scripts": "5.0.1",
     "react-spring": "^9.6.1",
+    "react-zoom-pan-pinch": "^3.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

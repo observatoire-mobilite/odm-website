@@ -43,6 +43,7 @@ export function MainMenu() {
       <NavItem to="/trucktraffic" title="Truck Traffic" icon={<LocalShippingIcon />} />
       <NavItem to="/cycling" title="Cycling and walking" icon={<DirectionsBikeIcon />} />
       <NavItem to="/publictransport" title="Public Transport" icon={<DepartureBoardIcon />} />
+      <NavItem to="/busmap" title="Bus Map" icon={<DepartureBoardIcon />} />
       <NavItem to="/fleet" title="Vehilce Fleet" icon={<CarRentalIcon />} />
       <Divider sx={{ my: 1 }} />
     </List>

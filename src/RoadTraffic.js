@@ -125,7 +125,7 @@ function YearSelect({years, selectedYear=undefined, selectionChanged=((y) => und
 }
 
 
-function HourlyTraffic({
+export function HourlyTraffic({
   countsByHour
 }) {
   return (
