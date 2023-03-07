@@ -316,7 +316,7 @@ function Sankey({
     return (
         <svg width="100%" height="400px" viewBox={`0 0 ${1000} ${1000}`}>
             <SankeyBars data={sumByZone} labels={zoneNames} labelOffset={-10} labelAnchor={'end'} x={200} />
-            <SankeyBars data={sumByMode} labels={['cars', 'walking', 'cycling', 'public transport']} x={700} labelOffset={60} />
+            <SankeyBars data={sumByMode} labels={['cars', 'walking', 'public transport', 'cycling']} x={700} labelOffset={60} />
             {sankeyMX && sankeyMX.length > 0 && [...Array(4).keys()].map((mode) => <SankeyLines data={sankeyMX} mode={mode} x0={250} x1={450} />)}
         </svg>
     )
