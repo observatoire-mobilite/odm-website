@@ -16,6 +16,10 @@ import DepartureBoardIcon from '@mui/icons-material/DepartureBoard';
 import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 
+import Tooltip from '@mui/material/Tooltip';
+import Fade from '@mui/material/Fade';
+import Zoom from '@mui/material/Zoom';
+
 import Button from '@mui/material/Button';
 import { TransformWrapper, TransformComponent, useTransformEffect } from "react-zoom-pan-pinch";
 import {useWindowSize} from './common.js'
@@ -27,9 +31,13 @@ export function BusMap() {
     
     const [busMapLoaded, setBusMapLoaded] = useState(false);
     const [busMap, setBusMap] = useState();
-    
+
+    const [busStatsLoaded, setBusStatsLoaded] = useState(false);
+    const [busStats, setBusStats] = useState();
+
     const [currentStop, setCurrentStop] = useState();
     const [currentLine, setCurrentLine] = useState();
+    const [currentYear, setCurrentYear] = useState(2023);
 
     // retrieve zone info
     // TODO: include directly into the code later
@@ -46,16 +54,29 @@ export function BusMap() {
     }, [])
 
 
-    if (! busMapLoaded) {
+    useEffect(() => {
+        setBusStatsLoaded(false);
+        fetch('data/publictransport/busstats.json')
+        .then((r) => r.json())
+        .then((dta) => {
+            setBusStats(dta);
+            setBusStatsLoaded(true);
+        }).catch((e) => {
+            console.log(e.message)
+        });
+    }, [])
+
+
+    if (! (busMapLoaded && busStatsLoaded)) {
         return <p>Loading ...</p>
     }
     return (
         <Grid container spacing={1}>
-            <Grid item xs={4}>
+            <Grid item xs={12}>
                 <h2>Public transport map</h2>
                 <h3>Current stop: {currentStop?.label} ({currentStop?.layer})</h3>
                 <h3>Current line: {currentLine?.line}</h3>
-                <HeatMap />
+                <HeatMap data={busStats['daily'][currentYear][currentStop?.label]} year={currentYear} getValues={(data) => data === undefined ? [] : data['corrected_boardings']} />
                 <HourlyTraffic countsByHour={[
                     {hour: 0, count_weekend: 400, count_weekday: 800},
                     {hour: 1, count_weekend: 200, count_weekday: 600},
@@ -83,7 +104,7 @@ export function BusMap() {
                     {hour: 23, count_weekend: 500, count_weekday: 900}
                 ]}/>
             </Grid>
-            <Grid item xs={8}>
+            <Grid item xs={12}>
                 <ZoomableMap 
                     border={busMap.frontier} lines={busMap.lines} stops={busMap.stops}
                     onSelectStop={(stop) => setCurrentStop(stop)} currentStop={currentStop}
@@ -140,10 +161,10 @@ export function Map({
     })
 
     const size = useWindowSize();
-
+    const height = size.height === undefined ? 600 : size.height - 150
 
     return (
-        <svg width="100%"  height={`${size.height - 150}px`} viewBox="100 250 3000 2200">
+        <svg width="100%"  height={`${height}px`} viewBox="100 250 3000 2200">
             <g>
                 <path 
                     d={border}
@@ -154,14 +175,15 @@ export function Map({
                     }} 
                 />
             </g>
-            <g>{lines.map((line) => <BusLine line={line} onSelection={onSelectLine} selected={currentLine === line} />)}</g>
-            <g>{stops.map((stop) => 
-                <BusStop 
-                    stop={stop} onSelection={onSelectStop} selected={currentStop === stop}
+            <g>{lines.map((line, idx) => <BusLine key={`busline-${idx}`} line={line} onSelection={onSelectLine} selected={currentLine === line} />)}</g>
+            <g>{stops.map((stop, idx) => 
+                <BusStop key={`stop-marker-${idx}`}
+                    stop={stop} selected={currentStop === stop}
                     showLabel={show_city_label(stop.layer, zoomLevel)} 
                     fontSize={`${.5 + .5 / zoomLevel}em`}
                 />)}
             </g>
+            <g>{stops.map((stop, idx) => {if (! stop.layer.startsWith('Station')) { return <BusStopClickableOverlay key={`stop-ui-${idx}`} stop={stop} onSelection={onSelectStop} />}})}</g>
         </svg>
     )
 }
@@ -169,8 +191,9 @@ export function Map({
 
 export function BusLine({line, onSelection, selected=false}) {
     return (
-        <g>{line.d.map((d) =>
+        <g>{line.d.map((d, idx) =>
             <path 
+                key={`busline-path-${idx}`}
                 d={d}
                 pointerEvents="visiblePainted"
                 style={{
@@ -199,37 +222,55 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false, 
             {stop.label}
         </text>
         <circle 
-            pointerEvents="visiblePainted"
             cx={stop.cx} cy={stop.cy} r={stop.r} 
             style={{
                 stroke: 'black',
                 fill: selected ? 'red' : 'black',
-                opacity: 0.6,
-                cursor: 'pointer'
+                opacity: 0.6
             }}
-            onClick={(evt) => onSelection(stop)}
         />
         </React.Fragment>
     )
 }
 
 
-function HeatMap({year=2023, yOffset=0}) {
+export function BusStopClickableOverlay({stop, onSelection=(stop) => undefined}) {
+    return (
+        <circle 
+            pointerEvents="visible"
+            cx={stop.cx} cy={stop.cy} r={stop.r + 2} 
+            style={{
+                stroke: 'none',
+                fill: 'none',
+                opacity: 0.0,
+                cursor: 'pointer'
+            }}
+            onClick={(evt) => onSelection(stop)}
+    />
+
+    )
+}
+
+
+function HeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
 
     const janfirst =  DateTime.local(year, 1, 1);
     const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
+
+    const values = getValues(data)
     
     return (
-        <svg width="100%"  height="100px" viewBox="0 0 5300 800">
-            <HeatMapMonths year={year} yOffset={yOffset} />
-            <HeatMapCircles year={year} yOffset={yOffset} />
+        <svg width="100%"  height="300px" viewBox="0 0 5450 800">
+            <HeatMapMonths year={year} xOffset={150} yOffset={yOffset} />
+            <HeatMapDayLabels year={year}  />
+            <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
         </svg>
     )
         
 }
 
 
-function HeatMapMonths({year, yOffset=0}) {
+function HeatMapMonths({year, xOffset=0, yOffset=0}) {
     const janfirst =  DateTime.local(year, 1, 1);
     let firstday = janfirst;
     
@@ -237,17 +278,17 @@ function HeatMapMonths({year, yOffset=0}) {
         <g>{[...Array(12).keys()].map((i) => {
             const nextmonth = firstday.plus({months: 1})
             const lastday = nextmonth.minus({days: 1})
-            const x0 = Math.floor((firstday.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
+            const x0 = xOffset + Math.floor((firstday.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
             const x_firstmonday = x0 + (firstday.weekday == 1 ? 0 : 100)
-            const x1 = Math.floor((lastday.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
+            const x1 = xOffset + Math.floor((lastday.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
             const y0 = yOffset + lastday.weekday * 100
             const y1 = yOffset + firstday.weekday * 100
-            const ret = (<g>
+            const ret = (<g key={`heatmap-month-${i}`}>
                 <path 
                     d={`M ${x_firstmonday},${yOffset} L${x1+100},${yOffset} l0,${y0} l-100,0 l0,${700-y0} L${x0},700 l0,${y1 - 700 - 100} L${x_firstmonday},${y1 - 100} z`}
                     style={{fill: i % 2 == 1 ? 'lightgray' : 'none', stroke: 'none'}} 
                 />
-                <text x={Math.floor((firstday.ordinal + janfirst.weekday - 2) / 7) * 100} y={800} style={{fontSize: '100px'}}>{firstday.toFormat('LLL')}</text>
+                <text x={x0} y={800} style={{fontSize: '100px'}}>{firstday.toFormat('LLL')}</text>
             </g>)
             firstday = nextmonth  // prepare next loop
             return ret
@@ -255,23 +296,53 @@ function HeatMapMonths({year, yOffset=0}) {
     )
 }
 
+function HeatMapDayLabels({year, yOffset=0, fontSize=60}) {
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    return (
+        <g>{[...Array(7).keys()].map((i) =>
+            <text key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100} style={{'fontSize': fontSize, 'alignmentBaseline': 'middle'}}>{weekdays[i]}</text>
+        )}</g> 
+    )
+}
 
-function HeatMapCircles({year, yOffset=0}) {
+
+function HeatMapCircles({year, values=[], xOffset=0, yOffset=0, log=false}) {
     const janfirst =  DateTime.local(year, 1, 1);
     const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
+    const maxValue = Math.max(...values);
     
     return (
         <g>{[...Array(days + 1).keys()].map((i) => {
             const day = janfirst.plus({days: i})
+            const noData = values[i] === undefined
+            const value = noData ? 0 : (log ? Math.log(values[i] + 1) / Math.log(maxValue + 1) : values[i] / maxValue)
+
+            const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * 100
+            const y = yOffset + (day.weekday - 1) * 100
+            
             return (
-                <circle 
-                    cx={50 + Math.floor((i + janfirst.weekday - 1) / 7) * 100}
-                    cy={yOffset + 50 + (day.weekday - 1) * 100} 
-                    r={10 + 40 * i / 365} 
-                    style={{'fill': `rgb(${i / 365 * 255}, 100, 100)`}}
-                />
+                <g key={`heatmap-day-group-${i}`} transform={`translate(${x}, ${y})`}>
+                    <circle key={`heatmap-day-circle-${i}`}                    
+                        cx={50} cy={50} r={10 + 40 * value} 
+                        style={noData ? {'fill': 'none', 'stroke': 'gray'} : {'fill': `rgb(${Math.round(value * 255)}, 100, 100)`}}
+                    />
+                     <Tooltip title={<HeatMapDayTooltip day={day} value={values[i]} />}>
+                        <rect x={0} y={0} width={100} height={100} style={{'fill': 'none', 'stroke': 'none'}} pointerEvents="visible" />
+                    </Tooltip>
+                </g>
             )
         })}</g>
     )
+}
+
+
+function HeatMapDayTooltip({day, value}) {
+    return (
+        <React.Fragment>
+            <Typography color="inherit">{day.toLocaleString(DateTime.DATE_HUGE)}</Typography>
+            <p>Boardings: {value === undefined ? '(no data)' : value}</p>
+        </React.Fragment>
+    )
+    
 }
 
