@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import { Routes, Route, Link } from "react-router-dom";
 
 import PageDemand from './PageDemand.js'
+import PageTram from './PageTram.js'
 import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
 import PublicTransportStops from './PublicTransport.js';
 import {BusMap} from './BusMap.js';
@@ -16,6 +17,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="publictransport" element={<PublicTransportStops />} />
         <Route path="busmap" element={<BusMap />} />
+        <Route path="tram" element={<PageTram />} />
         <Route path="demand" element={<PageDemand />} />
         <Route path="cartraffic" element={<Cars />} />
         <Route path="trucktraffic" element={<Trucks />} />

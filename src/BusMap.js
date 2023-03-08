@@ -214,7 +214,7 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false, 
 }
 
 
-function HeatMap({year=2023, yOffset=0}) {
+export function HeatMap({year=2023, yOffset=0}) {
 
     const janfirst =  DateTime.local(year, 1, 1);
     const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
