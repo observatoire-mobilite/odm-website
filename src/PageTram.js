@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useState, useMemo} from 'react'
 import Grid from '@mui/material/Grid';
 import { animated, useSpring } from '@react-spring/web'
 import { HeatMap } from './BusMap.js'
@@ -29,6 +29,8 @@ export default function PageTram() {
     }
 
     const [currentStop, setCurrentStop] = useState(data.stops[0])
+    const dailyStats = useMemo(() => Array.from({length: 365}, () => Math.floor(Math.random() * 100000)), [currentStop])
+    const hourlyStats = useMemo(() => Array.from({length: 24}, () => Math.floor(Math.random() * 100000 / 24)).map((pax, i) => ({hour: i, count_weekend: pax * Math.random(), count_weekday: pax})), [currentStop])
 
     return (
         <Grid container>            
@@ -64,6 +66,8 @@ export default function PageTram() {
                     {hour: 22, count_weekend: 700, count_weekday: 1000},
                     {hour: 23, count_weekend: 500, count_weekday: 900}
                 ]}/>
+                <HeatMap year={2023} getValues={(x) => x} data={dailyStats} />
+                <HourlyTraffic countsByHour={hourlyStats} />
             </Grid>
         </Grid>
     )

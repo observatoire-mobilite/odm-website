@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
@@ -20,11 +20,14 @@ import Tooltip from '@mui/material/Tooltip';
 import Fade from '@mui/material/Fade';
 import Zoom from '@mui/material/Zoom';
 
+import { animated, useSpring } from '@react-spring/web'
+
 import Button from '@mui/material/Button';
 import { TransformWrapper, TransformComponent, useTransformEffect } from "react-zoom-pan-pinch";
 import {useWindowSize} from './common.js'
 import { DateTime } from "luxon";
 import {HourlyTraffic} from './RoadTraffic';
+import { SpatialTrackingSharp } from '@mui/icons-material';
 
 
 export function BusMap() {
@@ -252,16 +255,16 @@ export function BusStopClickableOverlay({stop, onSelection=(stop) => undefined})
 }
 
 
-function HeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
+export function HeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
 
     const janfirst =  DateTime.local(year, 1, 1);
     const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
 
     const values = getValues(data)
-    
+
     return (
         <svg width="100%"  height="300px" viewBox="0 0 5450 800">
-            <HeatMapMonths year={year} xOffset={150} yOffset={yOffset} />
+            <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
             <HeatMapDayLabels year={year}  />
             <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
         </svg>
@@ -306,32 +309,41 @@ function HeatMapDayLabels({year, yOffset=0, fontSize=60}) {
 }
 
 
-function HeatMapCircles({year, values=[], xOffset=0, yOffset=0, log=false}) {
+function HeatMapCircles({year, values=[], log=false, ...args}) {
     const janfirst =  DateTime.local(year, 1, 1);
     const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
     const maxValue = Math.max(...values);
+    console.count('heat-map-circles')
     
     return (
         <g>{[...Array(days + 1).keys()].map((i) => {
-            const day = janfirst.plus({days: i})
-            const noData = values[i] === undefined
-            const value = noData ? 0 : (log ? Math.log(values[i] + 1) / Math.log(maxValue + 1) : values[i] / maxValue)
-
-            const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * 100
-            const y = yOffset + (day.weekday - 1) * 100
-            
-            return (
-                <g key={`heatmap-day-group-${i}`} transform={`translate(${x}, ${y})`}>
-                    <circle key={`heatmap-day-circle-${i}`}                    
-                        cx={50} cy={50} r={10 + 40 * value} 
-                        style={noData ? {'fill': 'none', 'stroke': 'gray'} : {'fill': `rgb(${Math.round(value * 255)}, 100, 100)`}}
-                    />
-                     <Tooltip title={<HeatMapDayTooltip day={day} value={values[i]} />}>
-                        <rect x={0} y={0} width={100} height={100} style={{'fill': 'none', 'stroke': 'none'}} pointerEvents="visible" />
-                    </Tooltip>
-                </g>
-            )
+            return <HeatMapCircle key={`heatmapcircle-${i}`} day={janfirst.plus({days: i})} value={values[i] / maxValue} displayValue={values[i]} {...args} />
         })}</g>
+    )
+}
+
+
+function HeatMapCircle({day, value, displayValue=undefined, xOffset=0, yOffset=0, januaryFirst=undefined, animate=false}) {
+    const janfirst = januaryFirst===undefined ? day.set({ordinal: 1}) : januaryFirst
+    const x = xOffset + Math.floor((day.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
+    const y = yOffset + (day.weekday - 1) * 100
+
+    const safeValue = value===undefined ? 0 : value
+    const springs = useSpring({
+        to: {r: 10 + 40 * safeValue},
+        immediate: false
+    })
+    const circleStyle = value===undefined ? {'fill': 'none', 'stroke': 'gray'} : {fill: `rgb(${Math.round(safeValue * 255)}, 100, 100)`}
+    //const springs = {r: 10 + 40 * safeValue, fill: `rgb(${Math.round(safeValue * 255)}, 100, 100)`}
+    return (
+        <g key={`heatmap-day-group-${day.ordinal}`} transform={`translate(${x}, ${y})`}>
+            <animated.circle key={`heatmap-day-circle-${day.ordinal}`}                    
+                cx={50} cy={50}
+                r={springs.r} 
+                style={circleStyle}
+            />
+            <rect x={0} y={0} width={100} height={100} style={{'fill': 'none', 'stroke': 'none', 'cursor': 'pointer'}} pointerEvents="visible" title={<HeatMapDayTooltip day={day} value={displayValue===undefined ? value : displayValue} />} />
+        </g>
     )
 }
 
