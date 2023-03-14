@@ -1,8 +1,24 @@
-import {useState, useMemo} from 'react'
+import {useState, useMemo, useTransition} from 'react'
 import Grid from '@mui/material/Grid';
-import { animated, useSpring } from '@react-spring/web'
+import { animated, useSpring, config } from '@react-spring/web'
 import { HeatMap } from './BusMap.js'
 import { HourlyTraffic } from './RoadTraffic.js'
+
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Slider from '@mui/material/Slider';
+import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
 
 
 export default function PageTram() {
@@ -39,33 +55,8 @@ export default function PageTram() {
             </Grid>
             <Grid item xs={8}>
                 <h1>{currentStop.label}</h1>
-                <HeatMap year={2023} />
-                <HourlyTraffic countsByHour={[
-                    {hour: 0, count_weekend: 400, count_weekday: 800},
-                    {hour: 1, count_weekend: 200, count_weekday: 600},
-                    {hour: 2, count_weekend: 10, count_weekday: 200},
-                    {hour: 3, count_weekend: 2, count_weekday: 10},
-                    {hour: 4, count_weekend: 100, count_weekday: 100},
-                    {hour: 5, count_weekend: 400, count_weekday: 1000},
-                    {hour: 6, count_weekend: 900, count_weekday: 4000},
-                    {hour: 7, count_weekend: 1000, count_weekday: 9000},
-                    {hour: 8, count_weekend: 4000, count_weekday: 13000},
-                    {hour: 9, count_weekend: 5000, count_weekday: 10000},
-                    {hour: 10, count_weekend: 3000, count_weekday: 8000},
-                    {hour: 11, count_weekend: 2000, count_weekday: 7000},
-                    {hour: 12, count_weekend: 3000, count_weekday: 7500},
-                    {hour: 13, count_weekend: 2500, count_weekday: 6500},
-                    {hour: 14, count_weekend: 2000, count_weekday: 6000},
-                    {hour: 15, count_weekend: 1500, count_weekday: 5500},
-                    {hour: 16, count_weekend: 1200, count_weekday: 6000},
-                    {hour: 17, count_weekend: 1000, count_weekday: 9000},
-                    {hour: 18, count_weekend: 800, count_weekday: 9500},
-                    {hour: 19, count_weekend: 600, count_weekday: 9000},
-                    {hour: 20, count_weekend: 800, count_weekday: 7000},
-                    {hour: 21, count_weekend: 900, count_weekday: 4000},
-                    {hour: 22, count_weekend: 700, count_weekday: 1000},
-                    {hour: 23, count_weekend: 500, count_weekday: 900}
-                ]}/>
+                <AggregateStatistics dailyStats={dailyStats} trend={'+1.4%'} />
+                <DataDialog />
                 <HeatMap year={2023} getValues={(x) => x} data={dailyStats} />
                 <HourlyTraffic countsByHour={hourlyStats} />
             </Grid>
@@ -109,7 +100,7 @@ function LineGraphStop({
 
 
     const radius = selected ? 30 : (highlighted ? 20 : 10)
-    const fontSize = selected ? 20 : (highlighted ? 15 : 10)
+    const fontSize = (selected ? 20 : (highlighted ? 15 : 10)) * 2
                     
     const springs = useSpring({
         r_outer: radius,
@@ -147,3 +138,153 @@ function LineGraphTrunk({height}) {
         <rect x={20} y={20} width={20} height={height} style={styleTram} />
     </g>)
 }
+
+
+function prettyPrintNumber(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u2009");
+}
+
+function FancyNumber({ count }) {
+    const { number } = useSpring({
+      from: { number: 0 },
+      number: count,
+      config: { mass:1, tension:200, friction:20, clamp: true }
+    });
+   
+    return <animated.span>{
+        number.to(val => Math.floor(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u2009"))
+    }</animated.span>;
+}
+   
+
+function AggregateStatistics({dailyStats, passengers=0, countedStops=0, totalStops=0, trend=0, toggle=false}) {
+
+    const [aggLevel, setAggLevel] = useState('workday')
+    const aggStat = useMemo(() => {
+        if (aggLevel == 'month') {
+            return dailyStats.reduce((kv, v) => kv + v, 0)
+        } else if (aggLevel == 'workday') {
+            return dailyStats.reduce((kv, v) => kv + v, 0) / 31
+        } else if (aggLevel == 'weekend') {
+            return dailyStats.reduce((kv, v) => kv + v, 0) / 300
+        }
+    }, [dailyStats, aggLevel])
+
+    const marks = [
+        {value: 1, label: 'weekend', description: 'on an average Saturday or Sunday'},
+        {value: 2.5, label: 'workday', description: 'on an average workday'},
+        {value: 5, label: 'month', description: 'total during the current month'},
+        {value: 8, label: 'quarter', description: 'total during the last quarter'}
+    ]
+
+    return (
+        <Paper
+            sx={{
+                p: 2,
+                margin: 'auto',
+                //maxWidth: 500,
+                flexGrow: 1,
+                backgroundColor: '#fff',
+            }}
+        >
+            <Grid container spacing={2}>
+                <Grid item lg={8}>
+                    <Grid item>
+                        <Typography variant="h6">
+                            Passengers
+                        </Typography>
+                        <Typography variant="h3">
+                            <FancyNumber count={aggStat} />
+                        </Typography>
+                        <Typography variant="caption">
+                            Who boarded between 2023/01/01 and 2023/01/31
+                        </Typography>
+                    </Grid>
+                    <Grid item>
+                        {toggle ? 
+                            <ToggleButtonGroup exclusive value={aggLevel} onChange={(evt, newVal) => { setAggLevel(newVal) }} variant="elevated" size="small" aria-label="aggregation period">
+                                {marks.map((m) => {
+                                    <ToggleButton value={m.value}>{m.description}</ToggleButton>    
+                                })}
+                            </ToggleButtonGroup> 
+                            :
+                            <Box sx={{p: 2, width:'80%'}}>
+                            <Slider
+                                aria-label="aggregation period"
+                                valueLabelDisplay="off"
+                                marks={marks}
+                                step={null}
+                                min={marks.at(0).value}
+                                max={marks.at(-1).value}
+                                onChange={(evt, newVal) => setAggLevel(marks.filter((m) => m.value == newVal)[0].label)}
+                                value={marks.filter((m) => m.label == aggLevel)[0].value}
+                            />
+                            </Box>
+                        }
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="caption">
+                            Extrapolated from {countedStops} counted stops out of {totalStops}
+                        </Typography>
+                    </Grid>
+                </Grid>
+                <Grid item container lg={4}>
+                    <Grid><Chip label={trend} variant="outlined" /></Grid>
+                    <Grid><Typography variant="caption">Compared to same month last year</Typography></Grid>
+                </Grid>
+          </Grid>
+    </Paper>
+    )
+  }
+
+
+
+export function DataDialog() {
+    
+    const [open, setOpen] = useState(false);
+    const [scroll, setScroll] = useState('paper');
+  
+    const handleClickOpen = (scrollType) => () => {
+      setOpen(true);
+      setScroll(scrollType);
+    };
+  
+    const handleClose = () => {
+      setOpen(false);
+    };
+
+    return (
+      <div>
+        <Button onClick={handleClickOpen('paper')}>How were these data generated?</Button>
+        <Button onClick={handleClickOpen('body')}>What do these data mean?</Button>
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          scroll={scroll}
+          aria-labelledby="scroll-dialog-title"
+          aria-describedby="scroll-dialog-description"
+        >
+          <DialogTitle id="scroll-dialog-title">Subscribe</DialogTitle>
+          <DialogContent dividers={scroll === 'paper'}>
+            <DialogContentText
+              id="scroll-dialog-description"
+              tabIndex={-1}
+            >
+              {[...new Array(50)]
+                .map(
+                  () => `Cras mattis consectetur purus sit amet fermentum.
+  Cras justo odio, dapibus ac facilisis in, egestas eget quam.
+  Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
+  Praesent commodo cursus magna, vel scelerisque nisl consectetur et.`,
+                )
+                .join('\n')}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button onClick={handleClose}>Subscribe</Button>
+          </DialogActions>
+        </Dialog>
+      </div>
+    );
+  }
