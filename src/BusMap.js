@@ -1,39 +1,14 @@
-import React, { useState, useEffect, useMemo, memo } from 'react';
-import ErrorBoundary from './ErrorBoundary';
+import React, { useState, useEffect, useRef, useMemo, memo, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
-import Switch from '@mui/material/Switch';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
-import FlowMap from './MapOfFlows.js';
-import {CorridorMap} from './CorridorMap.js';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import DepartureBoardIcon from '@mui/icons-material/DepartureBoard';
-import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
-import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
-
-import Tooltip from '@mui/material/Tooltip';
-import Fade from '@mui/material/Fade';
-import Zoom from '@mui/material/Zoom';
-
 import { animated, useSpring } from '@react-spring/web'
-
-import Button from '@mui/material/Button';
 import { TransformWrapper, TransformComponent, useTransformEffect } from "react-zoom-pan-pinch";
 import {useWindowSize} from './common.js'
 import { DateTime } from "luxon";
-import {HourlyTraffic} from './RoadTraffic';
-import { SpatialTrackingSharp } from '@mui/icons-material';
 
 
 export function BusMap() {
     
-    const [busMapLoaded, setBusMapLoaded] = useState(false);
-    const [busMap, setBusMap] = useState();
 
     const [busStatsLoaded, setBusStatsLoaded] = useState(false);
     const [busStats, setBusStats] = useState();
@@ -41,6 +16,52 @@ export function BusMap() {
     const [currentStop, setCurrentStop] = useState();
     const [currentLine, setCurrentLine] = useState();
     const [currentYear, setCurrentYear] = useState(2023);
+
+    useEffect(() => {
+        setBusStatsLoaded(false);
+        fetch('data/publictransport/busstats.json')
+        .then((r) => r.json())
+        .then((dta) => {
+            setBusStats(dta);
+            setBusStatsLoaded(true);
+        }).catch((e) => {
+            console.log(e.message)
+        });
+    }, [])
+
+
+    return (
+        <Suspense fallback={<p>Loading ...</p>}>
+            {/*<Zoomable><Map /></Zoomable>*/}
+            <Map></Map>
+        </Suspense>
+    )
+
+}
+
+
+export function Zoomable({children}) {
+    return (
+        <TransformWrapper>
+            {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+                <React.Fragment>
+                    <TransformComponent step={.1}>
+                        {children}
+                    </TransformComponent>
+                </React.Fragment>
+          )}
+        </TransformWrapper>
+      );
+}
+
+
+export function Map() {
+
+    const [busMapLoaded, setBusMapLoaded] = useState(false);
+    const [busMap, setBusMap] = useState();
+    const [viewWidth, setViewWidth] = useState(1472.387);
+    const [viewHeight, setViewHeight] = useState(2138.5);
+
 
     // retrieve zone info
     // TODO: include directly into the code later
@@ -56,132 +77,88 @@ export function BusMap() {
         });
     }, [])
 
+    const size = useWindowSize();
+    const height = size.height === undefined ? 600 : size.height - 150
+    const width = size.width === undefined ? 600 : size.width
 
-    useEffect(() => {
-        setBusStatsLoaded(false);
-        fetch('data/publictransport/busstats.json')
-        .then((r) => r.json())
-        .then((dta) => {
-            setBusStats(dta);
-            setBusStatsLoaded(true);
-        }).catch((e) => {
-            console.log(e.message)
-        });
-    }, [])
+    if (! busMapLoaded) return;
 
-
-    if (! (busMapLoaded && busStatsLoaded)) {
-        return <p>Loading ...</p>
+    const handleWheel = (evt) => {
+        if (evt.deltaY > 0) {
+            setViewWidth(viewWidth - 400) 
+        } else {
+            setViewWidth(viewWidth + 400)
+        }
     }
+
+
     return (
-        <Grid container spacing={1}>
-            {/*<Grid item xs={12}>
-                <h2>Public transport map</h2>
-                <h3>Current stop: {currentStop?.label} ({currentStop?.layer})</h3>
-                <h3>Current line: {currentLine?.line}</h3>
-                <HeatMap data={busStats['daily'][currentYear][currentStop?.label]} year={currentYear} getValues={(data) => data === undefined ? [] : data['corrected_boardings']} />
-                <HourlyTraffic countsByHour={[
-                    {hour: 0, count_weekend: 400, count_weekday: 800},
-                    {hour: 1, count_weekend: 200, count_weekday: 600},
-                    {hour: 2, count_weekend: 10, count_weekday: 200},
-                    {hour: 3, count_weekend: 2, count_weekday: 10},
-                    {hour: 4, count_weekend: 100, count_weekday: 100},
-                    {hour: 5, count_weekend: 400, count_weekday: 1000},
-                    {hour: 6, count_weekend: 900, count_weekday: 4000},
-                    {hour: 7, count_weekend: 1000, count_weekday: 9000},
-                    {hour: 8, count_weekend: 4000, count_weekday: 13000},
-                    {hour: 9, count_weekend: 5000, count_weekday: 10000},
-                    {hour: 10, count_weekend: 3000, count_weekday: 8000},
-                    {hour: 11, count_weekend: 2000, count_weekday: 7000},
-                    {hour: 12, count_weekend: 3000, count_weekday: 7500},
-                    {hour: 13, count_weekend: 2500, count_weekday: 6500},
-                    {hour: 14, count_weekend: 2000, count_weekday: 6000},
-                    {hour: 15, count_weekend: 1500, count_weekday: 5500},
-                    {hour: 16, count_weekend: 1200, count_weekday: 6000},
-                    {hour: 17, count_weekend: 1000, count_weekday: 9000},
-                    {hour: 18, count_weekend: 800, count_weekday: 9500},
-                    {hour: 19, count_weekend: 600, count_weekday: 9000},
-                    {hour: 20, count_weekend: 800, count_weekday: 7000},
-                    {hour: 21, count_weekend: 900, count_weekday: 4000},
-                    {hour: 22, count_weekend: 700, count_weekday: 1000},
-                    {hour: 23, count_weekend: 500, count_weekday: 900}
-                ]}/>
-            </Grid>*/}
-            <Grid item xs={12}>
-                <ZoomableMap 
-                    border={busMap.frontier} lines={busMap.lines} stops={busMap.stops} stations={busMap.stations}
-                    viewBox={busMap.viewBox}
-                    onSelectStop={(stop) => setCurrentStop(stop)} currentStop={currentStop}
-                    onSelectLine={(line) => setCurrentLine(line)} currentLine={currentLine}
-                 />
-            </Grid>
-        </Grid>
+        <ZoomableSVG>
+            <g id='frontier'><path d={busMap.border} style={{storke: '#e9eaeb', fill: 'none', strokeWidth: '5px'}} /></g>
+            <BusLines lines={busMap.lines} />
+            <g id="stations">
+                {busMap.stations.map((station, idx) => <BusStation key={`station-marker-${idx}`} station={station} />)}
+            </g>
+            <BusStops stops={busMap.stops} />
+        </ZoomableSVG>
     )
-
 }
 
 
-export function ZoomableMap({...args}) {
-    return (
-        <TransformWrapper>
-            {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-                <React.Fragment>
-                    <TransformComponent step={.1}>
-                        <Map {...args} />
-                    </TransformComponent>
-                </React.Fragment>
-          )}
-        </TransformWrapper>
-      );
-}
-
-
-export function Map({
-    border, lines=[], stops=[], stations=[], viewBox="0 0 1000 1000",
-    onSelectStop, currentStop,
-    onSelectLine, currentLine
-}) {
-
-    const [zoomLevel, setZoomLevel] = useState();
-
-    useTransformEffect(({ state, instance }) => {
-        // { previousScale: 1, scale: 1, positionX: 0, positionY: 0 }
-        setZoomLevel(state.scale)
-    })
+function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=0.5}) {
+    const [zoomLevel, setZoomLevel] = useState(1)
+    const [viewX, setViewX] = useState(0);
+    const [viewY, setViewY] = useState(0);
 
     const size = useWindowSize();
     const height = size.height === undefined ? 600 : size.height - 150
     const width = size.width === undefined ? 600 : size.width
+
+    const handleWheel = (evt) => {
+        let zl = zoomLevel
+        if (evt.deltaY > 0) {
+            zl -= (zl >= 1 + step ? step : 0)
+        } else {
+            zl += (zl <= 7 - step ? step : 0)
+        }
+        setZoomLevel(zl)
+
+        const {x, y} = mousePosition(evt)
+        setViewX(svgSize.width * x - svgSize.width / 2 / zl)
+        setViewY(svgSize.height * y - svgSize.height / 2 / zl)
+
+        console.log(zl, svgSize.width / 2 - svgSize.width / 2 / zl, svgSize.width / 2 - svgSize.width / 2 / zl)
+    }
+
+    const mousePosition = (evt) => {
+        const {width, height, x, y} = evt.target.getBoundingClientRect()
+        return {x: (evt.clientX - x) / width, y: (evt.clientY - y) / height}
+    }
+
     return (
-        <svg width={`${width}px`}  height={`${height}px`} viewBox={viewBox} style={{backgroundColor: 'white'}}>
-            <g>
-                <path 
-                    d={border}
-                    style={{
-                        stroke: '#e9eaeb',
-                        fill: 'none',
-                        strokeWidth: '5px'
-                    }} 
-                />
-            </g>
-            <g id="lines">{lines.map((line, idx) => <BusLine key={`busline-${idx}`} line={line} onSelection={(line) => console.log(line)} selected={currentLine === line} />)}</g>
-            <g id="stops">{stops.map((stop, idx) => 
-                <BusStop key={`stop-marker-${idx}`}
-                    stop={stop} selected={currentStop === stop}
-                    fontSize={stop.r}
-                    showLabel={(zoomLevel < 1.5 ? stop.r >= 15 : (zoomLevel < 3 ? stop.r >= 10 : true))}
-                />)}
-            </g>
-            <g id="stations">
-                {stations.map((station, idx) => <BusStation key={`station-marker-${idx}`} station={station} />)}
-            </g>
+        <svg width={`${width}px`}  height={`${height}px`} viewBox={`${viewX} ${viewY} ${svgSize.width / zoomLevel} ${svgSize.height / zoomLevel}`} style={{backgroundColor: 'white'}} onWheel={handleWheel} >
+            {children}
         </svg>
     )
 }
 
 
-export function BusLine({line, onSelection, selected=false}) {
-    console.count('busline render')
+function BusLines({lines}) {
+    console.count('buslines')
+    const [selected, setSelected] = useState()
+    
+    return (
+        <g id="lines">
+            {lines.map((line, idx) => 
+                <BusLine key={`busline-${idx}`} line={line} onSelection={(line) => setSelected(line)} selected={selected === line} />)
+            }
+        </g>
+    )
+}
+
+
+function BusLine({line, onSelection, selected=false}) {
+    
     return (
         <g>{line.d.map((d, idx) =>
             <path 
@@ -199,7 +176,32 @@ export function BusLine({line, onSelection, selected=false}) {
     )
 }
 
-export function BusStop({stop, onSelection=(stop) => undefined, selected=false, showLabel=true, fontSize='1em'}) {
+
+function BusStops({stops}) {
+
+    const [selected, setSelected] = useState()
+
+    console.count('busstops')
+    return (
+        <g id="stops">{stops.map((stop, idx) => 
+            <BusStop key={`stop-marker-${idx}`}
+                stop={stop}
+                selected={selected === stop}
+                onSelection={(stop) => setSelected(stop)}
+            />)}
+        </g>
+    )
+}
+
+
+export function BusStop({stop, onSelection=(stop) => undefined, selected=false}) {
+    const [showLabel, setShowLabel] = useState(true);
+    //useTransformEffect(({ state, instance }) => {
+    //    setShowLabel(state.zoomLevel < 1.5 ? stop.r >= 15 : (state.zoomLevel < 3 ? stop.r >= 10 : true))
+    //})
+
+    const [radius, setRadius] = useState(stop.r)
+    const springs = useSpring({r: radius, opacity: radius == stop.r ? 0 : 1})
 
     return (
         <React.Fragment>
@@ -208,7 +210,7 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false, 
                 y={stop.ly}
                 style={{
                     display: showLabel ? 'block' : 'none',
-                    fontSize: fontSize,
+                    fontSize: stop.r * .8,
                     alignmentBaseline: 'central'
                 }}
             >
@@ -216,13 +218,35 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false, 
             </text>
             {stop?.r === undefined ?
             <path d={stop.d} /> :
-            <circle 
+            <><circle 
                 cx={stop.cx} cy={stop.cy} r={stop.r} 
                 style={{
                     stroke: 'black',
-                    fill: selected ? 'red' : 'none'
+                    fill: selected ? 'red' : 'none',
                 }}
-            />}
+            />
+            <animated.circle 
+                cx={stop.cx} cy={stop.cy} r={springs.r} 
+                style={{
+                    fill: '#ffbb1c',
+                    stroke: 'black',
+                    opacity: radius == stop.r ? 0 : 1,
+                }}
+            />
+            <circle
+                cx={stop.cx} cy={stop.cy} r={stop.r * 1.3} 
+                style={{
+                    fill: 'none',
+                    stroke: 'none',
+                    cursor: 'pointer'
+                }}
+                pointerEvents="visible"
+                onMouseEnter={(evt) => setRadius(stop.r * 1.3)} 
+                onMouseLeave={(evt) => setRadius(stop.r * 1)}
+            />
+            </>
+            }
+
         </React.Fragment>
     )
 }
