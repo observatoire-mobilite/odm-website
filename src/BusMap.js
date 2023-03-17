@@ -75,7 +75,7 @@ export function BusMap() {
     }
     return (
         <Grid container spacing={1}>
-            <Grid item xs={12}>
+            {/*<Grid item xs={12}>
                 <h2>Public transport map</h2>
                 <h3>Current stop: {currentStop?.label} ({currentStop?.layer})</h3>
                 <h3>Current line: {currentLine?.line}</h3>
@@ -106,10 +106,11 @@ export function BusMap() {
                     {hour: 22, count_weekend: 700, count_weekday: 1000},
                     {hour: 23, count_weekend: 500, count_weekday: 900}
                 ]}/>
-            </Grid>
+            </Grid>*/}
             <Grid item xs={12}>
                 <ZoomableMap 
-                    border={busMap.frontier} lines={busMap.lines} stops={busMap.stops}
+                    border={busMap.frontier} lines={busMap.lines} stops={busMap.stops} stations={busMap.stations}
+                    viewBox={busMap.viewBox}
                     onSelectStop={(stop) => setCurrentStop(stop)} currentStop={currentStop}
                     onSelectLine={(line) => setCurrentLine(line)} currentLine={currentLine}
                  />
@@ -135,23 +136,8 @@ export function ZoomableMap({...args}) {
 }
 
 
-function show_city_label(layer, zoom) {
-    if (layer == 'Ville_N2') {
-        return true
-    } else if (layer == 'Ville_N3') {
-        return zoom > 1
-    } else if (layer == 'Ville_N4') {
-        return zoom > 2
-    } else if (layer == 'Ville_N5') {
-        return zoom > 3
-    }
-    return false
-    
-}
-
-
 export function Map({
-    border, lines=[], stops=[],
+    border, lines=[], stops=[], stations=[], viewBox="0 0 1000 1000",
     onSelectStop, currentStop,
     onSelectLine, currentLine
 }) {
@@ -165,34 +151,37 @@ export function Map({
 
     const size = useWindowSize();
     const height = size.height === undefined ? 600 : size.height - 150
-
+    const width = size.width === undefined ? 600 : size.width
     return (
-        <svg width="100%"  height={`${height}px`} viewBox="100 250 3000 2200">
+        <svg width={`${width}px`}  height={`${height}px`} viewBox={viewBox} style={{backgroundColor: 'white'}}>
             <g>
                 <path 
                     d={border}
                     style={{
-                        stroke: 'none',
-                        fill: 'rgb(220, 220, 220)',
+                        stroke: '#e9eaeb',
+                        fill: 'none',
                         strokeWidth: '5px'
                     }} 
                 />
             </g>
-            <g>{lines.map((line, idx) => <BusLine key={`busline-${idx}`} line={line} onSelection={onSelectLine} selected={currentLine === line} />)}</g>
-            <g>{stops.map((stop, idx) => 
+            <g id="lines">{lines.map((line, idx) => <BusLine key={`busline-${idx}`} line={line} onSelection={(line) => console.log(line)} selected={currentLine === line} />)}</g>
+            <g id="stops">{stops.map((stop, idx) => 
                 <BusStop key={`stop-marker-${idx}`}
                     stop={stop} selected={currentStop === stop}
-                    showLabel={show_city_label(stop.layer, zoomLevel)} 
-                    fontSize={`${.5 + .5 / zoomLevel}em`}
+                    fontSize={stop.r}
+                    showLabel={(zoomLevel < 1.5 ? stop.r >= 15 : (zoomLevel < 3 ? stop.r >= 10 : true))}
                 />)}
             </g>
-            <g>{stops.map((stop, idx) => {if (! stop.layer.startsWith('Station')) { return <BusStopClickableOverlay key={`stop-ui-${idx}`} stop={stop} onSelection={onSelectStop} />}})}</g>
+            <g id="stations">
+                {stations.map((station, idx) => <BusStation key={`station-marker-${idx}`} station={station} />)}
+            </g>
         </svg>
     )
 }
 
 
 export function BusLine({line, onSelection, selected=false}) {
+    console.count('busline render')
     return (
         <g>{line.d.map((d, idx) =>
             <path 
@@ -200,7 +189,7 @@ export function BusLine({line, onSelection, selected=false}) {
                 d={d}
                 pointerEvents="visiblePainted"
                 style={{
-                    stroke: selected ? 'red' : 'black', 
+                    stroke: selected ? 'red' : '#05779cff', 
                     fill: 'none',
                     cursor: 'pointer'
                 }}
@@ -210,31 +199,48 @@ export function BusLine({line, onSelection, selected=false}) {
     )
 }
 
-export function BusStop({stop, onSelection=(stop) => undefined, selected=false, showLabel=false, fontSize='0.5em'}) {
+export function BusStop({stop, onSelection=(stop) => undefined, selected=false, showLabel=true, fontSize='1em'}) {
+
     return (
         <React.Fragment>
-        <text 
-            x={stop.cx + stop.r * 1.1} 
-            y={stop.cy}
-            style={{
-                display: showLabel ? 'block' : 'none',
-                fontSize: fontSize,
-                alignmentBaseline: 'central'
-            }}
-        >
-            {stop.label}
-        </text>
-        <circle 
-            cx={stop.cx} cy={stop.cy} r={stop.r} 
-            style={{
-                stroke: 'black',
-                fill: selected ? 'red' : 'black',
-                opacity: 0.6
-            }}
-        />
+            <text 
+                x={stop.lx} 
+                y={stop.ly}
+                style={{
+                    display: showLabel ? 'block' : 'none',
+                    fontSize: fontSize,
+                    alignmentBaseline: 'central'
+                }}
+            >
+                {stop.label}
+            </text>
+            {stop?.r === undefined ?
+            <path d={stop.d} /> :
+            <circle 
+                cx={stop.cx} cy={stop.cy} r={stop.r} 
+                style={{
+                    stroke: 'black',
+                    fill: selected ? 'red' : 'none'
+                }}
+            />}
         </React.Fragment>
     )
 }
+
+function BusStation({station}) {
+    return (
+        <circle 
+            pointerEvents="visible"
+            cx={station.cx} cy={station.cy} r={station.r} 
+            style={{
+                stroke: 'none',
+                fill: 'black'
+            }}
+    />
+
+    )
+}
+
 
 
 export function BusStopClickableOverlay({stop, onSelection=(stop) => undefined}) {
