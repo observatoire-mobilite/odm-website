@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, memo, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
-import { animated, useSpring } from '@react-spring/web'
+import { animated, useSpring, useResize } from '@react-spring/web'
 import { TransformWrapper, TransformComponent, useTransformEffect } from "react-zoom-pan-pinch";
 import {useWindowSize} from './common.js'
 import { DateTime } from "luxon";
-
+import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
 
 export function BusMap() {
     
@@ -105,38 +105,64 @@ export function Map() {
 }
 
 
-function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=0.5}) {
+const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
+
+
+function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5}) {
     const [zoomLevel, setZoomLevel] = useState(1)
     const [viewX, setViewX] = useState(0);
     const [viewY, setViewY] = useState(0);
 
     const size = useWindowSize();
-    const height = size.height === undefined ? 600 : size.height - 150
-    const width = size.width === undefined ? 600 : size.width
+    //const height = size.height === undefined ? 600 : size.height - 150
+    //const width = size.width === undefined ? 600 : size.width
+    const { width, height } = useResize()
 
-    const handleWheel = (evt) => {
-        let zl = zoomLevel
-        if (evt.deltaY > 0) {
-            zl -= (zl >= 1 + step ? step : 0)
-        } else {
-            zl += (zl <= 7 - step ? step : 0)
+    const [style, api] = useSpring(() => ({
+        x: 0,
+        y: 0,
+        scale: 1,
+    }))
+    
+    
+    const bind = useGesture(
+        {
+            onDrag: ({ event, dragging, cancel, initial: [x0, y0], offset: [dx, dy], movement: [xm, ym], ...rest }) => {
+                event.preventDefault()
+                setViewX(-(xm / width) * svgSize.width / zoomLevel)
+                setViewY(-(ym / height) * svgSize.height / zoomLevel)
+            },
+            onWheel: ({velocity, offset: [dx, dy], event, ...rest}) => {
+                const zl = 1 - dy / step
+                setViewX(viewX + svgSize.width / 2 * (1 / zoomLevel - 1 / zl))
+                setViewY(viewY + svgSize.height / 2 * (1 / zoomLevel - 1 / zl))
+                setZoomLevel(zl)
+                
+            }
+        },
+        { 
+            wheel: { 
+                bounds: { left: 0, right: 0, top: -maxZoomLevel * step, bottom: 0 },
+                rubberband: true,
+            },
+            drag: {
+                delay: 100
+            }
         }
-        setZoomLevel(zl)
-
-        const {x, y} = mousePosition(evt)
-        setViewX(svgSize.width * x - svgSize.width / 2 / zl)
-        setViewY(svgSize.height * y - svgSize.height / 2 / zl)
-
-        console.log(zl, svgSize.width / 2 - svgSize.width / 2 / zl, svgSize.width / 2 - svgSize.width / 2 / zl)
-    }
-
-    const mousePosition = (evt) => {
-        const {width, height, x, y} = evt.target.getBoundingClientRect()
-        return {x: (evt.clientX - x) / width, y: (evt.clientY - y) / height}
-    }
+    )
 
     return (
-        <svg width={`${width}px`}  height={`${height}px`} viewBox={`${viewX} ${viewY} ${svgSize.width / zoomLevel} ${svgSize.height / zoomLevel}`} style={{backgroundColor: 'white'}} onWheel={handleWheel} >
+        <svg {...bind()}
+            //width={`${width}px`} 
+            //height={`${height}px`}
+            width=
+            viewBox={`${viewX} ${viewY} ${svgSize.width / zoomLevel} ${svgSize.height / zoomLevel}`} 
+            style={{
+                backgroundColor: 'white',
+                touchAction: 'none',
+                cursor: 'grab'
+            }}
+        >
             {children}
         </svg>
     )
