@@ -18,6 +18,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@use-gesture/react": "^10.2.24",
     "apache-arrow": "^10.0.1",
     "d3": "^7.7.0",
     "deck.gl": "^8.8.20",

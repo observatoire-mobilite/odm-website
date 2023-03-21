@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useLayoutEffect, useMemo, memo, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid';
-import { animated, useSpring, useResize } from '@react-spring/web'
+import { animated, useSpring, to } from '@react-spring/web'
 import { TransformWrapper, TransformComponent, useTransformEffect } from "react-zoom-pan-pinch";
 import {useWindowSize} from './common.js'
 import { DateTime } from "luxon";
@@ -77,20 +78,7 @@ export function Map() {
         });
     }, [])
 
-    const size = useWindowSize();
-    const height = size.height === undefined ? 600 : size.height - 150
-    const width = size.width === undefined ? 600 : size.width
-
-    if (! busMapLoaded) return;
-
-    const handleWheel = (evt) => {
-        if (evt.deltaY > 0) {
-            setViewWidth(viewWidth - 400) 
-        } else {
-            setViewWidth(viewWidth + 400)
-        }
-    }
-
+    if (! busMapLoaded) return
 
     return (
         <ZoomableSVG>
@@ -108,76 +96,94 @@ export function Map() {
 const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
 
 
-function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5}) {
-    const [zoomLevel, setZoomLevel] = useState(1)
-    const [screenSize, setScreenSize] = useState(null)
-    const [viewX, setViewX] = useState(0);
-    const [viewY, setViewY] = useState(0);
+function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5, backgroundColor='white'}) {
+    const containerRef = useRef()
+    const mapRef = useRef()
+    const scrollBounds = useCallback(() => {
+        if (containerRef.current && mapRef.current) {
+            const {width: containerWidth, height: containerHeight} = containerRef.current.getBoundingClientRect();
+            const {width: mapWidth, height: mapHeight} = mapRef.current.getBoundingClientRect();
+            return {
+                left: containerWidth - mapWidth,
+                right: 0,
+                top: 0,
+                bottom: containerHeight - mapHeight
+            }
+        }
+    })
 
-    const size = useWindowSize();
-    //const height = size.height === undefined ? 600 : size.height - 150
-    //const width = size.width === undefined ? 600 : size.width
-    
-    const ref = useRef()
-    useLayoutEffect(() => {
-        const {width, height} = ref.current.getBoundingClientRect();
-        setScreenSize({width, height, ar: width / height})
-      }, []);
+    useEffect(() => {
+        if (containerRef.current && mapRef.current) {
+            const {width: containerWidth, height: containerHeight} = containerRef.current.getBoundingClientRect();
+            const {width: mapWidth, height: mapHeight} = mapRef.current.getBoundingClientRect();
+            setXY({x: Math.min(containerWidth / mapWidth, containerHeight / mapHeight), y: 0})
+        }
+    }, [])
 
     const [style, api] = useSpring(() => ({
-        x: 0,
-        y: 0,
         scale: 1,
+        x: 0,
+        y: 0
     }))
+
+    const [xy, setXY] = useState({x: 0, y: 0})
+    const [zoomLevel, setZoomLevel] = useState(1)
     
     const bind = useGesture(
         {
-            onDrag: ({ event, dragging, cancel, initial: [x0, y0], offset: [dx, dy], movement: [xm, ym], ...rest }) => {
+            onDrag: ({ event, offset: [dx, dy], ...rest }) => {
                 event.preventDefault()
-                //setViewX((-dx / screenSize.width) * svgSize.width / zoomLevel)
-                //setViewY((-dy / screenSize.height) * svgSize.height / zoomLevel)
-                //const x = x0 / screenSize.width * svgSize.width / zoomLevel
-                //const y = y0 / screenSize.height * svgSize.height / zoomLevel
-                //const f = (svgSize.height / zoomLevel) / screenSize.height
-                const f = svgSize.height / zoomLevel / screenSize?.height
-                setViewX(-dx * f)
-                setViewY(-dy * f)
-
+                setXY({x: dx, y: dy})
+                api.start({x: dx, y: dy})
             },
-            onWheel: ({velocity, offset: [dx, dy], event, ...rest}) => {
+            onWheel: ({velocity, offset: [dx, dy], event: {clientX: x, clientY: y}, ...rest}) => {
                 const zl = 1 - dy / step
-                //setViewX(viewX + svgSize.width / 2 * (1 / zoomLevel - 1 / zl))
-                //setViewY(viewY + svgSize.height / 2 * (1 / zoomLevel - 1 / zl))
                 setZoomLevel(zl)
-                
+                api.start({scale: zl})
             }
         },
         { 
             wheel: { 
-                bounds: { left: 0, right: 0, top: -maxZoomLevel * step, bottom: 0 },
+                bounds: { left: 0, right: 0, top: -maxZoomLevel * step, bottom: step * (1 - 0.38) },
                 rubberband: true,
             },
             drag: {
-                delay: 10
+                //bounds: scrollBounds,
+                transform: ([x, y]) => [x / zoomLevel, y / zoomLevel],
+                rubberband: true,
+                delay: 200
             }
         }
     )
-    const [xy, setxy] = useState({x: 0, y: 0})
-
     return (
-        <svg ref={ref} {...bind()} preserveAspectRatio="xMidYMid meet"
-            viewBox={`${viewX} ${viewY} ${svgSize.width / zoomLevel} ${svgSize.height / zoomLevel}`} 
-            style={{
-                backgroundColor: 'white',
-                touchAction: 'none',
-                cursor: 'grab',
+        <div style={{position: 'relative'}}>
+        <div ref={containerRef} {...bind()}  
+            style={{ 
+                overflow: 'hidden',
                 width: '100%',
-                height: 'calc(100vh - 150px)'
+                height: 'calc(100vh - 150px)',
+                touchAction: 'none',
+                backgroundColor,
+                position: 'relative',
+                cursor: 'grab'
             }}
         >
-            {children}
-            <circle cx={xy.x} cy={xy.y} r={10} style={{'fill': 'red'}} />
-        </svg>
+            <animated.svg ref={mapRef} preserveAspectRatio="xMidYMid meet"
+                viewBox={`0 0 ${svgSize.width} ${svgSize.height}`} 
+                style={{
+                    backgroundColor,
+                    scale: style.scale,
+                    translate: [style.x, style.y]
+                }}
+            >
+                {children}
+            </animated.svg>
+        </div>
+        <div style={{position: 'absolute', top: '10px', left: '10px'}}>
+            <p>Scale: {zoomLevel}</p>
+            <p>xy: {xy.x} {xy.y}</p>
+        </div>
+        </div>
     )
 }
 
@@ -198,19 +204,44 @@ function BusLines({lines}) {
 
 function BusLine({line, onSelection, selected=false}) {
     
+    const [style, api] = useSpring(() => ({stroke: selected ? 'red' : '#05779cff'}))
+
     return (
         <g>{line.d.map((d, idx) =>
-            <path 
+            <g><path 
+                key={`busline-underlay-${idx}`}
+                d={d}
+                style={{
+                    stroke: 'white',
+                    fill: 'none',
+                    strokeWidth: 4,
+                    opacity: 0.9
+                }}
+            />
+            <animated.path 
                 key={`busline-path-${idx}`}
                 d={d}
-                pointerEvents="visiblePainted"
                 style={{
-                    stroke: selected ? 'red' : '#05779cff', 
+                    stroke: style.stroke, 
+                    strokeWidth: 2,
+                    fill: 'none'
+                }}
+            />
+            <path
+                key={`busline-overlay-${idx}`}
+                d={d}
+                style={{
+                    stroke: 'none',
                     fill: 'none',
+                    strokeWidth: 5,
                     cursor: 'pointer'
                 }}
-                onClick={(evt) => onSelection(line)} 
+                pointerEvents="visibleStroke"
+                onClick={(evt) => onSelection(line)}
+                onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
+                onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
             />
+            </g>
         )}</g>
     )
 }
@@ -239,8 +270,7 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false})
     //    setShowLabel(state.zoomLevel < 1.5 ? stop.r >= 15 : (state.zoomLevel < 3 ? stop.r >= 10 : true))
     //})
 
-    const [radius, setRadius] = useState(stop.r)
-    const springs = useSpring({r: radius, opacity: radius == stop.r ? 0 : 1})
+    const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
 
     return (
         <React.Fragment>
@@ -250,6 +280,9 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false})
                 style={{
                     display: showLabel ? 'block' : 'none',
                     fontSize: stop.r * .8,
+                    paintOrder: 'stroke',
+                    stroke: 'white',
+                    strokeWidth: stop.r / 20,
                     alignmentBaseline: 'central'
                 }}
             >
@@ -268,8 +301,8 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false})
                 cx={stop.cx} cy={stop.cy} r={springs.r} 
                 style={{
                     fill: '#ffbb1c',
-                    stroke: 'black',
-                    opacity: radius == stop.r ? 0 : 1,
+                    stroke: '#ffbb1c77',
+                    opacity: springs.opacity,
                 }}
             />
             <circle
@@ -280,8 +313,8 @@ export function BusStop({stop, onSelection=(stop) => undefined, selected=false})
                     cursor: 'pointer'
                 }}
                 pointerEvents="visible"
-                onMouseEnter={(evt) => setRadius(stop.r * 1.3)} 
-                onMouseLeave={(evt) => setRadius(stop.r * 1)}
+                onMouseEnter={(evt) => api.start({r: stop.r * 1.3, opacity: 1})} 
+                onMouseLeave={(evt) => api.start({r: stop.r, opacity: 0})}
             />
             </>
             }
