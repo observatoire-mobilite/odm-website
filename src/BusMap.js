@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, memo, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useMemo, memo, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, useResize } from '@react-spring/web'
@@ -110,13 +110,19 @@ const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, whee
 
 function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5}) {
     const [zoomLevel, setZoomLevel] = useState(1)
+    const [screenSize, setScreenSize] = useState(null)
     const [viewX, setViewX] = useState(0);
     const [viewY, setViewY] = useState(0);
 
     const size = useWindowSize();
     //const height = size.height === undefined ? 600 : size.height - 150
     //const width = size.width === undefined ? 600 : size.width
-    const { width, height } = useResize()
+    
+    const ref = useRef()
+    useLayoutEffect(() => {
+        const {width, height} = ref.current.getBoundingClientRect();
+        setScreenSize({width, height, ar: width / height})
+      }, []);
 
     const [style, api] = useSpring(() => ({
         x: 0,
@@ -124,18 +130,24 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
         scale: 1,
     }))
     
-    
     const bind = useGesture(
         {
             onDrag: ({ event, dragging, cancel, initial: [x0, y0], offset: [dx, dy], movement: [xm, ym], ...rest }) => {
                 event.preventDefault()
-                setViewX(-(xm / width) * svgSize.width / zoomLevel)
-                setViewY(-(ym / height) * svgSize.height / zoomLevel)
+                //setViewX((-dx / screenSize.width) * svgSize.width / zoomLevel)
+                //setViewY((-dy / screenSize.height) * svgSize.height / zoomLevel)
+                //const x = x0 / screenSize.width * svgSize.width / zoomLevel
+                //const y = y0 / screenSize.height * svgSize.height / zoomLevel
+                //const f = (svgSize.height / zoomLevel) / screenSize.height
+                const f = svgSize.height / zoomLevel / screenSize?.height
+                setViewX(-dx * f)
+                setViewY(-dy * f)
+
             },
             onWheel: ({velocity, offset: [dx, dy], event, ...rest}) => {
                 const zl = 1 - dy / step
-                setViewX(viewX + svgSize.width / 2 * (1 / zoomLevel - 1 / zl))
-                setViewY(viewY + svgSize.height / 2 * (1 / zoomLevel - 1 / zl))
+                //setViewX(viewX + svgSize.width / 2 * (1 / zoomLevel - 1 / zl))
+                //setViewY(viewY + svgSize.height / 2 * (1 / zoomLevel - 1 / zl))
                 setZoomLevel(zl)
                 
             }
@@ -146,24 +158,25 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 rubberband: true,
             },
             drag: {
-                delay: 100
+                delay: 10
             }
         }
     )
+    const [xy, setxy] = useState({x: 0, y: 0})
 
     return (
-        <svg {...bind()}
-            //width={`${width}px`} 
-            //height={`${height}px`}
-            width=
+        <svg ref={ref} {...bind()} preserveAspectRatio="xMidYMid meet"
             viewBox={`${viewX} ${viewY} ${svgSize.width / zoomLevel} ${svgSize.height / zoomLevel}`} 
             style={{
                 backgroundColor: 'white',
                 touchAction: 'none',
-                cursor: 'grab'
+                cursor: 'grab',
+                width: '100%',
+                height: 'calc(100vh - 150px)'
             }}
         >
             {children}
+            <circle cx={xy.x} cy={xy.y} r={10} style={{'fill': 'red'}} />
         </svg>
     )
 }
