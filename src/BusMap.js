@@ -95,6 +95,10 @@ export function Map() {
 
 const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
 
+const midPoint = ({x, y, width, height}) => ({x: x + width / 2, y: y + height/2});
+const diffVect = ({x: x1, y: y1}, {x: x2, y: y2}) => ({x: x1 - x2, y: y1 - y2})
+const scaleVect = ({x, y}, a) => ({x: x * a, y: y * a})
+
 
 function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5, backgroundColor='white'}) {
     const containerRef = useRef()
@@ -128,33 +132,87 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
 
     const [xy, setXY] = useState({x: 0, y: 0})
     const [zoomLevel, setZoomLevel] = useState(1)
+
+    useEffect(() => {
+        const handler = (e) => e.preventDefault()
+        document.addEventListener('gesturestart', handler)
+        document.addEventListener('gesturechange', handler)
+        document.addEventListener('gestureend', handler)
+        return () => {
+          document.removeEventListener('gesturestart', handler)
+          document.removeEventListener('gesturechange', handler)
+          document.removeEventListener('gestureend', handler)
+        }
+    }, [])
     
     const bind = useGesture(
         {
-            onDrag: ({ event, offset: [dx, dy], ...rest }) => {
-                event.preventDefault()
-                setXY({x: dx, y: dy})
+            onDrag: ({ pinching, cancel, offset: [dx, dy], ...rest }) => {
+                if (pinching) return cancel()
                 api.start({x: dx, y: dy})
             },
-            onWheel: ({velocity, offset: [dx, dy], event: {clientX: x, clientY: y}, ...rest}) => {
+            onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, a], memo, event}) => {
+                if (first) {
+                    const { width, height, x, y } = mapRef.current.getBoundingClientRect()
+                    const tx = ox - (x + width / 2)
+                    const ty = oy - (y + height / 2)
+                    memo = [style.x.get(), style.y.get(), tx, ty]
+                }
+        
+                const x = memo[0] - (ms - 1) * memo[2]
+                const y = memo[1] - (ms - 1) * memo[3]
+                api.start({ scale: s, x, y })
+                return memo
+            },
+            onWheel: ({cancel, first, memo, offset: [dx, dy], movement: [mx, my], event: {clientX: ox, clientY: oy}}) => {
                 const zl = 1 - dy / step
+                const dzl = 1 - my / step
+                // the core idea: the center of the map is stationary during scaling while any arbitrary 
+                // point away from the center moves outwards (resp. inwards) proportionally to its
+                // distance to the center. To keep a given point stationary in the viewport while zooming,
+                // we thus have to translate the entire map in the opposite direction that that point is
+                // moving away (or towards) the center of the map, which is simply the vector pointing from 
+                // the point's position after scaling to its initial position. We calculate the latter from 
+                // the difference of the vectors pointing from the map's center to either point.
+                // But, nothing seems to work!!!
+                if (first) {
+                    //const cursor = diffVect({x: ox, y: oy}, containerRef.current.getBoundingClientRect())
+                    const centerScreen = containerRef.current.getBoundingClientRect()
+                    const cursor = centerScreen
+                    const centerMap = midPoint(mapRef.current.getBoundingClientRect())
+                    const center2cursor = diffVect(cursor, centerMap)
+                    memo = [style.x.get(), style.y.get(), center2cursor.x, center2cursor.y]
+                }
+                
+                api.start({
+                    scale: zl,
+                    x: style.x.get(),
+                    y: style.y.get()
+                })  // TODO: add correction for zoom level
                 setZoomLevel(zl)
-                api.start({scale: zl})
+                return memo
             }
         },
         { 
             wheel: { 
-                bounds: { left: 0, right: 0, top: -maxZoomLevel * step, bottom: step * (1 - 0.38) },
+                //bounds: { left: 0, right: 0, top: -maxZoomLevel * step, bottom: step * (1 - 0.38) },
                 rubberband: true,
+                preventDefault: true,
+                preventScroll: true
             },
             drag: {
                 //bounds: scrollBounds,
                 transform: ([x, y]) => [x / zoomLevel, y / zoomLevel],
+                from: () => [style.x.get(), style.y.get()],
                 rubberband: true,
-                delay: 200
+                preventDefault: true
+            },
+            pinch: {
+                preventDefault: true
             }
         }
     )
+    
     return (
         <div style={{position: 'relative'}}>
         <div ref={containerRef} {...bind()}  
@@ -165,7 +223,8 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 touchAction: 'none',
                 backgroundColor,
                 position: 'relative',
-                cursor: 'grab'
+                cursor: 'grab',
+                userSelect: 'none'
             }}
         >
             <animated.svg ref={mapRef} preserveAspectRatio="xMidYMid meet"
@@ -173,15 +232,19 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 style={{
                     backgroundColor,
                     scale: style.scale,
-                    translate: [style.x, style.y]
+                    translate: [style.x, style.y],
+                    willChange: 'transform',
+                    transformOrigin: 'center'
                 }}
+                onClick={(evt) => {}}
             >
                 {children}
             </animated.svg>
         </div>
-        <div style={{position: 'absolute', top: '10px', left: '10px'}}>
-            <p>Scale: {zoomLevel}</p>
-            <p>xy: {xy.x} {xy.y}</p>
+        <div style={{position: 'absolute', width: '10px', height: '10px', top: `${xy.y}px`, left: `${xy.x}px`}}>
+            <svg viewBox={`0 0 4 4`}>
+            <circle cx={2} cy={2} r={4} style={{'fill': 'red'}} />
+            </svg>
         </div>
         </div>
     )
