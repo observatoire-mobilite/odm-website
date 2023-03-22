@@ -7,6 +7,8 @@ import { TransformWrapper, TransformComponent, useTransformEffect } from "react-
 import {useWindowSize} from './common.js'
 import { DateTime } from "luxon";
 import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
+import { createMemoryHistory } from '@remix-run/router';
+import { width } from '@mui/system';
 
 export function BusMap() {
     console.count('busmap')
@@ -102,123 +104,71 @@ const diffVect = ({x: x1, y: y1}, {x: x2, y: y2}) => ({x: x1 - x2, y: y1 - y2})
 const scaleVect = ({x, y}, a) => ({x: x * a, y: y * a})
 
 
-function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5, backgroundColor='white'}) {
+function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5, backgroundColor='white'}) {
     console.count('svg-container')
     
-    const containerRef = useRef()
     const mapRef = useRef()
-    const [boundingRects, setBoundingRects] = useState({map: null, container: null})
-
-    const scrollBounds = useCallback(() => {
-        if (containerRef.current && mapRef.current) {
-            const {width: containerWidth, height: containerHeight} = containerRef.current.getBoundingClientRect();
-            const {width: mapWidth, height: mapHeight} = mapRef.current.getBoundingClientRect();
-            return {
-                left: containerWidth - mapWidth,
-                right: 0,
-                top: 0,
-                bottom: containerHeight - mapHeight
-            }
-        }
-    })
-
-    const getCurrentZoomlevel = useCallback(() => {
-        if (containerRef.current && mapRef.current) {
-            const {width: containerWidth} = containerRef.current.getBoundingClientRect();
-            const {width: mapWidth} = mapRef.current.getBoundingClientRect();
-            return mapWidth / containerWidth    
-        }
-        return 1
-    })
-
-    const [style, api] = useSpring(() => ({
-        scale: 1,
-        x: 0,
-        y: 0
-    }))
-
+    const [viewBox, setViewBox] = useState({x: 0, y: 0, ...svgSize})
     const [xy, setXY] = useState({x: 0, y: 0})
-    const [zoomLevel, setZoomLevel] = useState(1)
 
-    useEffect(() => {
-        const handler = (e) => e.preventDefault()
-        document.addEventListener('gesturestart', handler)
-        document.addEventListener('gesturechange', handler)
-        document.addEventListener('gestureend', handler)
-        return () => {
-          document.removeEventListener('gesturestart', handler)
-          document.removeEventListener('gesturechange', handler)
-          document.removeEventListener('gestureend', handler)
-        }
-    }, [])
-    
     const bind = useGesture(
         {
             onDrag: ({ pinching, cancel, offset: [dx, dy], ...rest }) => {
                 if (pinching) return cancel()
-                api.start({x: dx, y: dy})
+                setViewBox({x: -dx, y: -dy, width: viewBox.width, height: viewBox.height})
             },
             onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, a], memo, event}) => {
-                if (first) {
-                    const { width, height, x, y } = mapRef.current.getBoundingClientRect()
-                    const tx = ox - (x + width / 2)
-                    const ty = oy - (y + height / 2)
-                    memo = [style.x.get(), style.y.get(), tx, ty]
-                }
-        
-                const x = memo[0] - (ms - 1) * memo[2]
-                const y = memo[1] - (ms - 1) * memo[3]
-                api.start({ scale: s, x, y })
                 return memo
             },
-            onWheel: ({cancel, first, memo, offset: [dx, dy], movement: [mx, my], event: {clientX: ox, clientY: oy}}) => {
-                const zl = 1 - dy / step
-                //setZoomLevel(zl)
-                api.start({
-                    scale: zl,
-                })
-                return memo
+            onWheel: ({movement: [mx, my], offset: [ddx, ddy], event: {clientX: ox, clientY: oy}}) => {
+                const zl = 1 - my / step
                 
-                const dzl = 1 - my / step
-                // the core idea: the center of the map is stationary during scaling while any arbitrary 
-                // point away from the center moves outwards (resp. inwards) proportionally to its
-                // distance to the center. To keep a given point stationary in the viewport while zooming,
-                // we thus have to translate the entire map in the opposite direction that that point is
-                // moving away (or towards) the center of the map, which is simply the vector pointing from 
-                // the point's position after scaling to its initial position. We calculate the latter from 
-                // the difference of the vectors pointing from the map's center to either point.
-                // But, nothing seems to work!!!
-                if (first) {
-                    //const cursor = diffVect({x: ox, y: oy}, containerRef.current.getBoundingClientRect())
-                    const centerScreen = containerRef.current.getBoundingClientRect()
-                    const cursor = centerScreen
-                    const centerMap = midPoint(mapRef.current.getBoundingClientRect())
-                    const center2cursor = diffVect(cursor, centerMap)
-                    memo = [style.x.get(), style.y.get(), center2cursor.x, center2cursor.y]
-                }
-                
-                api.start({
-                    scale: zl,
-                    x: style.x.get(),
-                    y: style.y.get()
-                })  // TODO: add correction for zoom level
-                return memo
+                // keep map-point at center of screen in center while scaling
+                const {x, y, width, height} = mapRef.current.getBoundingClientRect()
+
+                // when we scale the viewbox' width and height and keep x and y constant
+                // the viewbox essentially shrinks (or grows) towards its upper left corner.
+                // To maintain a given point on the map (say, that under the cursor) at the
+                // same position relative to the viewport, we just have to move the map in
+                // the opposite direction.
+                // Note that, since the map has a different aspect ratio than the svg tag,
+                // the relative position on the SVG tag is not that on the viewbox, or more
+                // precisely, the coordinate (0, 0) is not the top-left corner of the SVG box
+                // when completely zoomed out.
+                // For now, fix this using MinXMidY.
+                // TODO: find out how to include the offset to start centered
+                const apparent_width = viewBox.height * width / height
+                const cursor_x = apparent_width * ((ox - x) / width)
+                const dx =  apparent_width * (ox - x) / width * (1 - 1 / zl)
+                const dy = viewBox.height * (oy - y) / height * (1 - 1 / zl)
+                console.log(my, ddy)
+                setViewBox({x: viewBox.x + dx, y: viewBox.y + dy, width: viewBox.width / zl, height: viewBox.height / zl})
             }
         },
         { 
             wheel: { 
-                //bounds: { left: 0, right: 0, top: -maxZoomLevel * step, bottom: step * (1 - 0.38) },
+                bounds: {top: -180, bottom: 0},
                 rubberband: true,
                 preventDefault: true,
-                preventScroll: true
+                //preventScroll: true
             },
             drag: {
-                //bounds: scrollBounds,
+                //bounds: {left: 0, right: svgSize.with * maxZoomLevel, bottom: 0, top: svgSize.height * maxZoomLevel},
                 transform: ([x, y]) => {
-                    const zoomLevel = getCurrentZoomlevel()
-                    return [x / zoomLevel, y / zoomLevel]
+                    // converts pixels to SVG units and compensates for scaling
+                    // since viewBox is already scaled
+                    if (mapRef.current) {
+                        const {height} = mapRef.current.getBoundingClientRect()
+                        const f = viewBox.height / height
+                        return [x * f, y * f]
+                    }
+                    return [x, y]
+                    
                 },
-                from: () => [style.x.get(), style.y.get()],
+                from: () => {
+                    // have to be negative to match drag direction
+                    return [-viewBox.x, -viewBox.y]
+                },
                 rubberband: true,
                 preventDefault: true
             },
@@ -229,37 +179,43 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
     )
     
     return (<div style={{position: 'relative'}}>
-        <div ref={containerRef} {...bind()}  
-            style={{ 
-                overflow: 'hidden',
+        <svg {...bind()} ref={mapRef} 
+            preserveAspectRatio="xMinYMid meet"
+            viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} 
+            style={{
                 width: '100%',
                 height: 'calc(100vh - 150px)',
                 touchAction: 'none',
                 backgroundColor,
-                position: 'relative',
+                willChange: 'transform',
+                transformOrigin: 'center',
                 cursor: 'grab',
                 userSelect: 'none'
             }}
+            onClick={(evt) => { 
+                if (mapRef.current) { 
+                    const {x, y, width, height} = mapRef.current.getBoundingClientRect()
+                    setXY({x: (evt.clientX - x) / width, y: (evt.clientY - y) / height})
+                }
+            }}
         >
-            <animated.svg ref={mapRef} preserveAspectRatio="xMidYMid meet"
-                viewBox={`0 0 ${svgSize.width} ${svgSize.height}`} 
-                style={{
-                    backgroundColor,
-                    scale: style.scale,
-                    translate: [style.x, style.y],
-                    willChange: 'transform',
-                    transformOrigin: 'center'
-                }}
-            >
-                {children}
-            </animated.svg>
-        </div>
-        <div style={{position: 'absolute', width: '10px', height: '10px', top: `${xy.y}px`, left: `${xy.x}px`}}>
+            {children}
+            <circle cx={svgSize.width / 2} cy={svgSize.height / 2} r="10" fill="red" />
+        </svg>
+        <div style={{position: 'absolute', width: '10px', height: '10px', top: '10px', left: `10px`}}>
             <svg viewBox={`0 0 4 4`}>
             <circle cx={2} cy={2} r={4} style={{'fill': 'red'}} />
             </svg>
+            <p>x: {xy.x}</p>
+            <p>y: {xy.y}</p>
+            <p>x: {viewBox.x}</p>
+            <p>y: {viewBox.y}</p>
+            <p>width: {viewBox.width}</p>
+            <p>height: {viewBox.height}</p>
+            
         </div>
-    </div>)
+        </div>
+    )
 }
 
 
