@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext } from 'react';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid';
@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
 
 export function BusMap() {
+    console.count('busmap')
     
 
     const [busStatsLoaded, setBusStatsLoaded] = useState(false);
@@ -56,13 +57,10 @@ export function Zoomable({children}) {
 }
 
 
-export function Map() {
-
+export function Map({onSelection=(evt) => null}) {
+    console.count('map')
     const [busMapLoaded, setBusMapLoaded] = useState(false);
     const [busMap, setBusMap] = useState();
-    const [viewWidth, setViewWidth] = useState(1472.387);
-    const [viewHeight, setViewHeight] = useState(2138.5);
-
 
     // retrieve zone info
     // TODO: include directly into the code later
@@ -83,11 +81,15 @@ export function Map() {
     return (
         <ZoomableSVG>
             <g id='frontier'><path d={busMap.border} style={{storke: '#e9eaeb', fill: 'none', strokeWidth: '5px'}} /></g>
-            <BusLines lines={busMap.lines} />
+            <g id='lines'>
+                {busMap.lines.map((line, idx) => <BusLine key={`busline-${idx}`} line={line} />)}
+            </g>
             <g id="stations">
                 {busMap.stations.map((station, idx) => <BusStation key={`station-marker-${idx}`} station={station} />)}
             </g>
-            <BusStops stops={busMap.stops} />
+            <g id="stops">
+                {busMap.stops.map((stop, idx) => <BusStop key={`stop-marker-${idx}`} stop={stop}/>)}
+            </g>
         </ZoomableSVG>
     )
 }
@@ -101,8 +103,12 @@ const scaleVect = ({x, y}, a) => ({x: x * a, y: y * a})
 
 
 function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=700, maxZoomLevel=5, backgroundColor='white'}) {
+    console.count('svg-container')
+    
     const containerRef = useRef()
     const mapRef = useRef()
+    const [boundingRects, setBoundingRects] = useState({map: null, container: null})
+
     const scrollBounds = useCallback(() => {
         if (containerRef.current && mapRef.current) {
             const {width: containerWidth, height: containerHeight} = containerRef.current.getBoundingClientRect();
@@ -116,13 +122,14 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
         }
     })
 
-    useEffect(() => {
+    const getCurrentZoomlevel = useCallback(() => {
         if (containerRef.current && mapRef.current) {
-            const {width: containerWidth, height: containerHeight} = containerRef.current.getBoundingClientRect();
-            const {width: mapWidth, height: mapHeight} = mapRef.current.getBoundingClientRect();
-            setXY({x: Math.min(containerWidth / mapWidth, containerHeight / mapHeight), y: 0})
+            const {width: containerWidth} = containerRef.current.getBoundingClientRect();
+            const {width: mapWidth} = mapRef.current.getBoundingClientRect();
+            return mapWidth / containerWidth    
         }
-    }, [])
+        return 1
+    })
 
     const [style, api] = useSpring(() => ({
         scale: 1,
@@ -166,6 +173,12 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             },
             onWheel: ({cancel, first, memo, offset: [dx, dy], movement: [mx, my], event: {clientX: ox, clientY: oy}}) => {
                 const zl = 1 - dy / step
+                //setZoomLevel(zl)
+                api.start({
+                    scale: zl,
+                })
+                return memo
+                
                 const dzl = 1 - my / step
                 // the core idea: the center of the map is stationary during scaling while any arbitrary 
                 // point away from the center moves outwards (resp. inwards) proportionally to its
@@ -189,7 +202,6 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                     x: style.x.get(),
                     y: style.y.get()
                 })  // TODO: add correction for zoom level
-                setZoomLevel(zl)
                 return memo
             }
         },
@@ -202,7 +214,10 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             },
             drag: {
                 //bounds: scrollBounds,
-                transform: ([x, y]) => [x / zoomLevel, y / zoomLevel],
+                transform: ([x, y]) => {
+                    const zoomLevel = getCurrentZoomlevel()
+                    return [x / zoomLevel, y / zoomLevel]
+                },
                 from: () => [style.x.get(), style.y.get()],
                 rubberband: true,
                 preventDefault: true
@@ -213,8 +228,7 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
         }
     )
     
-    return (
-        <div style={{position: 'relative'}}>
+    return (<div style={{position: 'relative'}}>
         <div ref={containerRef} {...bind()}  
             style={{ 
                 overflow: 'hidden',
@@ -236,7 +250,6 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                     willChange: 'transform',
                     transformOrigin: 'center'
                 }}
-                onClick={(evt) => {}}
             >
                 {children}
             </animated.svg>
@@ -246,147 +259,98 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             <circle cx={2} cy={2} r={4} style={{'fill': 'red'}} />
             </svg>
         </div>
-        </div>
-    )
+    </div>)
 }
 
 
-function BusLines({lines}) {
-    console.count('buslines')
-    const [selected, setSelected] = useState()
-    
-    return (
-        <g id="lines">
-            {lines.map((line, idx) => 
-                <BusLine key={`busline-${idx}`} line={line} onSelection={(line) => setSelected(line)} selected={selected === line} />)
-            }
+function BusLine({line}) {
+    //console.count('busline')
+    const [style, api] = useSpring(() => ({stroke: '#05779cff'}))
+    const key = `line-${line.id}`
+
+    return (<g id={key} style={{ fill: 'none' }}>
+        <g style={{ stroke: 'white', strokeWidth: 4, opacity: 0.9 }}>
+            {line.d.map((d, idx) => <path key={`${key}-underlay-${idx}`} d={d} />)}
         </g>
-    )
-}
-
-
-function BusLine({line, onSelection, selected=false}) {
-    
-    const [style, api] = useSpring(() => ({stroke: selected ? 'red' : '#05779cff'}))
-
-    return (
-        <g>{line.d.map((d, idx) =>
-            <g><path 
-                key={`busline-underlay-${idx}`}
-                d={d}
-                style={{
-                    stroke: 'white',
-                    fill: 'none',
-                    strokeWidth: 4,
-                    opacity: 0.9
-                }}
-            />
-            <animated.path 
-                key={`busline-path-${idx}`}
-                d={d}
-                style={{
-                    stroke: style.stroke, 
-                    strokeWidth: 2,
-                    fill: 'none'
-                }}
-            />
-            <path
-                key={`busline-overlay-${idx}`}
-                d={d}
-                style={{
-                    stroke: 'none',
-                    fill: 'none',
-                    strokeWidth: 5,
-                    cursor: 'pointer'
-                }}
-                pointerEvents="visibleStroke"
-                onClick={(evt) => onSelection(line)}
+        <animated.g style={{ stroke: style.stroke, strokeWidth: 2 }}>
+            {line.d.map((d, idx) => <path key={`${key}-itinerary-${idx}`} d={d}/>)}
+        </animated.g>
+        <g style={{ stroke: 'none', strokeWidth: 5, cursor: 'pointer' }}
+            pointerEvents="visibleStroke"
+            onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
                 onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
+            onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
+            onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
                 onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
-            />
-            </g>
-        )}</g>
-    )
-}
-
-
-function BusStops({stops}) {
-
-    const [selected, setSelected] = useState()
-
-    console.count('busstops')
-    return (
-        <g id="stops">{stops.map((stop, idx) => 
-            <BusStop key={`stop-marker-${idx}`}
-                stop={stop}
-                selected={selected === stop}
-                onSelection={(stop) => setSelected(stop)}
-            />)}
+            onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
+        >
+            {line.d.map((d, idx) => <path key={`${key}-uioverlay-${idx}`} d={d} />)}
         </g>
-    )
+    </g>)
 }
 
 
-export function BusStop({stop, onSelection=(stop) => undefined, selected=false}) {
-    const [showLabel, setShowLabel] = useState(true);
-    //useTransformEffect(({ state, instance }) => {
-    //    setShowLabel(state.zoomLevel < 1.5 ? stop.r >= 15 : (state.zoomLevel < 3 ? stop.r >= 10 : true))
-    //})
 
+export function BusStop({stop}) {
+    //console.count('busstop')
     const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
 
-    return (
-        <React.Fragment>
-            <text 
-                x={stop.lx} 
-                y={stop.ly}
-                style={{
-                    display: showLabel ? 'block' : 'none',
-                    fontSize: stop.r * .8,
-                    paintOrder: 'stroke',
-                    stroke: 'white',
-                    strokeWidth: stop.r / 20,
-                    alignmentBaseline: 'central'
-                }}
-            >
-                {stop.label}
-            </text>
-            {stop?.r === undefined ?
-            <path d={stop.d} /> :
-            <><circle 
-                cx={stop.cx} cy={stop.cy} r={stop.r} 
-                style={{
-                    stroke: 'black',
-                    fill: selected ? 'red' : 'none',
-                }}
-            />
-            <animated.circle 
-                cx={stop.cx} cy={stop.cy} r={springs.r} 
-                style={{
-                    fill: '#ffbb1c',
-                    stroke: '#ffbb1c77',
-                    opacity: springs.opacity,
-                }}
-            />
-            <circle
-                cx={stop.cx} cy={stop.cy} r={stop.r * 1.3} 
-                style={{
-                    fill: 'none',
-                    stroke: 'none',
-                    cursor: 'pointer'
-                }}
+    const textStyle = {
+        fontSize: stop.r ? stop.r * .8 : 5,
+        paintOrder: 'stroke',
+        stroke: 'white',
+        strokeWidth: stop.r / 20,
+        alignmentBaseline: 'central'
+    }
+
+    const stopMarkerStyle = {    
+        stroke: 'black',
+        fill: 'none'
+    }
+
+    const highlightedStopMarkerStyle = {
+        fill: '#ffbb1c',
+        stroke: '#ffbb1c77',
+        opacity: springs.opacity,
+    }
+
+    const hiddenStopMarkerStyle = {
+        fill: 'none',
+        stroke: 'none',
+        cursor: 'pointer'
+    }
+
+    const text = <text x={stop.lx} y={stop.ly} style={textStyle}>{stop.label}</text>
+
+    if (stop.d) {
+        return(<g id={`stop-${stop.id}`}>
+            {text}
+            <path d={stop.d} style={stopMarkerStyle} />
+            <animated.path d={stop.d} style={highlightedStopMarkerStyle} />
+            <path d={stop.d} style={hiddenStopMarkerStyle} 
                 pointerEvents="visible"
                 onMouseEnter={(evt) => api.start({r: stop.r * 1.3, opacity: 1})} 
                 onMouseLeave={(evt) => api.start({r: stop.r, opacity: 0})}
             />
-            </>
-            }
-
-        </React.Fragment>
-    )
+        </g>)
+    }
+    
+    if (stop.cx && stop.cy && stop.r) {
+        return (<g id={`stop-${stop.id}`}>
+            {text}
+            <circle cx={stop.cx} cy={stop.cy} r={stop.r} style={stopMarkerStyle} />
+            <animated.circle cx={stop.cx} cy={stop.cy} r={springs.r} style={highlightedStopMarkerStyle} />
+            <circle cx={stop.cx} cy={stop.cy} r={stop.r + 5} style={hiddenStopMarkerStyle}
+                pointerEvents="visible"
+                onMouseEnter={(evt) => api.start({r: stop.r + 5, opacity: 1})} 
+                onMouseLeave={(evt) => api.start({r: stop.r, opacity: 0})}
+            /> 
+        </g>)
+    }
 }
 
 function BusStation({station}) {
+    //console.count('busstation')
     return (
         <circle 
             pointerEvents="visible"
@@ -400,24 +364,6 @@ function BusStation({station}) {
     )
 }
 
-
-
-export function BusStopClickableOverlay({stop, onSelection=(stop) => undefined}) {
-    return (
-        <circle 
-            pointerEvents="visible"
-            cx={stop.cx} cy={stop.cy} r={stop.r + 2} 
-            style={{
-                stroke: 'none',
-                fill: 'none',
-                opacity: 0.0,
-                cursor: 'pointer'
-            }}
-            onClick={(evt) => onSelection(stop)}
-    />
-
-    )
-}
 
 
 export function HeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
