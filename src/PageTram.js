@@ -56,7 +56,6 @@ export default function PageTram() {
             <Grid item xs={8}>
                 <h1>{currentStop.label}</h1>
                 <AggregateStatistics dailyStats={dailyStats} trend={'+1.4%'} />
-                <DataDialog />
                 <HeatMap year={2023} getValues={(x) => x} data={dailyStats} />
                 <HourlyTraffic countsByHour={hourlyStats} />
             </Grid>
@@ -157,7 +156,7 @@ function FancyNumber({ count }) {
 }
    
 
-function AggregateStatistics({dailyStats, passengers=0, countedStops=0, totalStops=0, trend=0, toggle=false}) {
+export function AggregateStatistics({dailyStats, passengers=0, countedStops=0, totalStops=0, trend=0, toggle=false}) {
 
     const [aggLevel, setAggLevel] = useState('workday')
     const aggStat = useMemo(() => {
@@ -237,54 +236,3 @@ function AggregateStatistics({dailyStats, passengers=0, countedStops=0, totalSto
     )
   }
 
-
-
-export function DataDialog() {
-    
-    const [open, setOpen] = useState(false);
-    const [scroll, setScroll] = useState('paper');
-  
-    const handleClickOpen = (scrollType) => () => {
-      setOpen(true);
-      setScroll(scrollType);
-    };
-  
-    const handleClose = () => {
-      setOpen(false);
-    };
-
-    return (
-      <div>
-        <Button onClick={handleClickOpen('paper')}>How were these data generated?</Button>
-        <Button onClick={handleClickOpen('body')}>What do these data mean?</Button>
-        <Dialog
-          open={open}
-          onClose={handleClose}
-          scroll={scroll}
-          aria-labelledby="scroll-dialog-title"
-          aria-describedby="scroll-dialog-description"
-        >
-          <DialogTitle id="scroll-dialog-title">Subscribe</DialogTitle>
-          <DialogContent dividers={scroll === 'paper'}>
-            <DialogContentText
-              id="scroll-dialog-description"
-              tabIndex={-1}
-            >
-              {[...new Array(50)]
-                .map(
-                  () => `Cras mattis consectetur purus sit amet fermentum.
-  Cras justo odio, dapibus ac facilisis in, egestas eget quam.
-  Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
-  Praesent commodo cursus magna, vel scelerisque nisl consectetur et.`,
-                )
-                .join('\n')}
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleClose}>Subscribe</Button>
-          </DialogActions>
-        </Dialog>
-      </div>
-    );
-  }

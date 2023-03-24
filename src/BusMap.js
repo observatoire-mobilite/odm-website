@@ -9,57 +9,45 @@ import { DateTime } from "luxon";
 import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
 import { createMemoryHistory } from '@remix-run/router';
 import { width } from '@mui/system';
+import BusMapDialog from './BusMapDialog.js';
+
+
+export const BusMapContext = createContext({
+    currentStop: null,
+    setCurrentStop: () => null,
+});
+  
 
 export function BusMap() {
-    console.count('busmap')
-    
 
-    const [busStatsLoaded, setBusStatsLoaded] = useState(false);
-    const [busStats, setBusStats] = useState();
+    return (
+        <BusMapState>
+            <Map />
+            <BusMapDialog />
+        </BusMapState>    )
+}
 
+
+function BusMapState({children}) {
+    console.count('mapstate')
     const [currentStop, setCurrentStop] = useState();
     const [currentLine, setCurrentLine] = useState();
     const [currentYear, setCurrentYear] = useState(2023);
 
-    useEffect(() => {
-        setBusStatsLoaded(false);
-        fetch('data/publictransport/busstats.json')
-        .then((r) => r.json())
-        .then((dta) => {
-            setBusStats(dta);
-            setBusStatsLoaded(true);
-        }).catch((e) => {
-            console.log(e.message)
-        });
-    }, [])
-
+    const mapContextValue = useMemo(() => ({currentStop, setCurrentStop, currentLine, setCurrentLine}))
 
     return (
         <Suspense fallback={<p>Loading ...</p>}>
             {/*<Zoomable><Map /></Zoomable>*/}
-            <Map></Map>
+            <BusMapContext.Provider value={mapContextValue}>
+                {children}
+            </BusMapContext.Provider>
         </Suspense>
     )
-
 }
 
 
-export function Zoomable({children}) {
-    return (
-        <TransformWrapper>
-            {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-                <React.Fragment>
-                    <TransformComponent step={.1}>
-                        {children}
-                    </TransformComponent>
-                </React.Fragment>
-          )}
-        </TransformWrapper>
-      );
-}
-
-
-export function Map({onSelection=(evt) => null}) {
+export function Map() {
     console.count('map')
     const [busMapLoaded, setBusMapLoaded] = useState(false);
     const [busMap, setBusMap] = useState();
@@ -178,7 +166,7 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
         }
     )
     
-    return (<div style={{position: 'relative'}}>
+    return (
         <svg {...bind()} ref={mapRef} 
             preserveAspectRatio="xMinYMid meet"
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} 
@@ -202,27 +190,16 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             {children}
             <circle cx={svgSize.width / 2} cy={svgSize.height / 2} r="10" fill="red" />
         </svg>
-        <div style={{position: 'absolute', width: '10px', height: '10px', top: '10px', left: `10px`}}>
-            <svg viewBox={`0 0 4 4`}>
-            <circle cx={2} cy={2} r={4} style={{'fill': 'red'}} />
-            </svg>
-            <p>x: {xy.x}</p>
-            <p>y: {xy.y}</p>
-            <p>x: {viewBox.x}</p>
-            <p>y: {viewBox.y}</p>
-            <p>width: {viewBox.width}</p>
-            <p>height: {viewBox.height}</p>
-            
-        </div>
-        </div>
     )
 }
 
 
 function BusLine({line}) {
     //console.count('busline')
+    const { setCurrentLine } = useContext(BusMapContext)
     const [style, api] = useSpring(() => ({stroke: '#05779cff'}))
     const key = `line-${line.id}`
+    const iAmTheChosenOne = useCallback(() => setCurrentLine(line))
 
     return (<g id={key} style={{ fill: 'none' }}>
         <g style={{ stroke: 'white', strokeWidth: 4, opacity: 0.9 }}>
@@ -234,11 +211,8 @@ function BusLine({line}) {
         <g style={{ stroke: 'none', strokeWidth: 5, cursor: 'pointer' }}
             pointerEvents="visibleStroke"
             onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
-                onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
-            onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
             onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
-                onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
-            onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
+            onClick={iAmTheChosenOne}
         >
             {line.d.map((d, idx) => <path key={`${key}-uioverlay-${idx}`} d={d} />)}
         </g>
@@ -248,6 +222,9 @@ function BusLine({line}) {
 
 
 export function BusStop({stop}) {
+    const { setCurrentStop } = useContext(BusMapContext)
+    const iAmChosen = useCallback(() => setCurrentStop(stop))
+
     //console.count('busstop')
     const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
 
@@ -285,8 +262,9 @@ export function BusStop({stop}) {
             <animated.path d={stop.d} style={highlightedStopMarkerStyle} />
             <path d={stop.d} style={hiddenStopMarkerStyle} 
                 pointerEvents="visible"
-                onMouseEnter={(evt) => api.start({r: stop.r * 1.3, opacity: 1})} 
-                onMouseLeave={(evt) => api.start({r: stop.r, opacity: 0})}
+                onMouseEnter={() => api.start({r: stop.r * 1.3, opacity: 1})} 
+                onMouseLeave={() => api.start({r: stop.r, opacity: 0})}
+                onClick={iAmChosen}
             />
         </g>)
     }
@@ -298,8 +276,9 @@ export function BusStop({stop}) {
             <animated.circle cx={stop.cx} cy={stop.cy} r={springs.r} style={highlightedStopMarkerStyle} />
             <circle cx={stop.cx} cy={stop.cy} r={stop.r + 5} style={hiddenStopMarkerStyle}
                 pointerEvents="visible"
-                onMouseEnter={(evt) => api.start({r: stop.r + 5, opacity: 1})} 
-                onMouseLeave={(evt) => api.start({r: stop.r, opacity: 0})}
+                onMouseEnter={() => api.start({r: stop.r + 5, opacity: 1})} 
+                onMouseLeave={() => api.start({r: stop.r, opacity: 0})}
+                onClick={() => setCurrentStop(stop)}
             /> 
         </g>)
     }
