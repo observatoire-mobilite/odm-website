@@ -14,12 +14,16 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import Slide from '@mui/material/Slide';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Avatar from '@mui/material/Avatar';
+import HomeIcon from '@mui/icons-material/Home';
+import ArchitectureIcon from '@mui/icons-material/Architecture';
 
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, config } from '@react-spring/web'
 import { HeatMap } from './BusMap.js'
 import { HourlyTraffic } from './RoadTraffic.js'
-import { AggregateStatistics } from './PageTram.js'
+import { AggregateStatistics, FancyNumber } from './PageTram.js'
 
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -42,8 +46,7 @@ export default function BusMapDialog() {
     const {currentStop, setCurrentStop} = useContext(BusMapContext)
     const handleClose = useCallback(() => {setCurrentStop(null)})
 
-    //const dailyStats = useMemo(() => Array.from({length: 365}, () => Math.floor(Math.random() * 100000)), [currentStop])
-
+    const dailyStats = useMemo(() => Array.from({length: 365}, () => Math.floor(Math.random() * 100000)), [currentStop])
     const hourlyStats = useMemo(() => Array.from({length: 24}, () => Math.floor(Math.random() * 100000 / 24)).map((pax, i) => ({hour: i, count_weekend: pax * Math.random(), count_weekday: pax})), [currentStop])
 
     const [busStatsLoaded, setBusStatsLoaded] = useState(false);
@@ -61,12 +64,12 @@ export default function BusMapDialog() {
         });
     }, [])
 
-    const dailyStats = useMemo(() => {
+    /*const dailyStats = useMemo(() => {
         if (currentStop.label) {
             const stop = busStats['hourly'][2023][currentStop.label]
             Array.from({length: 24}, (h) => ({hour: h, count_weekend: stop[h]}))
         }
-    }, [currentStop])
+    }, [currentStop])*/
 
 
     if (! busStatsLoaded) return
@@ -93,9 +96,61 @@ export default function BusMapDialog() {
                 </Toolbar>
                     
             </AppBar>
-            <Box sx={{ maxWidth: 'xl', justify: 'center' }}>
-                <Grid container spacing={2}>            
-                    <Grid item xs={8}>
+            <Box sx={{ width: '100%', justify: 'center' }}>
+                <Grid container spacing={2} sx={{maxWidth: 'xl'}}>
+                    <Grid item m={4}>
+                        <Paper sx={{width: '100%', p:2}}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={4} justify = "center">
+                                    <Avatar><HomeIcon /></Avatar>
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <Typography variant="p">
+                                        Resident population
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        <FancyNumber count={Math.floor(Math.random() * 100000)} />
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+                        </Paper>
+                    </Grid>
+                    <Grid item m={4}>
+                        <Paper sx={{width: '100%', p:2}}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                <Avatar><ArchitectureIcon sx={{fontSize: "3em"}}  /></Avatar>
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <Typography variant="p">
+                                        Average distance to bus-stop
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        <FancyNumber count={Math.floor(Math.random() * 10000) / 10} />&nbsp;m
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+                            
+                        </Paper>
+                    </Grid>    
+                    <Grid item m={4}>
+                        <Paper sx={{width: '100%', p:2}}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                <Avatar><ArchitectureIcon sx={{fontSize: "3em"}}  /></Avatar>
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <Typography variant="p">
+                                        Some other stat
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        <FancyNumber count={Math.floor(Math.random() * 100) / 10} />
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+                        </Paper>
+                    </Grid>   
+                    <Grid item xs={12}>
                         <AggregateStatistics dailyStats={dailyStats} trend={'+1.4%'} />
                         <HeatMap year={2023} getValues={(x) => x} data={dailyStats} />
                         <HourlyTraffic countsByHour={hourlyStats} />

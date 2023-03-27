@@ -143,7 +143,7 @@ function prettyPrintNumber(number) {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u2009");
 }
 
-function FancyNumber({ count }) {
+export function FancyNumber({ count }) {
     const { number } = useSpring({
       from: { number: 0 },
       number: count,
