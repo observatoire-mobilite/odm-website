@@ -158,7 +158,8 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                     return [-viewBox.x, -viewBox.y]
                 },
                 rubberband: true,
-                preventDefault: true
+                preventDefault: true,
+                filterTaps: true
             },
             pinch: {
                 preventDefault: true
