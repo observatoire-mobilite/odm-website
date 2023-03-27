@@ -188,7 +188,6 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             }}
         >
             {children}
-            <circle cx={svgSize.width / 2} cy={svgSize.height / 2} r="10" fill="red" />
         </svg>
     )
 }
@@ -232,7 +231,7 @@ export function BusStop({stop}) {
         fontSize: stop.r ? stop.r * .8 : 5,
         paintOrder: 'stroke',
         stroke: 'white',
-        strokeWidth: stop.r / 20,
+        strokeWidth: stop.r ? stop.r / 20: 1,
         alignmentBaseline: 'central'
     }
 
@@ -255,15 +254,15 @@ export function BusStop({stop}) {
 
     const text = <text x={stop.lx} y={stop.ly} style={textStyle}>{stop.label}</text>
 
-    if (stop.d) {
+    if (stop.path) {
         return(<g id={`stop-${stop.id}`}>
             {text}
-            <path d={stop.d} style={stopMarkerStyle} />
-            <animated.path d={stop.d} style={highlightedStopMarkerStyle} />
-            <path d={stop.d} style={hiddenStopMarkerStyle} 
+            <path d={stop.path} style={stopMarkerStyle} />
+            <animated.path d={stop.path} style={highlightedStopMarkerStyle} />
+            <path d={stop.path} style={hiddenStopMarkerStyle} 
                 pointerEvents="visible"
-                onMouseEnter={() => api.start({r: stop.r * 1.3, opacity: 1})} 
-                onMouseLeave={() => api.start({r: stop.r, opacity: 0})}
+                onMouseEnter={() => api.start({opacity: 1})} 
+                onMouseLeave={() => api.start({opacity: 0})}
                 onClick={iAmChosen}
             />
         </g>)
