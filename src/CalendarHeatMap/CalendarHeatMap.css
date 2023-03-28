@@ -1,0 +1,66 @@
+/* progressions generated using https://davidjohnstone.net/lch-lab-colour-gradient-picker
+['#05779c', '#4d7e92', '#6d8588', '#878d7d', '#9e9472', '#b39c66', '#c7a459', '#daab4a', '#edb338', '#ffbb1c']  // LAB blue to yellow
+['#ffbb1c', '#edb338', '#daab4a', '#c7a459', '#b39c66', '#9e9472', '#878d7d', '#6d8588', '#4d7e92', '#05779c']  // LAB yellow to blue
+['#05779c', '#0085a3', '#0093a1', '#009f96', '#00aa84', '#2db46d', '#69bb52', '#9bbf36', '#ccc01d', '#ffbb1c']  // LCH yellow to blue
+['#ffbb1c', '#ccc01d', '#9bbf36', '#69bb52', '#2db46d', '#00aa84', '#009f96', '#0093a1', '#0085a3', '#05779c']  // LCH blue to yellow
+*/
+
+
+rect.heatmap {
+    stroke: none;
+    fill: none;
+    cursor: pointer;
+}
+
+circle.heatmap {
+    stroke: none;
+}
+
+circle.heatmap[data-scaledvalue="null"] {
+    fill: #d3d3d3
+}
+
+circle.heatmap[data-scaledvalue="0"] {
+    fill: #ffbb1c
+}
+
+circle.heatmap[data-scaledvalue="1"] {
+    fill: #ccc01d
+}
+
+circle.heatmap[data-scaledvalue="2"] {
+    fill: #9bbf36
+}
+
+circle.heatmap[data-scaledvalue="3"] {
+    fill: #69bb52
+}
+
+circle.heatmap[data-scaledvalue="4"] {
+    fill: #2db46d
+}
+
+circle.heatmap[data-scaledvalue="5"] {
+    fill: #00aa84
+}
+
+circle[data-scaledvalue="6"] {
+    fill: #009f96
+}
+
+circle[data-scaledvalue="7"] {
+    fill: #0093a1
+}
+
+circle[data-scaledvalue="8"] {
+    fill: #0085a3
+}
+
+circle[data-scaledvalue="9"] {
+    fill: #05779c
+}
+
+/* value "10" is when indeed the maximum value is reached */
+circle[data-scaledvalue="10"] {
+    fill: #05779c
+}
