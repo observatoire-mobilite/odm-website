@@ -12,7 +12,6 @@ import {load} from '@loaders.gl/core';
 import DeckGL from '@deck.gl/react';
 import {Map} from 'react-map-gl';
 import maplibregl from 'maplibre-gl';
-import {BASEMAP} from '@deck.gl/carto';
 import {ScatterplotLayer} from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -55,17 +54,18 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
 
   return (
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
+      <Map mapLib={maplibregl} mapStyle="style.json" />
       <ScatterplotLayer 
         data={locations}
         opacity={0.8}
         getPosition={({DDLon, DDLat}) => [DDLon, DDLat]}
-        getFillColor={({POSTE_ID}) => countsByStation[POSTE_ID] > 0 ? [255, 140, 0] : [200, 200, 200, 200]}
+        getFillColor={({POSTE_ID}) => countsByStation[POSTE_ID] > 0 ? [38, 122, 166] : [200, 200, 200, 200]}
         getRadius={({POSTE_ID}) => countsByStation[POSTE_ID]}
-        radiusScale={10000 / maxCount}
+        radiusScale={1000 / maxCount}
         radiusMinPixels={3}
         radiusMaxPixels={30}
         pickable={true}
-        highlightColor={[255, 0, 0]}
+        highlightColor={[255, 187, 28]}
         highlightedObjectIndex={selectedStationIndex}
         onClick={({object, index}) => { onSelect(object); setSelectedStationIndex(index) }}
         updateTriggers={{
@@ -73,9 +73,7 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
           getFillColor: countsByStation,
           getPosition: locations
         }}
-      />
-      <Map mapLib={maplibregl} mapStyle={BASEMAP.POSITRON} />
-      
+      />  
     </DeckGL>
   )
 }
