@@ -11,13 +11,12 @@ import './CalendarHeatMap.css'
 export default function CalendarHeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
     /* Displays the daily variation of some quantity throughout a year.*/
 
-    const janfirst =  useMemo(() => DateTime.local(year, 1, 1), [year])
     const values = getValues(data)
 
     return (
         <SVGcanvas>
             <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
-            <HeatMapDayLabels year={year}  />
+            <HeatMapDayLabels />
             <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
             <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
             <HeatMapWeekBars year={year} xOffset={150} values={values} />
@@ -63,7 +62,7 @@ function HeatMapMonths({year, xOffset=0, yOffset=0}) {
 }
 
 
-function HeatMapDayLabels({year, yOffset=0, fontSize=60}) {
+function HeatMapDayLabels({yOffset=0, fontSize=60}) {
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   return (
       <g>{[...Array(7).keys()].map((i) =>
