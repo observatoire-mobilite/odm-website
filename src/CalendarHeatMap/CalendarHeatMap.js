@@ -19,6 +19,8 @@ export default function CalendarHeatMap({year=2023, yOffset=0, getValues=(x) => 
             <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
             <HeatMapDayLabels year={year}  />
             <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
+            <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
+            <HeatMapWeekBars year={year} xOffset={150} values={values} />
         </SVGcanvas>
     )
         
@@ -71,16 +73,6 @@ function HeatMapDayLabels({year, yOffset=0, fontSize=60}) {
 }
 
 
-function clip(value, min, max) {
-  if (value > max) {
-    return max
-  } else if (value < min) {
-    return min
-  }
-  return value
-}
-
-
 function HeatMapCircles({
   year, values=[], log=false,
   minRadius=10, maxRadius=50,
@@ -94,7 +86,7 @@ function HeatMapCircles({
     const xmax = maxValue == 'auto' ? Math.max(...values) : maxValue
     const xmin = minValue == 'auto' ? Math.min(...values) : minValue
   
-    const daily = [...Array(janfirst.daysInYear).keys()].map((i) => {
+    return [...Array(janfirst.daysInYear).keys()].map((i) => {
       const day = janfirst.plus({days: i})
       const value = values[i] === undefined ? null : values[i]
       const scaledValue = value === null ? null : (value - xmin) / xmax
@@ -105,28 +97,24 @@ function HeatMapCircles({
       return {i, day, value, category, x, y, r}
     })
 
-    const weekly = daily.reduce((kv, v) => {
-      if (kv[v.x])
-    }, {})
-  }, [year])
+  }, [year, values])
   
-
   console.count('heat-map-circles')
 
   return (
     <g id='heatmap-circles'>{displayData.map((point) => {
       return (
-        <g id={`heatmap-day-${point.i}`} key={`heatmap-day-${point.i}`} transform={`translate(${point.x}, ${point.y})`}>
+        <g key={`heatmap-day-${point.i}-circle`} transform={`translate(${point.x}, ${point.y})`}>
           <animated.circle key={`heatmap-day-${point.i}-circle`}
             cx={maxRadius} cy={maxRadius} r={point.r} 
             className="heatmap"
             data-value={point.value}
             data-scaledvalue={point.category}
           />
-          <rect key={`heatmap-day-${point.i}-rect`}
+          <rect key={`heatmap-day-${point.i}-ui`}
             x={0} y={0}
             width={circleDiameter} height={circleDiameter}
-            className="heatmap"
+            className="heatmap-ui"
             pointerEvents="visible"
             title={`${point.day.toISODate()}: ${point.value}`}
           />
@@ -137,16 +125,47 @@ function HeatMapCircles({
 }
 
 
-function HeatMapWeekBars({year, values}) {
+function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0}) {
+  const circleDiameter = 2 * maxRadius
   const displayData = useMemo(() => {
+    
     const janfirst = DateTime.local(year, 1, 1)
-  
-    return [...Array(janfirst.daysInYear).keys()].map((i) => {
-      const day = janfirst.plus({days: i})
-      const value = values[i] === undefined ? null : values[i]
-      return {i, day, value, category, x, y, r}
-    })  
-  }, [year])  
+    let max = 0
+    return Object.entries([...Array(janfirst.daysInYear).keys()].reduce((kv, i) => {
+    
+      // first step: group daily  values by week 
+      // `x` serves as proxy - no dealing with weekyear
+      if (values[i] === undefined) return kv
+      const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * circleDiameter
+      kv[x] = kv[x] ?? []
+      kv[x].push(values[i])
+      return kv
+    
+    }, {})).map(([x,vals]) => {
+      // second step step: calculate average day per week
+      // and retain its maximum while at the same time
+      const value = vals.reduce((kv, v) => kv + v, 0) / vals.length
+      max = Math.max(value, max)
+      return {x, value}
+    
+    }).map((week) => { 
+      // finally, scale by max (assuming minimum is zero)
+      return {...week, scaledValue: week.value / max, category: Math.floor(week.value / max * 10)}
+    })
+
+  }, [year, values])
+
+  return (<g id="heatmap-week">{displayData.map((week, i) => {
+    return (
+      <rect key={`heatmap-week-${i}-rect`}
+        x={parseInt(week.x) + circleDiameter * .2} y={-height * week.scaledValue}
+        width={circleDiameter * .6} height={height * week.scaledValue}
+        className="heatmap"
+        data-scaledvalue={week.category}
+      />
+    )
+  })}</g>)
+
 }
 
 
