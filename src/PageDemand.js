@@ -11,10 +11,10 @@ import {CorridorMap} from './CorridorMap.js';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import DepartureBoardIcon from '@mui/icons-material/DepartureBoard';
-import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
-import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
+import IconPedestrian from './ODMIcons/IconPedestrian.js';
+import IconCar from './ODMIcons/IconCar.js';
+import IconBicycle from './ODMIcons/IconBicycle.js';
+import IconBus from './ODMIcons/IconBus.js';
 
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -156,6 +156,7 @@ function prettyAbsoluteNumber(val) {
     let v = Math.round(val)
     let r = v % 1000
     let m = (v - r) / 1000
+    if (v < 1000) return `${r}`
     return `${m}\u00A0${padZero(r)}`
 }
 
@@ -164,10 +165,10 @@ function prettyPercent(val) {
 }
 
 const icons = [
-    <DirectionsCarIcon />,
-    <DirectionsBikeIcon />,
-    <DepartureBoardIcon />,
-    <DirectionsWalkIcon />
+    <IconCar height="1.6em" />,
+    <IconBicycle height="1em" />,
+    <IconBus height="2em" />,
+    <IconPedestrian height="1.9em" />
 ]
 
 
@@ -215,7 +216,7 @@ function ModeSplitGraph({
         return (
             <svg width="100%"  height="3em" viewBox={`0 0 ${width_scaled} ${height_scaled + 100}`}>
                 {parts.map((p, i) => 
-                    <Tooltip title={<p>{icons[i]}{prettyAbsoluteNumber(p.width * total)} trips on a workday or {prettyPercent(p.width)} of all trips</p>} followCursor={true}>
+                    <Tooltip title={<div>{icons[i]}<br /><big>{prettyAbsoluteNumber(p.width * total)}</big><br />trips per workday <br />or {prettyPercent(p.width)} of all trips</div>} followCursor={true}>
                         <rect onMouseOver={(evt) => undefined} x={p.left * f} y="0" width={p.width * f} height={height_scaled} style={{fill: p.color}} />
                     </Tooltip>
                 )}
@@ -413,10 +414,10 @@ function DemandWidget({
                                 onChange={(evt, newVal) => {onModeSelected(newVal);}}
                                 value={selectedMode}
                             >
-                                <ToggleButton value={0} aria-label="car trips"><DirectionsCarIcon /></ToggleButton>
-                                <ToggleButton value={2} aria-label="public transport trips"><DepartureBoardIcon /></ToggleButton>
-                                <ToggleButton value={3} aria-label="bicycle trips"><DirectionsBikeIcon /></ToggleButton>
-                                <ToggleButton value={1} aria-label="walks"><DirectionsWalkIcon /></ToggleButton>
+                                <ToggleButton value={0} aria-label="car trips"><IconCar height="1.6em" color="black" /></ToggleButton>
+                                <ToggleButton value={2} aria-label="public transport trips"><IconBus height="2em" color="black" /></ToggleButton>
+                                <ToggleButton value={3} aria-label="bicycle trips"><IconBicycle height="1.5em" color="black" /></ToggleButton>
+                                <ToggleButton value={1} aria-label="walks"><IconPedestrian height="2em" color="black" /></ToggleButton>
                             </ToggleButtonGroup>
                         </FormGroup>
                     </Paper>

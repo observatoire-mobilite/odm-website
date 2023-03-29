@@ -9,11 +9,16 @@ import Divider from '@mui/material/Divider';
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import FollowTheSignsIcon from '@mui/icons-material/FollowTheSigns';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import CarRentalIcon from '@mui/icons-material/CarRental';
 import DepartureBoardIcon from '@mui/icons-material/DepartureBoard';
-import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
+
+import IconPedestrian from './ODMIcons/IconPedestrian.js';
+import IconCar from './ODMIcons/IconCar.js';
+import IconTruck from './ODMIcons/IconTruck.js';
+import IconBicycle from './ODMIcons/IconBicycle.js';
+import IconBus from './ODMIcons/IconBus.js';
+import IconTramway from './ODMIcons/IconTramway.js';
+
 
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -38,13 +43,13 @@ export function MainMenu() {
   return (
     <List component="nav">
       <NavItem to="/" title="Home" icon={<DashboardIcon />} />
-      <NavItem to="/demand" title="Mobility Demand" icon={<FollowTheSignsIcon />} />
-      <NavItem to="/cartraffic" title="Car Traffic" icon={<DirectionsCarIcon />} />
-      <NavItem to="/trucktraffic" title="Truck Traffic" icon={<LocalShippingIcon />} />
-      <NavItem to="/cycling" title="Cycling and walking" icon={<DirectionsBikeIcon />} />
+      <NavItem to="/demand" title="Mobility Demand" icon={<IconPedestrian height="66%" />} />
+      <NavItem to="/cartraffic" title="Car Traffic" icon={<IconCar height="66%" />} />
+      <NavItem to="/trucktraffic" title="Truck Traffic" icon={<IconTruck height="66%" />} />
+      <NavItem to="/cycling" title="Cycling and walking" icon={<IconBicycle height="50%" />} />
       <NavItem to="/publictransport" title="Public Transport" icon={<DepartureBoardIcon />} />
-      <NavItem to="/busmap" title="Bus Map" icon={<DepartureBoardIcon />} />
-      <NavItem to="/tram" title="Tramway" icon={<DepartureBoardIcon />} />
+      <NavItem to="/busmap" title="Bus Map" icon={<IconBus height="66%" />} />
+      <NavItem to="/tram" title="Tramway" icon={<IconTramway height="80%" />} />
       <NavItem to="/fleet" title="Vehilce Fleet" icon={<CarRentalIcon />} />
       <Divider sx={{ my: 1 }} />
     </List>
