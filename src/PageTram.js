@@ -1,7 +1,8 @@
 import {useState, useMemo, useTransition} from 'react'
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, config } from '@react-spring/web'
-import { HeatMap } from './BusMap.js'
+//import { HeatMap } from './BusMap.js'
+import CalendarHeatMap from './CalendarHeatMap'
 import { HourlyTraffic } from './RoadTraffic.js'
 
 import Button from '@mui/material/Button';
@@ -56,7 +57,7 @@ export default function PageTram() {
             <Grid item xs={8}>
                 <h1>{currentStop.label}</h1>
                 <AggregateStatistics dailyStats={dailyStats} trend={'+1.4%'} />
-                <HeatMap year={2023} getValues={(x) => x} data={dailyStats} />
+                <CalendarHeatMap year={2023} getValues={(x) => x} data={dailyStats} />
                 <HourlyTraffic countsByHour={hourlyStats} />
             </Grid>
         </Grid>
