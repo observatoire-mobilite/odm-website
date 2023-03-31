@@ -26,7 +26,7 @@ import CardHeader from '@mui/material/CardHeader';
 import InfoIcon from '@mui/icons-material/Info';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-
+import { styled } from '@mui/material/styles';
 
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
@@ -49,6 +49,8 @@ const useDelayedRender = delay => {
   };
 
 
+// adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
+const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
 export default function BusMapDialog() {
     console.count('busmapdialog')
@@ -114,6 +116,7 @@ export default function BusMapDialog() {
                     <h1>{currentStop?.label}</h1>
                 </Toolbar>
             </AppBar>
+            <Offset />
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
