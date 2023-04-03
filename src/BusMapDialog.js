@@ -120,43 +120,6 @@ export default function BusMapDialog() {
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={12}>
-                        <h1>{currentStop?.label}</h1>
-                    </Grid>
-                    <Grid item xs={12} md={6} lg={4}>
-                        <SingleStat
-                            title="Resident population"
-                            caption="people living in the respective area as per January 2023, source: STATEC / RNPP"
-                            value={Math.ceil(Math.random() * currentStop?.r / 25 * 10000)}
-                            avatar={<Avatar sx={{ width: 70, height: 70 }}><HomeIcon sx={{fontSize: 70}}  /></Avatar>}
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={6} lg={4}>
-                        <SingleStat 
-                            title="Distance to closest stop"
-                            avatar={<Avatar sx={{ width: 70, height: 70 }}><ArchitectureIcon sx={{fontSize: 70}}  /></Avatar>}
-                            value={Math.floor(Math.random() * 10000) / 10}
-                            unit="m"
-                            caption="average distance per address point to the closest stop in the region"
-                        />
-                    </Grid>    
-                    <Grid item xs={12} md={12} lg={4}>
-                    <SingleStat 
-                            title="Some other stat"
-                            subtitle="something interesting"
-                            avatar={<Avatar sx={{ width: 70, height: 70 }}><ArchitectureIcon sx={{fontSize: 70}}  /></Avatar>}
-                            value={Math.floor(Math.random() * 40) / 10}
-                            unit="unit"
-                        />
-                    </Grid>   
-                    <Grid item xs={12}>
-                        <ComplexStat
-                            title="Passengers on average"
-                            caption="boardings averaged over time"    
-                        >
-                            <AggregateStatistics dailyStats={displayData?.daily} />
-                        </ComplexStat>
-                    </Grid>
                     <Grid item xs={4}>
                         <SingleStat 
                             title="Passengers on a weekend"
