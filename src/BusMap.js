@@ -10,6 +10,8 @@ import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } 
 import { createMemoryHistory } from '@remix-run/router';
 import { width } from '@mui/system';
 import BusMapDialog from './BusMapDialog.js';
+import { useTheme } from '@mui/material/styles';
+import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
 
 
 export const BusMapContext = createContext({
@@ -51,6 +53,7 @@ export function Map() {
     console.count('map')
     const [busMapLoaded, setBusMapLoaded] = useState(false);
     const [busMap, setBusMap] = useState();
+    const theme = useTheme()
 
     // retrieve zone info
     // TODO: include directly into the code later
@@ -70,7 +73,7 @@ export function Map() {
 
     return (
         <ZoomableSVG>
-            <g id='frontier'><path d={busMap.border} style={{storke: '#e9eaeb', fill: 'none', strokeWidth: '5px'}} /></g>
+            <g id='frontier'><path d={busMap.border} style={{storke: theme.palette.gray, fill: 'none', strokeWidth: '5'}} /></g>
             <g id='lines'>
                 {busMap.lines.map((line, idx) => <BusLine key={`busline-${idx}`} line={line} />)}
             </g>
@@ -196,8 +199,9 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
 
 function BusLine({line}) {
     //console.count('busline')
+    const theme = useTheme()
     const { setCurrentLine } = useContext(BusMapContext)
-    const [style, api] = useSpring(() => ({stroke: '#05779cff'}))
+    const [style, api] = useSpring(() => ({stroke: theme.palette.primary.main}))
     const key = `line-${line.id}`
     const iAmTheChosenOne = useCallback(() => setCurrentLine(line))
 
@@ -210,8 +214,8 @@ function BusLine({line}) {
         </animated.g>
         <g style={{ stroke: 'none', strokeWidth: 5, cursor: 'pointer' }}
             pointerEvents="visibleStroke"
-            onMouseEnter={(evt) => api.start({stroke: '#ffbb1c'})} 
-            onMouseLeave={(evt) => api.start({stroke: '#05779cff'})} 
+            onMouseEnter={(evt) => api.start({stroke: theme.palette.secondary.main})} 
+            onMouseLeave={(evt) => api.start({stroke: theme.palette.primary.main})} 
             onClick={iAmTheChosenOne}
         >
             {line.d.map((d, idx) => <path key={`${key}-uioverlay-${idx}`} d={d} />)}
@@ -224,6 +228,7 @@ function BusLine({line}) {
 export function BusStop({stop}) {
     const { setCurrentStop } = useContext(BusMapContext)
     const iAmChosen = useCallback(() => setCurrentStop(stop))
+    const theme = useTheme()
 
     //console.count('busstop')
     const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
@@ -242,8 +247,8 @@ export function BusStop({stop}) {
     }
 
     const highlightedStopMarkerStyle = {
-        fill: '#ffbb1c',
-        stroke: '#ffbb1c77',
+        fill: theme.palette.secondary.main,
+        stroke: theme.palette.secondary.light,
         opacity: springs.opacity,
     }
 
@@ -298,109 +303,3 @@ function BusStation({station}) {
 
     )
 }
-
-
-
-export function HeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
-
-    const janfirst =  DateTime.local(year, 1, 1);
-    const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
-
-    const values = getValues(data)
-
-    return (
-        <svg width="100%"  height="300px" viewBox="0 0 5450 800">
-            <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
-            <HeatMapDayLabels year={year}  />
-            <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
-        </svg>
-    )
-        
-}
-
-
-function HeatMapMonths({year, xOffset=0, yOffset=0}) {
-    const janfirst =  DateTime.local(year, 1, 1);
-    let firstday = janfirst;
-    
-    return (
-        <g>{[...Array(12).keys()].map((i) => {
-            const nextmonth = firstday.plus({months: 1})
-            const lastday = nextmonth.minus({days: 1})
-            const x0 = xOffset + Math.floor((firstday.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
-            const x_firstmonday = x0 + (firstday.weekday == 1 ? 0 : 100)
-            const x1 = xOffset + Math.floor((lastday.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
-            const y0 = yOffset + lastday.weekday * 100
-            const y1 = yOffset + firstday.weekday * 100
-            const ret = (<g key={`heatmap-month-${i}`}>
-                <path 
-                    d={`M ${x_firstmonday},${yOffset} L${x1+100},${yOffset} l0,${y0} l-100,0 l0,${700-y0} L${x0},700 l0,${y1 - 700 - 100} L${x_firstmonday},${y1 - 100} z`}
-                    style={{fill: i % 2 == 1 ? 'lightgray' : 'none', stroke: 'none'}} 
-                />
-                <text x={x0} y={800} style={{fontSize: '100px'}}>{firstday.toFormat('LLL')}</text>
-            </g>)
-            firstday = nextmonth  // prepare next loop
-            return ret
-        })}</g>
-    )
-}
-
-function HeatMapDayLabels({year, yOffset=0, fontSize=60}) {
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    return (
-        <g>{[...Array(7).keys()].map((i) =>
-            <text key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100} style={{'fontSize': fontSize, 'alignmentBaseline': 'middle'}}>{weekdays[i]}</text>
-        )}</g> 
-    )
-}
-
-
-function HeatMapCircles({year, values=[], log=false, ...args}) {
-    const janfirst =  DateTime.local(year, 1, 1);
-    const days = DateTime.local(year, 12, 31).diff(janfirst, 'days').days
-    const maxValue = Math.max(...values);
-    console.count('heat-map-circles')
-    
-    return (
-        <g>{[...Array(days + 1).keys()].map((i) => {
-            return <HeatMapCircle key={`heatmapcircle-${i}`} day={janfirst.plus({days: i})} value={values[i] / maxValue} displayValue={values[i]} {...args} />
-        })}</g>
-    )
-}
-
-
-function HeatMapCircle({day, value, displayValue=undefined, xOffset=0, yOffset=0, januaryFirst=undefined, animate=false}) {
-    const janfirst = januaryFirst===undefined ? day.set({ordinal: 1}) : januaryFirst
-    const x = xOffset + Math.floor((day.ordinal - 1 + janfirst.weekday - 1) / 7) * 100
-    const y = yOffset + (day.weekday - 1) * 100
-
-    const safeValue = value===undefined ? 0 : value
-    const springs = useSpring({
-        to: {r: 10 + 40 * safeValue},
-        immediate: false
-    })
-    const circleStyle = value===undefined ? {'fill': 'none', 'stroke': 'gray'} : {fill: `rgb(${Math.round(safeValue * 255)}, 100, 100)`}
-    //const springs = {r: 10 + 40 * safeValue, fill: `rgb(${Math.round(safeValue * 255)}, 100, 100)`}
-    return (
-        <g key={`heatmap-day-group-${day.ordinal}`} transform={`translate(${x}, ${y})`}>
-            <animated.circle key={`heatmap-day-circle-${day.ordinal}`}                    
-                cx={50} cy={50}
-                r={springs.r} 
-                style={circleStyle}
-            />
-            <rect x={0} y={0} width={100} height={100} style={{'fill': 'none', 'stroke': 'none', 'cursor': 'pointer'}} pointerEvents="visible" title={<HeatMapDayTooltip day={day} value={displayValue===undefined ? value : displayValue} />} />
-        </g>
-    )
-}
-
-
-function HeatMapDayTooltip({day, value}) {
-    return (
-        <React.Fragment>
-            <Typography color="inherit">{day.toLocaleString(DateTime.DATE_HUGE)}</Typography>
-            <p>Boardings: {value === undefined ? '(no data)' : value}</p>
-        </React.Fragment>
-    )
-    
-}
-
