@@ -1,10 +1,18 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, Suspense} from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import CalendarHeatmap from 'react-calendar-heatmap';
-import 'react-calendar-heatmap/dist/styles.css';
+import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import YearToggle from './YearToggle'
+import CalendarHeatMap from './CalendarHeatMap'
+
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import CropFreeIcon from '@mui/icons-material/CropFree';
+import LockIcon from '@mui/icons-material/Lock';
 
 import {CSVLoader} from '@loaders.gl/csv';
 import {load} from '@loaders.gl/core';
@@ -23,6 +31,9 @@ import Select from '@mui/material/Select';
 import {Chart} from './LineChart/Chart.js';
 import {Plot} from './LineChart/Axes.js';
 import ErrorBoundary from './ErrorBoundary.js';
+import SingleStat from './DataGrids/SingleStat.js';
+
+import Skeleton from '@mui/material/Skeleton';
 
 
 // Viewport settings
@@ -38,7 +49,7 @@ const INITIAL_VIEW_STATE = {
 function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsPath=() => 'locations.csv'}) {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStationIndex, setSelectedStationIndex] = useState(1);
+  const [selectedStationIndex, setSelectedStationIndex] = useState(null);
   
   useEffect(() => {
     load(locationsPath(), CSVLoader).then(dta => {
@@ -47,13 +58,10 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
     })
   }, []) // no need to reload those data
 
-  if (loading || countsByStation.length == 0) return (
-    <p>Loading ...</p>
-  )
   const maxCount = Math.max(...countsByStation.filter(c => Number.isFinite(c)))
 
   return (
-    <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
+    <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative', height: '100%'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
       <Map mapLib={maplibregl} mapStyle="style.json" />
       <ScatterplotLayer 
         data={locations}
@@ -73,7 +81,24 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
           getFillColor: countsByStation,
           getPosition: locations
         }}
-      />  
+      />
+      <Stack style={{right: '0', position: 'absolute'}}>
+        <IconButton color="primary" title="zoom in on map"><ZoomInIcon /></IconButton>
+        <IconButton color="primary" title="zoom out of map"><ZoomOutIcon /></IconButton>
+        <IconButton color="primary" title="put entrie country into view"><CropFreeIcon /></IconButton>
+        <IconButton color="primary" title="lock map - can simplify scrolling down to other widgets" disabled><LockIcon /></IconButton>
+      </Stack>
+      {selectedStationIndex === null ? <Typography sx={{p: 2}} style={{
+        borderRadius: '.4em',
+        top: 'calc(50% - 4em)',
+        width: '20em',
+        inlineSize: '15em',
+        left: 'calc(50% - 10em)',
+        fontSize: '1em',
+        color: 'white',
+        position: 'absolute',
+        textAlign: 'center',
+        backgroundColor: 'rgba(0,0,0, .6)'}}>Click any counting station (dot on the map) to start.<br />Dot-sizes are proportional to average daily traffic.</Typography> : null}
     </DeckGL>
   )
 }
@@ -88,40 +113,16 @@ function HeatMap({countsByDay, year}) {
   }, [countsByDay])
 
   return (
-    <CalendarHeatmap
-      horizontal={true}
-      startDate={new Date(`${year}-01-01`)}
-      endDate={new Date(`${year}-12-31`)}
-      values={countsByDay}
+    <CalendarHeatMap
+      year={year} getValue={(x) => x.count} getDate={(x) => x.date} data={countsByDay}
       titleForValue={(value) => {
           if (!value) return "no data";
           return `${value.date}: ${Math.round(value.count)} vehicles`
-      }}
-      classForValue={(value) => {
-          if (!value) return 'color-empty';
-          if (value.count < maxFlow[0]) return 'color-github-1';
-          if (value.count < maxFlow[1]) return 'color-github-2';
-          if (value.count < maxFlow[2]) return 'color-github-3';
-          return 'color-github-4';
       }}
     />
   )
 
 }
-
-function YearSelect({years, selectedYear=undefined, selectionChanged=((y) => undefined)}) {
-  if (selectedYear === undefined) { selectedYear = years[0] }
-  
-  return (
-    <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-      <InputLabel id="select-year">Year</InputLabel>
-      <Select labelId="select-year" id="select-year-small" value={selectedYear} label="Year" onChange={(evt) => selectionChanged(evt.target.value)} >
-        { years.map((value, index) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
-      </Select>
-    </FormControl>
-  )
-}
-
 
 export function HourlyTraffic({
   countsByHour
@@ -169,7 +170,7 @@ export function TraficData({
           }
           return stats
         }, []).map((v, i) => v.reduce((kv, v) => kv + v, 0) / v.length))
-        setCountsByStation(stats);
+        setCountsByStation({overall: stats, weekend: stats.map((v) => v ? v * .3 : undefined)});
 
       })
       setLoadingCountsByHour(true);
@@ -189,38 +190,61 @@ export function TraficData({
     }, [station, countsByHour])
 
     return (
-        <Grid container>
-            <Grid item xs={12} lg={6} sx={{'minHeight': '600px'}}>
-              <StationMap onSelect={setStation} countsByStation={countsByStation} locationsPath={locationsPath} />
-            </Grid>
-            <Grid item xs={12} lg={6}>
-              <p>Station: {station.ROUTE} {station.LOCALITE} ({station.POSTE_ID}), total: {countsByStation[station.POSTE_ID]}</p>
-              <YearSelect years={years.sort().reverse()} selectedYear={year} selectionChanged={setYear} />
-              {loadingCountsByDay ? "Loading ..." : <HeatMap countsByDay={filteredCountsByDay} year={year} />}
-              {loadingCountsByHour ? "Loading ..." : <HourlyTraffic countsByHour={filteredCountsByHour} /> }
-              
-            </Grid>
+      <Grid container spacing={2}>
+        <Grid item xs={12} lg={6} xl={5} minHeight="50vh">
+          <Suspense fallback={<p>Loading...</p>}>
+            <StationMap onSelect={setStation} countsByStation={countsByStation.overall} locationsPath={locationsPath} />
+          </Suspense>
         </Grid>
+        <Grid item xs={12} lg={6} xl={7}>
+          <Typography variant="h4">{station.ROUTE} {station.LOCALITE}</Typography>
+          <Grid container spacing={2} sx={{p: 2}}>
+            <Grid item xs={6}>
+              <SingleStat 
+                  title="Average daily traffic"
+                  caption={`based on counting data for ${year}`}    
+                  value={countsByStation?.overall && countsByStation.overall[station.POSTE_ID]}
+                  unit="cars"
+                />
+            </Grid>
+            <Grid item xs={6}>
+              <SingleStat 
+                  title="Traffic on weekends"
+                  caption="total number of vehicles counted"    
+                  value={countsByStation.weekend && countsByStation.weekend[station.POSTE_ID]}
+                />
+            </Grid>
+            <Grid item xs={12}>
+              <Paper sx={{p: 2}}>
+                <YearToggle from={Math.min(...years)} to={Math.max(...years)} currentYear={year} onChange={(evt, val) => setYear(val)} />
+                {loadingCountsByDay ? <CanvasSkeleton /> : <HeatMap countsByDay={filteredCountsByDay} year={year} />}
+              </Paper>
+            </Grid>
+            <Grid item xs={12}>
+              <Paper sx={{p: 2}}>
+                {loadingCountsByHour ? "Loading ..." : <HourlyTraffic countsByHour={filteredCountsByHour} /> }
+              </Paper>
+            </Grid>
+        </Grid>  
+      </Grid>
+    </Grid>
     )
       
 }
 
 
+
+function CanvasSkeleton({proportion=5450 / 950}) {
+  return (<Skeleton height="150px" variant="rounded" />)
+}
+
+
+
 export default function RoadTraffic() {
     return (
-      <Grid container direction="column" justifyContent="space-evenly">
-        <Grid item>
-          <h2>Road Traffic</h2>
-          <Typography variant="body1">
-            Trafic sur les routes luxembourgeoises selon les systèmes de captage automatisé du trafic de l'APC.
-          </Typography>      
           <TraficData 
             getHourlyCounts={(c) => { return { 'hour': c.ind, 'count_weekday': c.V_weekday, 'count_weekend': c.V_weekend }}}
             getDailyCount={(c) => c.V}
           />
-        </Grid>
-        <Grid item>
-        </Grid>
-      </Grid>
-    )
+          )
   }

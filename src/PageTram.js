@@ -57,7 +57,7 @@ export default function PageTram() {
             <Grid item xs={8}>
                 <h1>{currentStop.label}</h1>
                 <AggregateStatistics dailyStats={dailyStats} trend={'+1.4%'} />
-                <CalendarHeatMap year={2023} getValues={(x) => x} data={dailyStats} />
+                <CalendarHeatMap year={2023} data={dailyStats} />
                 <HourlyTraffic countsByHour={hourlyStats} />
             </Grid>
         </Grid>
