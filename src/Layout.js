@@ -81,43 +81,67 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
   }),
 );
 
-const mdTheme = createTheme();
+function hexToRgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [
+    parseInt(result[1], 16),
+    parseInt(result[2], 16),
+    parseInt(result[3], 16)
+  ] : null;
+}
+
+const themeVars = {
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#206f89',
+    },
+    secondary: {
+      main: '#ffbb1c',
+    },
+  },
+}
+themeVars.palette.primary.main_rgb = hexToRgb(themeVars.palette.primary.main)
+themeVars.palette.secondary.main_rgb = hexToRgb(themeVars.palette.secondary.main)
+const theme = createTheme(themeVars);
 
 export default function Layout() {
   const [open, setOpen] = React.useState(false);
   const toggleDrawer = () => {
     setOpen(!open);
   };
-  const mdTheme = createTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const embed = searchParams.get("embed")
 
 
   if (embed) {
     return (
-    <Box 
-      component="main"
-      sx={{
-        backgroundColor: (theme) =>
-          theme.palette.mode === 'light'
-            ? theme.palette.grey[100]
-            : theme.palette.grey[900],
-        flexGrow: 1,
-        height: '100vh',
-        overflow: 'auto',
-      }}
-    >
-      <Container maxWidth="100vw">
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
-        <Copyright sx={{ pt: 4 }} />
-      </Container>
-    </Box>)
+    <ThemeProvider theme={theme}>
+      <Box 
+        component="main"
+        sx={{
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light'
+              ? theme.palette.grey[100]
+              : theme.palette.grey[900],
+          flexGrow: 1,
+          height: '100vh',
+          overflow: 'auto',
+        }}
+      >
+        <Container maxWidth="100vw">
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+          <Copyright sx={{ pt: 4 }} />
+        </Container>
+      </Box>
+    </ThemeProvider>
+    )
   }
   
   return (
-    <ThemeProvider theme={mdTheme}>
+    <ThemeProvider theme={theme}>
       <Box sx={{ display: 'flex' }}>
         <AppBar position="absolute" open={open}>
           <Toolbar sx={{ pr: '24px' /* keep right padding when drawer closed */ }} >
