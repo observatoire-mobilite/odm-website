@@ -8,27 +8,41 @@ import { ColorRampProperty } from 'maplibre-gl';
 import './CalendarHeatMap.css'
 
 
-export default function CalendarHeatMap({year=2023, yOffset=0, getValues=(x) => x, data={}}) {
+export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, getValue}) {
     /* Displays the daily variation of some quantity throughout a year.*/
 
-    const values = getValues(data)
-
+    const values = useMemo(() => {
+      return (getDate && getValue) ? objectsToArray(year, data, getDate, getValue) : data
+    }, [year, data])
     return (
-        <SVGcanvas>
-            <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
-            <HeatMapDayLabels />
-            <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
-            <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
-            <HeatMapWeekBars year={year} xOffset={150} values={values} />
-        </SVGcanvas>
+      <SVGcanvas>
+          <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
+          <HeatMapDayLabels />
+          <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
+          <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
+          <HeatMapWeekBars year={year} xOffset={150} values={values} />
+      </SVGcanvas>
     )
         
 }
 
 
-function SVGcanvas({children, width='100%', height='300px', vertical=false}) {
+function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.value) {
+  const janfirst =  DateTime.local(year, 1, 1);
+  const lookup = values.reduce((kv, v) => {
+    const day = DateTime.fromISO(getDate(v))
+    kv[day.ordinal - 1] = getValue(v)
+    return kv
+  }, {})
+  return Array.from({length: janfirst.daysInYear}, (_, i) => lookup[i])
+}
+
+
+function SVGcanvas({children, width='100%', height=undefined, vertical=false}) {
+    const proportion = useMemo(() => 950 / 5450, [])
+    
     return (
-        <svg width={width} height={height} viewBox="0 0 5450 800">
+        <svg width={width} height={height} viewBox="0 -150 5450 950">
             {children}
         </svg>
     )
@@ -82,10 +96,11 @@ function HeatMapCircles({
   const circleDiameter = 2 * maxRadius
   const displayData = useMemo(() => {
     const janfirst = DateTime.local(year, 1, 1)
-    const xmax = maxValue == 'auto' ? Math.max(...values) : maxValue
-    const xmin = minValue == 'auto' ? Math.min(...values) : minValue
+    const valuesFillna = values.map(v => v ?? 0)
+    const xmax = maxValue == 'auto' ? Math.max(...valuesFillna) : maxValue
+    const xmin = minValue == 'auto' ? Math.min(...valuesFillna) : minValue
   
-    return [...Array(janfirst.daysInYear).keys()].map((i) => {
+    return Array.from({length: janfirst.daysInYear}, (_, i) => {
       const day = janfirst.plus({days: i})
       const value = values[i] === undefined ? null : values[i]
       const scaledValue = value === null ? null : (value - xmin) / xmax
@@ -97,7 +112,6 @@ function HeatMapCircles({
     })
 
   }, [year, values])
-  
   console.count('heat-map-circles')
 
   return (

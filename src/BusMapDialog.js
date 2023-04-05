@@ -1,5 +1,6 @@
 import {useContext, forwardRef, useCallback, useMemo, useState, useEffect} from 'react';
 import {BusMapContext} from './BusMap.js';
+import YearToggle from './YearToggle';
 
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -24,8 +25,6 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import CardHeader from '@mui/material/CardHeader';
 import InfoIcon from '@mui/icons-material/Info';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { styled } from '@mui/material/styles';
 
 import Grid from '@mui/material/Grid';
@@ -162,17 +161,6 @@ export default function BusMapDialog() {
             </Container>:<h1>No data</h1>}
         </Dialog>
     );
-}
-
-
-function YearToggle({from=2020, to=2023}) {
-    const [currentYear, setCurrentYear] = useState(to)
-    return (<ToggleButtonGroup exclusive value={currentYear} aria-label="year to explore" onChange={(evt, val) => setCurrentYear(val)}>
-        {Array.from({length: to-from + 1}).map((_, i) => {
-            return (<ToggleButton value={from + i} aria-label={from + i}>{from + i}</ToggleButton>)
-        })}
-     </ToggleButtonGroup>
-    )
 }
 
 
