@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, Suspense} from 'react';
+import React, {useState, useEffect, useRef, Suspense, useMemo} from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -35,6 +35,8 @@ import SingleStat from './DataGrids/SingleStat.js';
 
 import Skeleton from '@mui/material/Skeleton';
 
+import { useTheme } from '@mui/material/styles';
+
 
 // Viewport settings
 const INITIAL_VIEW_STATE = {
@@ -59,6 +61,9 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
   }, []) // no need to reload those data
 
   const maxCount = Math.max(...countsByStation.filter(c => Number.isFinite(c)))
+  const theme = useTheme()
+  //const primary = useMemo(() => hexToRgb(theme.palette.primary.main))
+  const primary = theme.palette.primary.main_rgb
 
   return (
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative', height: '100%'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
@@ -67,13 +72,13 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
         data={locations}
         opacity={0.8}
         getPosition={({DDLon, DDLat}) => [DDLon, DDLat]}
-        getFillColor={({POSTE_ID}) => countsByStation[POSTE_ID] > 0 ? [38, 122, 166] : [200, 200, 200, 200]}
+        getFillColor={({POSTE_ID}) => countsByStation[POSTE_ID] > 0 ? theme.palette.primary.main_rgb : [200, 200, 200]}
         getRadius={({POSTE_ID}) => countsByStation[POSTE_ID]}
         radiusScale={1000 / maxCount}
         radiusMinPixels={3}
         radiusMaxPixels={30}
         pickable={true}
-        highlightColor={[255, 187, 28]}
+        highlightColor={theme.palette.secondary.main_rgb}
         highlightedObjectIndex={selectedStationIndex}
         onClick={({object, index}) => { onSelect(object); setSelectedStationIndex(index) }}
         updateTriggers={{
@@ -127,11 +132,12 @@ function HeatMap({countsByDay, year}) {
 export function HourlyTraffic({
   countsByHour
 }) {
+  const theme = useTheme()
   return (
     <ErrorBoundary>
       <Chart xExtent={[0, 24]} yExtent={[0, Math.max(...countsByHour.map(c => c.count_weekday), ...countsByHour.map(c => c.count_weekend))]}>
-        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekday}})} stroke="#1976d2" />
-        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekend}})} stroke="gray"/>
+        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekday}})} stroke={theme.palette.primary.main} />
+        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekend}})} stroke={theme.palette.primary.light}/>
       </Chart>
     </ErrorBoundary>
   )

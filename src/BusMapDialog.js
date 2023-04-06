@@ -33,6 +33,8 @@ import { animated, useSpring, config } from '@react-spring/web'
 import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
 import { HourlyTraffic } from './RoadTraffic.js'
 import { AggregateStatistics, FancyNumber } from './PageTram.js'
+import SingleStat from './DataGrids/SingleStat.js'
+import ComplexStat from './DataGrids/ComplexStat.js'
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="left" ref={ref} {...props} />;
@@ -164,58 +166,3 @@ export default function BusMapDialog() {
 }
 
 
-function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined}) {
-    return (
-        <Paper sx={{
-            p: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            minWidth: '200px'
-        }}>
-            <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={2}>
-                <Grid item xs="auto">{avatar}</Grid>
-                <Grid item xs>
-                    <Typography variant="h6" color="primary">
-                        {title}
-                    </Typography>
-                    {subtitle && <Typography variant="subtitle">
-                        {subtitle}
-                    </Typography>}
-                    <Typography variant="h4">
-                        <FancyNumber count={value} />{unit === undefined ? '' : `\u202F${unit}`}
-                    </Typography>
-                    <Button color="primary" variant="filledTonal" size="small">last month</Button>
-                    {caption && <Typography variant="caption">
-                        {caption}
-                    </Typography>}
-                    <Typography>
-                    <Button startIcon={<InfoIcon/>} size="small">learn more...</Button>
-                    </Typography>
-                </Grid>
-            </Grid>        
-        </Paper>
-        
-    )
-}
-
-function ComplexStat({children, title, subtitle, caption}) {
-    return (<Paper sx={{
-        p: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        minWidth: '200px'
-    }}>
-        <Typography variant="h6" color="primary">
-            {title}
-        </Typography>
-        {subtitle && <Typography variant="subtitle">
-            {subtitle}
-        </Typography>}
-        {children}
-        {caption && <Typography variant="caption">
-            {caption}
-        </Typography>}
-    </Paper>)
-}
