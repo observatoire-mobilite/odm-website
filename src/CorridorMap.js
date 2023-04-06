@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import { useTheme } from '@mui/material/styles';
 
 
 export function CorridorMap({
@@ -8,7 +9,6 @@ export function CorridorMap({
     onZoneSelected=(zone) => undefined,
     zoneLabel=false
 }) {
-    
     return (
         <svg width="100%"  height="600px" viewBox="0 0 877 1000">
             <g id="zones" style={{display: 'inline'}}>
@@ -31,12 +31,15 @@ export function CorridorMap({
 
 
 function CorridorMultiPolygon({paths, index, opacity=1.0, selected=false, onSelection=(zone) => undefined, value=0}){
+    const theme = useTheme()
+    const color = theme.palette.primary.main_rgb
     return (
         <g 
             id={`zone${index}`}
             pointerEvents="visiblePainted"
             style={{
-                fill: selected ? `red` : `rgba(${Math.round((value > 1 ? 1 : value) * 255)}, 100, 100, ${opacity})`,
+                fill: selected ? theme.palette.secondary.main : theme.palette.primary.main,
+                opacity,
                 stroke: 'white',
                 strokeWidth: 1,
                 strokeLinecap: 'butt',

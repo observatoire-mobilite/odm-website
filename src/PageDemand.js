@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
@@ -19,6 +19,8 @@ import IconBus from './ODMIcons/IconBus.js';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+
+import { useTheme } from '@mui/material/styles';
 
 export default function PageDemand() {
     
@@ -123,10 +125,6 @@ export default function PageDemand() {
 }
 
 
-function LinearColorMap(val) {
-    return `rgb(${val > 1 ? 1 : (val < 0 ? 0 : val) * 255}, 100, 100)`
-}
-
 
 const coords = (alpha=0, {xc=500, yc=500, r=500}={}) => [
     xc + Math.sin(alpha) * r,
@@ -178,12 +176,17 @@ function ModeSplitGraph({
     data=[],
     kind='bar'
 }) {
-
+    const theme = useTheme()
     const total = data.reduce((rv, v) => rv + v, 0)
     let cumsum = 0
+    const colormap = useCallback((k) => {
+        const color = theme.palette.primary.main_rgb.map((v, i) => Math.floor(v - (v - theme.palette.secondary.main_rgb[i]) * k / 3))
+        return `rgb(${color[0]}, ${color[1]}, ${color[2]})`
+    })
+    console.log(colormap(.5))
     const parts = data.map((t, i) => {
         const rel = t / total
-        const ret = {'width': rel, 'left': cumsum, 'right': cumsum + rel, 'color': LinearColorMap(i / 3)}
+        const ret = {'width': rel, 'left': cumsum, 'right': cumsum + rel, 'color': colormap(i)}
         cumsum += rel
         return ret
     })
