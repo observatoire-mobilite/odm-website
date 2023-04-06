@@ -111,7 +111,8 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, a], memo, event}) => {
                 return memo
             },
-            onWheel: ({movement: [mx, my], offset: [ddx, ddy], event: {clientX: ox, clientY: oy}}) => {
+            onWheel: ({movement: [mx, my], offset: [ddx, ddy], event: {clientX: ox, clientY: oy}, event}) => {
+                event.preventDefault()
                 const zl = 1 - my / step
                 
                 // keep map-point at center of screen in center while scaling
@@ -132,19 +133,21 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 const cursor_x = apparent_width * ((ox - x) / width)
                 const dx =  apparent_width * (ox - x) / width * (1 - 1 / zl)
                 const dy = viewBox.height * (oy - y) / height * (1 - 1 / zl)
-                console.log(my, ddy)
                 setViewBox({x: viewBox.x + dx, y: viewBox.y + dy, width: viewBox.width / zl, height: viewBox.height / zl})
             }
         },
         { 
+            target: mapRef,
             wheel: { 
                 bounds: {top: -180, bottom: 0},
                 rubberband: true,
                 preventDefault: true,
+                eventOptions: { passive: false }
                 //preventScroll: true
             },
             drag: {
                 //bounds: {left: 0, right: svgSize.with * maxZoomLevel, bottom: 0, top: svgSize.height * maxZoomLevel},
+                eventOptions: { passive: false },
                 transform: ([x, y]) => {
                     // converts pixels to SVG units and compensates for scaling
                     // since viewBox is already scaled
@@ -162,7 +165,7 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 },
                 rubberband: true,
                 preventDefault: true,
-                filterTaps: true
+                filterTaps: true,
             },
             pinch: {
                 preventDefault: true
