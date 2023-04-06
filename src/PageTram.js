@@ -5,6 +5,7 @@ import { animated, useSpring, config } from '@react-spring/web'
 import CalendarHeatMap from './CalendarHeatMap'
 import { HourlyTraffic } from './RoadTraffic.js'
 
+
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -19,7 +20,17 @@ import DialogTitle from '@mui/material/DialogTitle';
 
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import Container from '@mui/material/Container';
 import Chip from '@mui/material/Chip';
+import Drawer from '@mui/material/Drawer';
+import { useTheme } from '@mui/material/styles';
+
+import SingleStat from './DataGrids/SingleStat.js'
+import ComplexStat from './DataGrids/ComplexStat.js'
+import YearToggle from './YearToggle'
+
+import { styled } from '@mui/material/styles';
+const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
 
 export default function PageTram() {
@@ -48,20 +59,60 @@ export default function PageTram() {
     const [currentStop, setCurrentStop] = useState(data.stops[0])
     const dailyStats = useMemo(() => Array.from({length: 365}, () => Math.floor(Math.random() * 100000)), [currentStop])
     const hourlyStats = useMemo(() => Array.from({length: 24}, () => Math.floor(Math.random() * 100000 / 24)).map((pax, i) => ({hour: i, count_weekend: pax * Math.random(), count_weekday: pax})), [currentStop])
+    const [open, setOpen] = useState(false)
+    const toggleDrawer = () => {
+        setOpen(!open);
+      };
+      
 
-    return (
-        <Grid container>            
+    return (<Box>
+        <Drawer open={open} variant="persistent" anchor="right">
+            <Offset />
+            <LineGraph stops={data.stops} currentStop={currentStop} onSelection={(stop) => setCurrentStop(stop)} />
+        </Drawer>
+        <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
             <Grid item xs={4}>
-                <LineGraph stops={data.stops} currentStop={currentStop} onSelection={(stop) => setCurrentStop(stop)} />
+                <SingleStat 
+                    title="Passengers on a weekend"
+                    caption="boardings averaged over time"    
+                    value={hourlyStats.reduce((kv, v) => kv + v.count_weekend ?? 0, 0)}
+                />
+                <Button onClick={toggleDrawer}>click</Button>
+            
             </Grid>
-            <Grid item xs={8}>
-                <h1>{currentStop.label}</h1>
-                <AggregateStatistics dailyStats={dailyStats} trend={'+1.4%'} />
-                <CalendarHeatMap year={2023} data={dailyStats} />
-                <HourlyTraffic countsByHour={hourlyStats} />
+            <Grid item xs={4}>
+                <SingleStat 
+                    title="Passengers on a weekday"
+                    caption="boardings averaged over time"    
+                    value={hourlyStats.reduce((kv, v) => kv + v.count_weekday ?? 0, 0)}
+                />
+            </Grid>
+            <Grid item xs={4}>
+                <SingleStat 
+                    title="Passengers per month"
+                    caption="boardings averaged over time"    
+                    value={dailyStats.reduce((kv, v) => kv + v ?? 0, 0)}
+                />
+            </Grid>
+            <Grid item xs={12}>
+                <ComplexStat
+                    title="Passengers per day"
+                >
+                    <Box sx={{p: 2}}>
+                        <YearToggle />
+                        <CalendarHeatMap year={2023} getValues={(x) => x} data={dailyStats} />
+                    </Box>
+                </ComplexStat>
+            </Grid>
+            <Grid item xs={12}>
+                <ComplexStat
+                    title="Passengers per hour"
+                >
+                    <HourlyTraffic countsByHour={hourlyStats} />
+                </ComplexStat>
             </Grid>
         </Grid>
-    )
+    </Box>)
 }
 
 
@@ -70,7 +121,7 @@ function LineGraph({stops, currentStop, onSelection=(evt) => undefined}) {
     const [mouseOverStop, setMouseOverStop] = useState()
     
     return (
-        <svg height="640px" viewBox={`0 0 ${30 * 20} ${stops.length * 60}`}>
+        <svg height="640px" viewBox={`0 -30 ${30 * 20} ${stops.length * 60 + 30}`}>
             <LineGraphTrunk height={(stops.length - 1) * 60}/>
             {stops.map((stop, i) => 
                 <LineGraphStop 
@@ -89,7 +140,6 @@ function LineGraph({stops, currentStop, onSelection=(evt) => undefined}) {
 
 function LineGraphStop({
     stop, 
-    fill='#34455eff', 
     pos=0,
     selected=false,
     highlighted=false,
@@ -98,7 +148,8 @@ function LineGraphStop({
     onHover=(stop) => undefined
 }) {
 
-
+    const theme = useTheme()
+    const fill = theme.palette.primary.main
     const radius = selected ? 30 : (highlighted ? 20 : 10)
     const fontSize = (selected ? 20 : (highlighted ? 15 : 10)) * 2
                     
@@ -133,7 +184,9 @@ function LineGraphStop({
 
 
 function LineGraphTrunk({height}) {
-    const styleTram = { fill: '#34455eff', stroke: 'white', strokeWidth: 2.5 }
+    const theme = useTheme()
+    const fill = theme.palette.primary.main
+    const styleTram = { fill, stroke: 'white', strokeWidth: 2.5 }
     return (<g>
         <rect x={20} y={20} width={20} height={height} style={styleTram} />
     </g>)
@@ -156,84 +209,3 @@ export function FancyNumber({ count }) {
     }</animated.span>;
 }
    
-
-export function AggregateStatistics({dailyStats, passengers=0, countedStops=0, totalStops=0, trend=0, toggle=false}) {
-
-    const [aggLevel, setAggLevel] = useState('workday')
-    const aggStat = useMemo(() => {
-        if (aggLevel == 'month') {
-            return dailyStats.reduce((kv, v) => kv + v, 0)
-        } else if (aggLevel == 'workday') {
-            return dailyStats.reduce((kv, v) => kv + v, 0) / 31
-        } else if (aggLevel == 'weekend') {
-            return dailyStats.reduce((kv, v) => kv + v, 0) / 300
-        }
-    }, [dailyStats, aggLevel])
-
-    const marks = [
-        {value: 1, label: 'weekend', description: 'on an average Saturday or Sunday'},
-        {value: 2.5, label: 'workday', description: 'on an average workday'},
-        {value: 5, label: 'month', description: 'total during the current month'},
-        {value: 8, label: 'quarter', description: 'total during the last quarter'}
-    ]
-
-    return (
-        <Paper
-            sx={{
-                p: 2,
-                margin: 'auto',
-                //maxWidth: 500,
-                flexGrow: 1,
-                backgroundColor: '#fff',
-            }}
-        >
-            <Grid container spacing={2}>
-                <Grid item lg={8}>
-                    <Grid item>
-                        <Typography variant="h6">
-                            Passengers
-                        </Typography>
-                        <Typography variant="h3">
-                            <FancyNumber count={aggStat} />
-                        </Typography>
-                        <Typography variant="caption">
-                            Who boarded between 2023/01/01 and 2023/01/31
-                        </Typography>
-                    </Grid>
-                    <Grid item>
-                        {toggle ? 
-                            <ToggleButtonGroup exclusive value={aggLevel} onChange={(evt, newVal) => { setAggLevel(newVal) }} variant="elevated" size="small" aria-label="aggregation period">
-                                {marks.map((m) => {
-                                    <ToggleButton value={m.value}>{m.description}</ToggleButton>    
-                                })}
-                            </ToggleButtonGroup> 
-                            :
-                            <Box sx={{p: 2, width:'80%'}}>
-                            <Slider
-                                aria-label="aggregation period"
-                                valueLabelDisplay="off"
-                                marks={marks}
-                                step={null}
-                                min={marks.at(0).value}
-                                max={marks.at(-1).value}
-                                onChange={(evt, newVal) => setAggLevel(marks.filter((m) => m.value == newVal)[0].label)}
-                                value={marks.filter((m) => m.label == aggLevel)[0].value}
-                            />
-                            </Box>
-                        }
-                    </Grid>
-                    <Grid item>
-                        <Typography variant="caption">
-                            Extrapolated from {countedStops} counted stops out of {totalStops}
-                        </Typography>
-                    </Grid>
-                </Grid>
-                <Grid item container lg={4}>
-                    <Grid><Chip label={trend} variant="outlined" /></Grid>
-                    <Grid><Typography variant="caption">Compared to same month last year</Typography></Grid>
-                </Grid>
-          </Grid>
-    </Paper>
-    )
-  }
-
