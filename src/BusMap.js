@@ -13,6 +13,14 @@ import BusMapDialog from './BusMapDialog.js';
 import { useTheme } from '@mui/material/styles';
 import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
 
+import Stack from '@mui/material/Stack';
+import IconButton from '@mui/material/IconButton';
+import Box from '@mui/material/Box';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import CropFreeIcon from '@mui/icons-material/CropFree';
+import LockIcon from '@mui/icons-material/Lock';
+
 
 export const BusMapContext = createContext({
     currentStop: null,
@@ -101,6 +109,18 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
     const mapRef = useRef()
     const [viewBox, setViewBox] = useState({x: 0, y: 0, ...svgSize})
     const [xy, setXY] = useState({x: 0, y: 0})
+    const zoomTo = ({x, y=0, width=svgSize.width, height=svgSize.height, z=2}) => {
+        const {width: box_width, height: box_height} = mapRef.current.getBoundingClientRect()
+        const apparent_width = svgSize.height * box_width / box_height
+        setViewBox({x: -(apparent_width / 2 - width / 2), y, width: width, height: height})
+    }
+    const zoom = ({zl=.1}) => {
+        const {width: box_width, height: box_height} = mapRef.current.getBoundingClientRect()
+        const apparent_width = viewBox.height * box_width / box_height
+        const dx =  apparent_width * .5 * (1 - 1 / zl)
+        const dy = viewBox.height * .5 * (1 - 1 / zl)
+        setViewBox({x: viewBox.x + dx, y: viewBox.y + dy, width: viewBox.width / zl, height: viewBox.height / zl})
+    }
 
     const bind = useGesture(
         {
@@ -111,7 +131,8 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
             onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, a], memo, event}) => {
                 return memo
             },
-            onWheel: ({movement: [mx, my], offset: [ddx, ddy], event: {clientX: ox, clientY: oy}}) => {
+            onWheel: ({movement: [mx, my], offset: [ddx, ddy], event: {clientX: ox, clientY: oy}, event}) => {
+                event.preventDefault()
                 const zl = 1 - my / step
                 
                 // keep map-point at center of screen in center while scaling
@@ -132,19 +153,21 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 const cursor_x = apparent_width * ((ox - x) / width)
                 const dx =  apparent_width * (ox - x) / width * (1 - 1 / zl)
                 const dy = viewBox.height * (oy - y) / height * (1 - 1 / zl)
-                console.log(my, ddy)
                 setViewBox({x: viewBox.x + dx, y: viewBox.y + dy, width: viewBox.width / zl, height: viewBox.height / zl})
             }
         },
         { 
+            target: mapRef,
             wheel: { 
                 bounds: {top: -180, bottom: 0},
                 rubberband: true,
                 preventDefault: true,
+                eventOptions: { passive: false }
                 //preventScroll: true
             },
             drag: {
                 //bounds: {left: 0, right: svgSize.with * maxZoomLevel, bottom: 0, top: svgSize.height * maxZoomLevel},
+                eventOptions: { passive: false },
                 transform: ([x, y]) => {
                     // converts pixels to SVG units and compensates for scaling
                     // since viewBox is already scaled
@@ -162,7 +185,7 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 },
                 rubberband: true,
                 preventDefault: true,
-                filterTaps: true
+                filterTaps: true,
             },
             pinch: {
                 preventDefault: true
@@ -170,8 +193,8 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
         }
     )
     
-    return (
-        <svg {...bind()} ref={mapRef} 
+    return (<Box style={{position: 'relative', height: '100%'}}>
+        <svg ref={mapRef} 
             preserveAspectRatio="xMinYMid meet"
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} 
             style={{
@@ -182,7 +205,7 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 willChange: 'transform',
                 transformOrigin: 'center',
                 cursor: 'grab',
-                userSelect: 'none'
+                userSelect: 'none',
             }}
             onClick={(evt) => { 
                 if (mapRef.current) { 
@@ -193,6 +216,13 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
         >
             {children}
         </svg>
+        <Stack style={{right: '0', position: 'absolute', top: '0'}}>
+            <IconButton onClick={(evt) => zoom({zl: 1.1})} color="primary" title="zoom in on map"><ZoomInIcon /></IconButton>
+            <IconButton onClick={(evt) => zoom({zl: 0.9})} color="primary" title="zoom out of map"><ZoomOutIcon /></IconButton>
+            <IconButton onClick={(evt) => zoomTo({})} color="primary" title="put entrie country into view"><CropFreeIcon /></IconButton>
+            <IconButton color="primary" title="lock map - can simplify scrolling down to other widgets" disabled><LockIcon /></IconButton>
+        </Stack>
+      </Box>
     )
 }
 
