@@ -8,6 +8,7 @@ import PageTram from './PageTram.js'
 import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
 import PublicTransportStops from './PublicTransport.js';
 import {BusMap} from './BusMap.js';
+import PageChargy from  './PageChargy.js';
 import Layout from './Layout.js';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="cartraffic" element={<Cars />} />
         <Route path="trucktraffic" element={<Trucks />} />
         <Route path="cycling" element={<Cycling />} />
+        <Route path="charging" element={<PageChargy />} />
         <Route path="fleet" element={<Fleet />} />
         <Route path="*" element={<NoMatch />} />
       </Route>
