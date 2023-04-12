@@ -1,5 +1,5 @@
 import {useContext, forwardRef, useCallback, useMemo, useState, useEffect} from 'react';
-import {BusMapContext} from './BusMap.js';
+import {MapContext} from './LineMap/MapState.js';
 import YearToggle from './YearToggle';
 
 import Button from '@mui/material/Button';
@@ -55,7 +55,7 @@ const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
 export default function BusMapDialog() {
     console.count('busmapdialog')
-    const {currentStop, setCurrentStop} = useContext(BusMapContext)
+    const {currentStop, setCurrentStop} = useContext(MapContext)
     const handleClose = useCallback(() => {setCurrentStop(null)})
 
     const [busStatsLoaded, setBusStatsLoaded] = useState(false);
