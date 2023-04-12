@@ -1,2 +1,2 @@
-import CalendarHeatMap from './CalendarHeatMap.js'
-export default CalendarHeatMap
+export * from './CalendarHeatMap.js';
+export { default } from './CalendarHeatMap.js';

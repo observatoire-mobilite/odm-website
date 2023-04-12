@@ -38,8 +38,10 @@ import { HourlyTraffic } from './RoadTraffic.js'
 import { AggregateStatistics, FancyNumber } from './PageTram.js'
 import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
+import BarChart from './BarChart'
 
 import { DateTime } from "luxon";
+
 
 
 export default function PageTrain() {
@@ -54,6 +56,8 @@ const Transition = forwardRef(function Transition(props, ref) {
 
 // adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
+
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
 
 export function MapDialog() {
     console.count('trainmapdialog')
@@ -89,13 +93,22 @@ export function MapDialog() {
                 return kv + (v === null ? 0 : first.daysInMonth)
             }, 0)
             const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
-            return {monthly, dailyAvg: total / n_days, monthlyAvg: total / n_months, total}
+            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: total / n_days, monthlyAvg: total / n_months, total}
         } catch (error) {
             return empty
         }
     }, [currentStop, currentYear])
-    console.log(displayData)
 
+    const allMax = useMemo(() => {
+        if (currentStop?.label === undefined) return null
+        try {
+            return Math.max(...Object.values(stats[currentStop.label]).map((v) => Math.max(...v['week_avg'])))
+        } catch (error) {
+            console.log(error)
+            return null
+        }
+    }, [currentStop])
+    
     if (! statsLoaded) return
     
     return (
@@ -145,11 +158,13 @@ export function MapDialog() {
                     </Grid>
                     <Grid item xs={12}>
                         <ComplexStat
-                            title="Passengers per day"
+                            title="Passengers per month"
                         >
                             <Box sx={{p: 2}}>
                                 <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
-                                
+                            </Box>
+                            <Box sx={{p: 2}}>
+                                <BarChart data={displayData?.monthly} labels={MONTHS} ymax={allMax} />
                             </Box>
                         </ComplexStat>
                     </Grid>
