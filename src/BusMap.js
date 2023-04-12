@@ -109,6 +109,13 @@ function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=
                 setViewBox({x: -dx, y: -dy, width: viewBox.width, height: viewBox.height})
             },
             onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, a], memo, event}) => {
+                const zl = 1 - ms / step
+                
+                const {x, y, width, height} = mapRef.current.getBoundingClientRect()
+                const apparent_width = viewBox.height * width / height
+                const dx =  apparent_width * (ox - x) / width * (1 - 1 / zl)
+                const dy = viewBox.height * (oy - y) / height * (1 - 1 / zl)
+                setViewBox({x: viewBox.x + dx, y: viewBox.y + dy, width: viewBox.width / zl, height: viewBox.height / zl})
                 return memo
             },
             onWheel: ({movement: [mx, my], offset: [ddx, ddy], event: {clientX: ox, clientY: oy}}) => {
