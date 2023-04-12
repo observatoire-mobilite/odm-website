@@ -6,7 +6,9 @@ import { Routes, Route, Link } from "react-router-dom";
 import PageDemand from './PageDemand.js'
 import PageTram from './PageTram.js'
 import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
-import BusMap from './BusMap.js';
+import PublicTransportStops from './PublicTransport.js';
+import {BusMap} from './BusMap.js';
+import PageChargy from  './PageChargy.js';
 import Layout from './Layout.js';
 import PageTrain from './PageTrain.js';
 import PageFleet from './PageFleet.js';
@@ -23,7 +25,8 @@ export default function App() {
         <Route path="cartraffic" element={<Cars />} />
         <Route path="trucktraffic" element={<Trucks />} />
         <Route path="cycling" element={<Cycling />} />
-        <Route path="fleet" element={<PageFleet />} />
+        <Route path="charging" element={<PageChargy />} />
+        <Route path="fleet" element={<Fleet />} />
         <Route path="*" element={<NoMatch />} />
       </Route>
     </Routes>
