@@ -9,8 +9,8 @@ export const MapContext = createContext({
 
 export default function MapState({children}) {
     console.count('mapstate')
-    const [currentStop, setCurrentStop] = useState();
-    const [currentLine, setCurrentLine] = useState();
+    const [currentStop, setCurrentStop] = useState(null);
+    const [currentLine, setCurrentLine] = useState(null);
     const [currentYear, setCurrentYear] = useState(2023);
 
     const mapContextValue = useMemo(() => ({currentStop, setCurrentStop, currentLine, setCurrentLine, currentYear, setCurrentYear}))
