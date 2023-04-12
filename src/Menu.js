@@ -18,6 +18,7 @@ import IconTruck from './ODMIcons/IconTruck.js';
 import IconBicycle from './ODMIcons/IconBicycle.js';
 import IconBus from './ODMIcons/IconBus.js';
 import IconTramway from './ODMIcons/IconTramway.js';
+import IconTrain from './ODMIcons/IconTrain.js';
 
 
 import { NavLink, useLocation } from "react-router-dom";
@@ -47,9 +48,9 @@ export function MainMenu() {
       <NavItem to="/cartraffic" title="Car Traffic" icon={<IconCar height="66%" />} />
       <NavItem to="/trucktraffic" title="Truck Traffic" icon={<IconTruck height="66%" />} />
       <NavItem to="/cycling" title="Cycling and walking" icon={<IconBicycle height="50%" />} />
-      <NavItem to="/publictransport" title="Public Transport" icon={<DepartureBoardIcon />} />
       <NavItem to="/busmap" title="Bus Map" icon={<IconBus height="66%" />} />
       <NavItem to="/tram" title="Tramway" icon={<IconTramway height="80%" />} />
+      <NavItem to="/railway" title="Railways" icon={<IconTrain height="80%" />} />
       <NavItem to="/fleet" title="Vehilce Fleet" icon={<CarRentalIcon />} />
       <Divider sx={{ my: 1 }} />
     </List>
