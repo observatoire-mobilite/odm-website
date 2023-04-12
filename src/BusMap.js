@@ -2,6 +2,7 @@ import {Suspense, lazy, Fragment} from 'react';
 import CircularProgress from '@mui/material/CircularProgress'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
+import Search from './LineMap/Search.js';
 
 const LineMap = lazy(() => import('./LineMap'))
 const BusMapDialog = lazy(() => import('./BusMapDialog'))
@@ -24,6 +25,7 @@ export default function BusMap() {
             <Suspense fallback={fallback()}>
                 <LineMap mapdata="data/publictransport/busmap.json">
                     <BusMapDialog />
+                    <Search />
                 </LineMap>
             </Suspense>    
         </Container>
