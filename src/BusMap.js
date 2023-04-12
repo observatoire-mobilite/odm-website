@@ -12,7 +12,7 @@ import { width } from '@mui/system';
 import BusMapDialog from './BusMapDialog.js';
 import { useTheme } from '@mui/material/styles';
 import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
-
+import Search from './LineMap/Search.js';
 
 export const BusMapContext = createContext({
     currentStop: null,
@@ -26,6 +26,7 @@ export function BusMap() {
         <BusMapState>
             <Map />
             <BusMapDialog />
+            <Search />
         </BusMapState>    )
 }
 
