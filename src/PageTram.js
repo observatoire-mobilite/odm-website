@@ -1,4 +1,4 @@
-import {useState, useMemo, useTransition} from 'react'
+import {useState, useMemo, useTransition, useEffect, Fragment, Children, useContext, createContext} from 'react'
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, config } from '@react-spring/web'
 //import { HeatMap } from './BusMap.js'
@@ -29,6 +29,12 @@ import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
 import YearToggle from './YearToggle'
 
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+
 import { styled } from '@mui/material/styles';
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
@@ -36,34 +42,64 @@ const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 export default function PageTram() {
     const data = {
         stops: [
-            {id: 101, label: 'Luxexpo', cat: 2},
-            {id: 102, label: 'Alphone Weicker', cat: 0},
-            {id: 103, label: 'National Bibliothéik', cat: 0},
-            {id: 104, label: 'Universitéit', cat: 0},
-            {id: 105, label: 'Coque', cat: 0},
-            {id: 106, label: 'Europaparlament', cat: 0},
-            {id: 107, label: 'Philharmonie / MUDAM', cat: 0},
-            {id: 108, label: 'Rout Bréck - Pafendall', cat: 1},
-            {id: 109, label: 'Theater', cat: 0},
-            {id: 110, label: 'Faïencerie', cat: 0},
-            {id: 111, label: 'Stäereplaz / Etoile', cat: 1},
-            {id: 112, label: 'Hamilius', cat: 1},
-            {id: 113, label: 'Place de Metz', cat: 0},
-            {id: 114, label: 'Paräisser Plaz', cat: 0},
-            {id: 115, label: 'Gare Centrale', cat: 1},
-            {id: 116, label: 'Dernier Sol', cat: 0},
-            {id: 117, label: 'Lycée Bouneweg', cat: 1},
+            {id: 'LUXEXP', label: 'Luxexpo', cat: 2},
+            {id: 'WEICKE', label: 'Alphonse Weicker', cat: 0},
+            {id: 'NATBIB', label: 'National Bibliothéik', cat: 0},
+            {id: 'UNIVER', label: 'Universitéit', cat: 0},
+            {id: 'COQUE', label: 'Coque', cat: 0},
+            {id: 'PAREUR', label: 'Europaparlament', cat: 0},
+            {id: 'PHILHA', label: 'Philharmonie / MUDAM', cat: 0},
+            {id: 'ROUBRE', label: 'Rout Bréck - Pafendall', cat: 1},
+            {id: 'THEATE', label: 'Theater', cat: 0},
+            {id: 'FAÏENC', label: 'Faïencerie', cat: 0},
+            {id: 'STÄREP', label: 'Stäereplaz / Etoile', cat: 1},
+            {id: 'HAMILI', label: 'Hamilius', cat: 1},
+            {id: 'METZ', label: 'Place de Metz', cat: 0},
+            {id: 'PARIS', label: 'Paräisser Plaz', cat: 0},
+            {id: 'GARCEN', label: 'Gare Centrale', cat: 1},
+            {id: 'DERSOL', label: 'Dernier Sol', cat: 0},
+            {id: 'LY.BON', label: 'Lycée Bouneweg', cat: 1},
         ]
     }
 
     const [currentStop, setCurrentStop] = useState(data.stops[0])
-    const dailyStats = useMemo(() => Array.from({length: 365}, () => Math.floor(Math.random() * 100000)), [currentStop])
-    const hourlyStats = useMemo(() => Array.from({length: 24}, () => Math.floor(Math.random() * 100000 / 24)).map((pax, i) => ({hour: i, count_weekend: pax * Math.random(), count_weekday: pax})), [currentStop])
+    const [currentYear, setCurrentYear] = useState(2023)
+    const [loading, setLoading] = useState(false)
+    const [stats, setStats] = useState()
+    
+    useEffect(() => {
+        setLoading(true)
+        fetch('data/publictransport/tramstats.json')
+        .then((res) => res.json())
+        .then((res) => {
+            setLoading(false)
+            setStats(res)
+            console.log(res)
+        }).catch((reason) => {
+            console.log(reason)
+        })
+    }, [])
+
     const [open, setOpen] = useState(false)
     const toggleDrawer = () => {
         setOpen(!open);
-      };
-      
+    };
+
+    const displayStats = useMemo(() => {
+        if (! stats || ! currentStop?.id || ! currentYear) return {hourly: [], daily: []}
+        
+        const hourlyStats = stats['hourly'][currentStop?.id][currentYear]
+        const hourly = hourlyStats ? Object.values(hourlyStats).reduce((kv, v) => v?.count ?? kv, []) : []
+        console.log(hourly)
+
+        return {
+            daily: (stats && stats['daily'][currentStop?.id] && stats['daily'][currentStop?.id][currentYear]) ? stats['daily'][currentStop?.id][currentYear]['passengers'] : [],
+            hourly
+        }
+    }, [currentYear, currentStop, stats])
+    console.log(displayStats)
+
+    if (loading) return
 
     return (<Box>
         <Drawer open={open} variant="persistent" anchor="right">
@@ -71,27 +107,88 @@ export default function PageTram() {
             <LineGraph stops={data.stops} currentStop={currentStop} onSelection={(stop) => setCurrentStop(stop)} />
         </Drawer>
         <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
+            <Grid item xs={12}>
+                <h1>{currentStop.label}</h1>
+            </Grid>
             <Grid item xs={4}>
                 <SingleStat 
-                    title="Passengers on a weekend"
-                    caption="boardings averaged over time"    
-                    value={hourlyStats.reduce((kv, v) => kv + v.count_weekend ?? 0, 0)}
+                    title="Trips on a weekend"
+                    caption="boarding and deboarding events"
+                    value={displayStats.hourly && displayStats.hourly.reduce((kv, v) => kv + v ?? 0, 0)}
                 />
                 <Button onClick={toggleDrawer}>click</Button>
             
             </Grid>
             <Grid item xs={4}>
                 <SingleStat 
-                    title="Passengers on a weekday"
-                    caption="boardings averaged over time"    
-                    value={hourlyStats.reduce((kv, v) => kv + v.count_weekday ?? 0, 0)}
+                    title="Trips on a weekday"
+                    caption="boarding and deboarding events"
+                    value={displayStats.hourly && displayStats.hourly.reduce((kv, v) => kv + v ?? 0, 0)}
                 />
             </Grid>
             <Grid item xs={4}>
                 <SingleStat 
-                    title="Passengers per month"
-                    caption="boardings averaged over time"    
-                    value={dailyStats.reduce((kv, v) => kv + v ?? 0, 0)}
+                    title="Trips per year"
+                    caption={`boarding and deboarding events observed over ${displayStats.daily && displayStats.daily.reduce((kv, v) => kv + (v && v > 0 ? 1 : 0), 0)} days in ${currentYear}`}
+                    value={displayStats.daily && displayStats.daily.reduce((kv, v) => kv + v ?? 0, 0)}
+                    info={<FAQList>
+                        <FAQEntry title="What do we mean by `trips per year`?" name="panel-1">
+                            <Typography>"Trips per year" is the sum total of all boarding and deboarding events observed by all LUXTRAM tram-cars whose counting equipment was operational as they stopped at {currentStop.label} in {currentYear}.
+                            It is the number of tram-trips that originated and ended at {currentStop.label}.
+                            The result is directly comparable between different stops and thus measures the importance of {currentStop.label} within the LUXTRAM network. 
+                            </Typography>
+                            <Typography>
+                            Beware: it is different from number of individual passangers that rode or even boarded and deboarded the tram;
+                            the simple reason being that people may be counted multiple times.
+                            For example, a commuter arriving at at {currentStop.label} in the morning and leaving via that same stop in the evening counts as two distinct trips.                            
+                            </Typography>
+                        </FAQEntry>
+                        <FAQEntry title="Why are you counting trips and not passengers ?">
+                            <Typography>
+                                Despite their name, passenger counting systems actually count boarding and deboarding events, not passengers.
+                                The difference is subtle, but important:
+                                a passenger is a person taking a trip on a tram.
+                                A trip starts at boarding and ends with deboarding.
+                                Ideally, a counter registers both events.
+                                By design, counters cannot reidentify people between events.
+                                This respects the principle of <a href="https://edps.europa.eu/data-protection/data-protection/glossary/d_en#data_minimization" target="_blank">data minimization</a>,
+                                but reduces our knowledge to the fact that someone just started (respectively finished) a tram-trip at the given stop.
+                                There is no way of knowing when or where that trip finished (respectively began), nor whether the rider has taken other tram-rides before this one.
+                            </Typography>
+                            <Typography>
+                                Over the entire network, every boarding must eventually be followed by a deboarding &emdash; barring sensor error.
+                                Every pair of such events is evidence of a trip, and every trip implies a passenger.
+                                Thus it is possible to calculate the number of passengers transported on the network, even if there is no way of knowing how many of those passengers are in fact the same person taking multiple trips.
+                                Importantly, in this calculation, it only matters that those boardings and deboardings happened, not where.
+                                When only considering the events at one single stop, that reasoning breaks down.
+                            </Typography>
+                        </FAQEntry>
+                        <FAQEntry title="Why do you sum up boardings and deboardings ?"  name="panel-2">
+                            <Typography>
+                            We follow the conventions of the <a hef="https://pnm2035.lu">PNM2305</a>.
+                            Summing boardings and deboardings yields the number of trips, both incoming and outgoing, in relation to a stop.
+                            As a disadvantage, individuals taking more than one trip per day are counted multiple times.
+                            Thus the number of trips cannot be taken as a proxy for the number of passengers.
+                            Summing only boardings (or deboardings) seemingly mitigates that problem.
+                            However, this would severely limit comparability 
+
+                            However, it would be a poor indication
+
+                            </Typography>
+                        </FAQEntry>
+                        <FAQEntry title="How confident are you of those results ?"  name="panel-3">
+                            <Typography>
+                            Automatic passenger counting systems are not perfect. For any number of reasons, counters may miscount, fail to count or fail to transmit the result. There are no corrections made except the clamping of excessive values (&gt; 300 boardings or deboardings).
+                            </Typography>                        
+                        </FAQEntry>
+                        <FAQEntry title="Why aren't there 365 days of observations?"  name="panel-4">
+                            <Typography>
+                            The number of days accounted for in the sum may differ form one year if (a) the calendar year is incomplete, (b) the site has not been updated yet or (c) there were indeed no data recorded.
+                            Trams have been circulating every day, even throughout the COVID-19 panedmic. Gaps in the data are just that.
+                            While the odds of all counters on all vehicles failing on the same day are small, network-wide outages with complete and irreversible data-loss can and do happen when backend systems fail.
+                            </Typography>
+                        </FAQEntry>
+                    </FAQList>}
                 />
             </Grid>
             <Grid item xs={12}>
@@ -99,8 +196,8 @@ export default function PageTram() {
                     title="Passengers per day"
                 >
                     <Box sx={{p: 2}}>
-                        <YearToggle />
-                        <CalendarHeatMap year={2023} getValues={(x) => x} data={dailyStats} />
+                        <YearToggle from={2018} to={2023} currentYear={currentYear} onChange={(evt, newVal) => setCurrentYear(newVal ?? currentYear)} />
+                        <CalendarHeatMap year={currentYear} data={displayStats.daily} />
                     </Box>
                 </ComplexStat>
             </Grid>
@@ -108,11 +205,49 @@ export default function PageTram() {
                 <ComplexStat
                     title="Passengers per hour"
                 >
-                    <HourlyTraffic countsByHour={hourlyStats} />
+                    <HourlyTraffic countsByHour={displayStats.hourly ? displayStats.hourly.map((k, i) => ({hour: i, count_weekday: k, count_weekend: k})): []} />
                 </ComplexStat>
             </Grid>
         </Grid>
     </Box>)
+}
+
+
+const FAQContext = createContext()
+
+export function FAQList({children}) {
+  const [expanded, setExpanded] = useState('panel-1');
+
+  const handleChange = (panel) => (event, isExpanded) => {
+    setExpanded(isExpanded ? panel : false);
+  };
+
+  const ctx = {expanded, setExpanded, handleChange}
+
+  return (
+    <Fragment>
+        <FAQContext.Provider value={ctx}>
+            {children}
+        </FAQContext.Provider>
+    </Fragment>
+  )
+}
+
+
+export function FAQEntry({title, children, name='panel1'}) {
+    const {expanded, handleChange} = useContext(FAQContext)
+    return (
+      <Accordion expanded={expanded === name} onChange={handleChange(name)}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls={`${name}-content`} id={`${name}-header`}>
+          <Typography variant="h6">
+            <a id={`${name}-link`}>{title}</a>
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          {children}
+        </AccordionDetails>
+      </Accordion>
+    )
 }
 
 
