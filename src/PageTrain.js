@@ -1,4 +1,7 @@
-import {useContext, forwardRef, useCallback, useMemo, useState, useEffect} from 'react';
+import { useState, forwardRef, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext } from 'react';
+import LineMap from './LineMap'
+import { useTheme } from '@mui/material/styles';
+
 import {MapContext} from './LineMap/MapState.js';
 import YearToggle from './YearToggle';
 
@@ -35,72 +38,83 @@ import { HourlyTraffic } from './RoadTraffic.js'
 import { AggregateStatistics, FancyNumber } from './PageTram.js'
 import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
+import BarChart from './BarChart'
+
+import { DateTime } from "luxon";
+
+
+
+export default function PageTrain() {
+    return (<LineMap><MapDialog /></LineMap>)
+}
+
+
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="left" ref={ref} {...props} />;
 });
 
-const useDelayedRender = delay => {
-    const [delayed, setDelayed] = useState(true);
-    useEffect(() => {
-      const timeout = setTimeout(() => setDelayed(false), delay);
-      return () => clearTimeout(timeout);
-    }, []);
-    return fn => !delayed && fn();
-  };
-
-
 // adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
-export default function BusMapDialog() {
-    console.count('busmapdialog')
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+
+export function MapDialog() {
+    console.count('trainmapdialog')
     const {currentStop, setCurrentStop} = useContext(MapContext)
     const handleClose = useCallback(() => {setCurrentStop(null)})
 
-    const [busStatsLoaded, setBusStatsLoaded] = useState(false);
-    const [busStats, setBusStats] = useState();
+    const [statsLoaded, setStatsLoaded] = useState(false);
+    const [stats, setStats] = useState({});
 
     const [currentYear, setCurrentYear] = useState(2023)
 
     useEffect(() => {
-        setBusStatsLoaded(false);
-        fetch('data/publictransport/busstats.json')
+        setStatsLoaded(false);
+        fetch('data/publictransport/trainstats.json')
         .then((r) => r.json())
         .then((dta) => {
-            setBusStats(dta);
-            setBusStatsLoaded(true);
+            setStats(dta);
+            setStatsLoaded(true);
         }).catch((e) => {
             console.log(e.message)
         });
     }, [])
 
     const displayData = useMemo(() => {
-        if (currentStop?.label) {
-            if (busStats['daily'][currentYear][currentStop.label] === undefined) return
-            if (busStats['hourly'][currentYear][currentStop.label] === undefined) return
-            if (busStats['hourly'][currentYear][currentStop.label][0] === undefined) return
-            if (busStats['hourly'][currentYear][currentStop.label][1] === undefined) return
-            return {
-                hourly: Array.from({length: 24}, (_, h) => ({
-                    hour: h,
-                    count_weekend: busStats['hourly'][currentYear][currentStop.label][1]['corrected_boardings'][h] ?? 0,
-                    count_weekday: busStats['hourly'][currentYear][currentStop.label][0]['corrected_boardings'][h] ?? 0
-                })),
-                daily: busStats['daily'][currentYear][currentStop.label]['corrected_boardings']
-            }
-        } else {
-            return
+        const empty = {monthly: []}
+        console.log(stats)
+        if (currentStop?.label === undefined) return empty
+        try {
+            const monthly = stats[currentStop.label][currentYear]['week_avg']
+            const n_months = monthly.reduce((kv, v) => kv + (v === null ? 0 : 1), 0)
+            const n_days = monthly.reduce((kv, v, i) => {
+                const first = DateTime.local(currentYear, i+1)
+                return kv + (v === null ? 0 : first.daysInMonth)
+            }, 0)
+            const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
+            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: total / n_days, monthlyAvg: total / n_months, total}
+        } catch (error) {
+            return empty
         }
     }, [currentStop, currentYear])
-    console.log(displayData)
 
-    if (! busStatsLoaded) return
+    const allMax = useMemo(() => {
+        if (currentStop?.label === undefined) return null
+        try {
+            return Math.max(...Object.values(stats[currentStop.label]).map((v) => Math.max(...v['week_avg'])))
+        } catch (error) {
+            console.log(error)
+            return null
+        }
+    }, [currentStop])
+    
+    if (! statsLoaded) return
     
     return (
         <Dialog
             fullScreen
-            open={currentStop}
+            open={currentStop !== null}
             onClose={handleClose}
             TransitionComponent={Transition}
         >
@@ -123,40 +137,35 @@ export default function BusMapDialog() {
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
                     <Grid item xs={4}>
                         <SingleStat 
-                            title="Passengers on a weekend"
-                            caption="boardings averaged over time"    
-                            value={displayData?.hourly.reduce((kv, v) => kv + v.count_weekend ?? 0, 0)}
+                            title="Trips per day"
+                            caption={`boardings and deboardings on average per day in ${currentYear}`}
+                            value={displayData?.dailyAvg}
                         />
                     </Grid>
                     <Grid item xs={4}>
                         <SingleStat 
-                            title="Passengers on a weekday"
-                            caption="boardings averaged over time"    
-                            value={displayData?.hourly.reduce((kv, v) => kv + v.count_weekday ?? 0, 0)}
+                            title="Trips per month"
+                            caption={`boardings and deboardings per month in ${currentYear}`}
+                            value={displayData?.monthlyAvg}
                         />
                     </Grid>
                     <Grid item xs={4}>
                         <SingleStat 
-                            title="Passengers per month"
-                            caption="boardings averaged over time"    
-                            value={displayData?.daily.reduce((kv, v) => kv + v ?? 0, 0)}
+                            title={`Total in ${currentYear}`}
+                            caption={`boardings and deboardings in ${currentYear}`}
+                            value={displayData?.total}
                         />
                     </Grid>
                     <Grid item xs={12}>
                         <ComplexStat
-                            title="Passengers per day"
+                            title="Passengers per month"
                         >
                             <Box sx={{p: 2}}>
-                                <YearToggle />
-                                <CalendarHeatMap year={2023} getValues={(x) => x} data={displayData?.daily} />
+                                <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
                             </Box>
-                        </ComplexStat>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <ComplexStat
-                            title="Passengers per hour"
-                        >
-                            <HourlyTraffic countsByHour={displayData?.hourly} />
+                            <Box sx={{p: 2}}>
+                                <BarChart data={displayData?.monthly} labels={MONTHS} ymax={allMax} />
+                            </Box>
                         </ComplexStat>
                     </Grid>
                 </Grid>

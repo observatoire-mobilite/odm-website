@@ -10,15 +10,16 @@ import PublicTransportStops from './PublicTransport.js';
 import {BusMap} from './BusMap.js';
 import PageChargy from  './PageChargy.js';
 import Layout from './Layout.js';
+import PageTrain from './PageTrain.js';
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="publictransport" element={<PublicTransportStops />} />
         <Route path="busmap" element={<BusMap />} />
         <Route path="tram" element={<PageTram />} />
+        <Route path="railway" element={<PageTrain />} />
         <Route path="demand" element={<PageDemand />} />
         <Route path="cartraffic" element={<Cars />} />
         <Route path="trucktraffic" element={<Trucks />} />
