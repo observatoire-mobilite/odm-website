@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { animated, useSpring, to } from '@react-spring/web'
 import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
 
@@ -20,6 +20,18 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     
     const mapRef = useRef()
     const [viewBox, setViewBox] = useState({x: 0, y: 0, ...svgSize})
+
+    useEffect(() => {
+        const handler = (e) => e.preventDefault()
+        document.addEventListener('gesturestart', handler)
+        document.addEventListener('gesturechange', handler)
+        document.addEventListener('gestureend', handler)
+        return () => {
+            document.removeEventListener('gesturestart', handler)
+            document.removeEventListener('gesturechange', handler)
+            document.removeEventListener('gestureend', handler)
+        }
+    }, [])
     
     // handler: zoom to a specific point on the map
     const resetZoom = ({}) => {
