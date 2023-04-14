@@ -63,7 +63,7 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     useGesture(
         {
             onDrag: ({ pinching, cancel, offset: [dx, dy], ...rest }) => {
-                if (pinching) return cancel
+                if (pinching) return cancel()
                 setViewBox({x: -dx, y: -dy, width: viewBox.width, height: viewBox.height})
             },
             onPinch: ({ origin: [ox, oy], offset: [s, a], movement: [ms], event}) => {
@@ -74,7 +74,6 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
             },
             onWheel: ({movement: [_, my], event: {clientX: ox, clientY: oy}, event, pinching, cancel}) => {
                 event.preventDefault()
-                if (pinching) return cancel
                 const zl = 1 - my / step
                 zoom({zl, origin: [ox, oy]})
             }
