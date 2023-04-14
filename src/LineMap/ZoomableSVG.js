@@ -56,11 +56,12 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
             onPinch: ({ origin: [ox, oy], offset: [s, a], movement: [ms], event}) => {
                 event.preventDefault()
                 console.log(ox, oy, s, a, ms)
-                const zl = s
+                const zl = 1 + (ms - 1) * .1
                 zoom({zl, origin: [ox, oy]})
             },
-            onWheel: ({movement: [_, my], event: {clientX: ox, clientY: oy}, event}) => {
+            onWheel: ({movement: [_, my], event: {clientX: ox, clientY: oy}, event, pinching, cancel}) => {
                 event.preventDefault()
+                if (pinching) return cancel
                 const zl = 1 - my / step
                 zoom({zl, origin: [ox, oy]})
             }
