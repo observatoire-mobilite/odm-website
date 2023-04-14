@@ -25,7 +25,7 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     const resetZoom = ({}) => {
         const box = mapRef.current.getBoundingClientRect()
         const apparent_width = svgSize.height * box.width / box.height
-        setViewBox({x: -(apparent_width / 2 - width / 2), y: 0, ...svgSize})
+        setViewBox({x: -(apparent_width / 2 - box.width / 2), y: 0, ...svgSize})
     }
 
     const zoom = ({zl=1, origin: [ox, oy], relative=false}) => {
