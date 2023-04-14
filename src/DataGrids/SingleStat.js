@@ -32,7 +32,7 @@ const ExpandMore = styled((props) => {
 
 
 
-export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined}) {
+export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined, info=null}) {
 
     return (
         <Paper sx={{
@@ -57,9 +57,7 @@ export default function SingleStat({title, subtitle=null, caption=null, value, a
                     {caption && <Typography variant="caption">
                         {caption}
                     </Typography>}
-                    <ScrollDialog title={title}>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Quam vulputate dignissim suspendisse in est ante in nibh mauris. Dui faucibus in ornare quam viverra orci. Aliquet nibh praesent tristique magna. Volutpat consequat mauris nunc congue nisi vitae suscipit tellus mauris. Porttitor lacus luctus accumsan tortor posuere ac. Nisl purus in mollis nunc sed. Lorem ipsum dolor sit amet consectetur. Dictum varius duis at consectetur lorem. Sit amet commodo nulla facilisi nullam vehicula ipsum. Dictum at tempor commodo ullamcorper a. Nibh sed pulvinar proin gravida. In mollis nunc sed id semper. Fames ac turpis egestas maecenas. Sem viverra aliquet eget sit amet tellus cras adipiscing. Nisl tincidunt eget nullam non nisi est. Egestas congue quisque egestas diam in arcu cursus euismod quis. Arcu cursus vitae congue mauris rhoncus aenean vel. Ut eu sem integer vitae justo eget magna fermentum. Praesent elementum facilisis leo vel fringilla est ullamcorper.</p>
-                    </ScrollDialog>
+                    {info && <ScrollDialog title={title}>{info}</ScrollDialog>}
                 </Grid>
             </Grid>        
         </Paper>
