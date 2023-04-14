@@ -110,7 +110,9 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
                 filterTaps: true,
             },
             pinch: {
-                preventDefault: true
+                preventDefault: true,
+                eventOptions: { passive: false }
+                
             }
         }
     )
