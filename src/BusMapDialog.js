@@ -147,7 +147,7 @@ export default function BusMapDialog() {
                             title="Passengers per day"
                         >
                             <Box sx={{p: 2}}>
-                                <YearToggle />
+                                <YearToggle currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
                                 <CalendarHeatMap year={2023} getValues={(x) => x} data={displayData?.daily} />
                             </Box>
                         </ComplexStat>
