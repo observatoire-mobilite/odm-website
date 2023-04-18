@@ -29,11 +29,8 @@ import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
 import YearToggle from './YearToggle'
 
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
+import FAQList from './FAQ/List'
+import FAQEntry from './FAQ/Entry'
 
 import { styled } from '@mui/material/styles';
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
@@ -210,44 +207,6 @@ export default function PageTram() {
             </Grid>
         </Grid>
     </Box>)
-}
-
-
-const FAQContext = createContext()
-
-export function FAQList({children}) {
-  const [expanded, setExpanded] = useState('panel-1');
-
-  const handleChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
-  };
-
-  const ctx = {expanded, setExpanded, handleChange}
-
-  return (
-    <Fragment>
-        <FAQContext.Provider value={ctx}>
-            {children}
-        </FAQContext.Provider>
-    </Fragment>
-  )
-}
-
-
-export function FAQEntry({title, children, name='panel1'}) {
-    const {expanded, handleChange} = useContext(FAQContext)
-    return (
-      <Accordion expanded={expanded === name} onChange={handleChange(name)}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls={`${name}-content`} id={`${name}-header`}>
-          <Typography variant="h6">
-            <a id={`${name}-link`}>{title}</a>
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          {children}
-        </AccordionDetails>
-      </Accordion>
-    )
 }
 
 
