@@ -120,7 +120,7 @@ export default function Fleet() {
                                 />
                             </Grid>
                             <Grid item xs={12} sx={{m: 2}}>
-                                <AreaChart data={stats[currentCat][currentStat]} />
+                                <AreaChart data={stats[currentCat][currentStat]} xlabels={stats['refdates']} />
                             </Grid>
                         </Grid>
 

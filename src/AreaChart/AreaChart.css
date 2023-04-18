@@ -53,7 +53,13 @@
     fill: #05779c
 }
 
-.areachart:hover {
-    fill: #ffbb1c;
 
+.valuePicker {
+    fill: none;
+    stroke: none;
+}
+
+.valuePicker:hover {
+    fill: #ffbb1c;
+    opacity: 0.6;
 }

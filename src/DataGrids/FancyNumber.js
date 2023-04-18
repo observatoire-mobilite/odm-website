@@ -1,7 +1,7 @@
 import {useSpring, animated} from 'react-spring'
 
 
-export default function FancyNumber({ count }) {
+export default function FancyNumber({ count, round=0 }) {
     const { number } = useSpring({
       from: { number: 0 },
       number: count,
@@ -10,7 +10,7 @@ export default function FancyNumber({ count }) {
    
     if (count) {
       return <animated.span>{
-          number.to(val => Math.floor(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"))
+          number.to(val => (Math.round(val * Math.pow(10, round)) / Math.pow(10, round)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"))
       }</animated.span>;
     } else {
       return <span style={{color: 'gray', fontStyle: 'italic'}}>(no data)</span>
