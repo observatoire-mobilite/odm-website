@@ -43,10 +43,12 @@ export default function AreaChart({data, xlabels}) {
         })
     }, [data])
 
+    const [springs, api] = useSprings(displayData.length, (i) => ({ to: { d: displayData[i].d }}), [displayData])
+
 
     return (
         <svg ref={ref} width="100%" viewBox="0 0 1000 620">
-            {displayData.map(({d}, i) => <path className="areachart" data-scaledvalue={10} d={d} />)}
+            {springs.map((spring, i) => <animated.path className="areachart" data-scaledvalue={10} d={spring.d} />)}
             {Array.from({length: displayData.n * 0}, (_, i) => {
                 return <rect fill="none" stroke="none" x={1000/displayData.n * i} y="0" width={1000/displayData.n} height="620" />
             })}
