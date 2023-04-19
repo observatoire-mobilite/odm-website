@@ -37,7 +37,7 @@ export default function Stop({stop}) {
         cursor: 'pointer'
     }
 
-    const text = <text x={stop.lx} y={stop.ly} style={textStyle}>{stop.label}</text>
+    const text = <text x={stop.lx ?? (stop.cx  + stop.r * 1.2)} y={stop.ly ?? stop.cy} style={textStyle}>{stop.label}</text>
 
     if (stop.path) {
         return(<g id={`stop-${stop.id}`}>
