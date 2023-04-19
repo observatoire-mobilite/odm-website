@@ -15,11 +15,31 @@ const FlowLine = styled('g')(({theme}) => ({
 }))
 
 
+const country2point = ({country}, {width, height}) => {
+    let dims = []
+    switch (country) {
+        case 'Belgique':
+            dims = [0, 0.5]
+            break
+        case 'Allemagne':
+            dims = [1, 0.5]
+            break
+        case 'France':
+            dims = [0.5, 1]
+            break
+        default:
+            dims = [0.5, 0.5]
+            break
+    }
+    return [width * dims[0], height * dims[1]]
+}
+
+
 export default function Flows({url='data/demand/flows.json', maxStrokeWidth=20, hideInternalFlow=false}) {
     const {showBoundary} = useErrorBoundary()
     const theme = useTheme()
-    const [zones, flows, fetchFlows, currentZone, currentScenario] = useZonalFlowMapStore(
-        (state) => [state.zones, state.flows, state.fetchFlows, state.currentZone, state.currentScenario],
+    const [zones, flows, fetchFlows, currentZone, currentScenario, viewBox] = useZonalFlowMapStore(
+        (state) => [state.zones, state.flows, state.fetchFlows, state.currentZone, state.currentScenario, state.viewBox],
         shallow
     )
     useEffect(() => { 
@@ -34,12 +54,11 @@ export default function Flows({url='data/demand/flows.json', maxStrokeWidth=20, 
             flow: modes.reduce((kv, mode) => kv + (mode[toZone] ?? 0), 0)
         }))
         const flow = hideInternalFlow ? allflows.filter(({toZone}) => toZone != currentZone.index ) : allflows
-        console.log(flow)
         const maxFlow = Math.max(...flow.map(({flow}) => flow))
         
         const [x1, y1] = zones[currentZone.index].centroid ?? [0, 0]
         return flow.map(({flow, toZone}) => {
-            const [x2, y2] = zones[toZone].centroid ?? [0, 0]
+            const [x2, y2] = zones[toZone].centroid ?? country2point(zones[toZone], viewBox)
             return {x1, y1, x2, y2, strokeWidth: flow / maxFlow * maxStrokeWidth}
         })
     }, [flows, currentZone])

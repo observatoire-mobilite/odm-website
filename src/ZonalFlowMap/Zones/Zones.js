@@ -5,7 +5,6 @@ import { shallow } from 'zustand/shallow';
 import { styled } from '@mui/material/styles';
 
 const ZoneFlowMapZone = styled('g')(({theme}) => ({
-    fill: theme.palette.primary.main,
     stroke: 'white',
     strokeWidth: 1,
     strokeLinecap: 'butt',
@@ -15,17 +14,18 @@ const ZoneFlowMapZone = styled('g')(({theme}) => ({
     cursor: 'pointer',
     pointerEvents: 'visiblePainted',
     transition: 'fill 0.3s ease',
+    fill: theme.palette.grey[500],
     '&.lighter': {
-        fill: theme.palette.primary.light
+        fill: theme.palette.grey[400],
     },
     '&:hover': {
-        fill: theme.palette.primary.dark,
+        fill: theme.palette.grey[600],
     },
     '&.chosen': {
-        fill: theme.palette.secondary.main
+        fill: theme.palette.grey[700],
     },
     '&.chosen:hover': {
-        fill: theme.palette.secondary.light
+        fill: theme.palette.grey[800],
     },
 }))
 

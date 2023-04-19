@@ -4,13 +4,17 @@ import { useZonalFlowMapStore } from './store'
 import Flows from './Flows'
 import Zones from './Zones'
 
+
+const flattenViewbox = ({x, y, width, height}) => `${x} ${y} ${width} ${height}`
+
+
 export default function ZonalFlowMap({
     urlZones='data/demand/zones.json', 
     urlFlows='data/demand/flows.json', 
     width="100%", height="600px"
 }) {
 
-    const [fetchZones, fetchFlows] = useZonalFlowMapStore((state) => [state.fetchZones, state.fetchFlows])
+    const [fetchZones, fetchFlows, viewBox] = useZonalFlowMapStore((state) => [state.fetchZones, state.fetchFlows, state.viewBox])
     const {showBoundary} = useErrorBoundary()
     useEffect(() => {
         fetchZones(urlZones).catch((e) => showBoundary(e))
@@ -18,7 +22,7 @@ export default function ZonalFlowMap({
     }, [])
 
     return (
-        <svg width={width} height={height} viewBox="0 0 877 1000">
+        <svg width={width} height={height} viewBox={flattenViewbox(viewBox)}>
             <Zones />
             <Flows />
         </svg>
