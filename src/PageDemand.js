@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import ErrorBoundary from './ErrorBoundary';
+import {useMemo, useState, useEffect, useCallback } from 'react';
 import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
-import FlowMap from './MapOfFlows.js';
-import {CorridorMap} from './CorridorMap.js';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
@@ -21,105 +18,30 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
 import { useTheme } from '@mui/material/styles';
+import BarChart from './BarChart'
+import {useErrorBoundary, ErrorBoundary} from 'react-error-boundary'
+import ZonalFlowMap from './ZonalFlowMap'
+import {useZonalFlowMapStore} from './ZonalFlowMap/store'
+
+
 
 export default function PageDemand() {
     
-    const [zonesLoaded, setZonesLoaded] = useState(false);
-    const [zones, setZones] = useState();
-    const [flowData, setFlowData] = useState();
-    const [flowDataLoaded, setFlowDataLoaded] = useState(false);
-    const [flows, setFlows] = useState();
-    const [modeSplit, setModeSplit] = useState();
+    const currentZone = useZonalFlowMapStore((state) => state.currentZone)
     
-    const [selectedScenario, setSelectedScenario] = useState(0);
-    const [selectedZone, setSelectedZone] = useState(0);
-    const [selectedMode, setSelectedMode] = useState(0);
-
-    // retrieve zone info
-    // TODO: include directly into the code later
-    useEffect(() => {
-        setZonesLoaded(false);
-        fetch('data/demand/zones.json')
-        .then((r) => r.json())
-        .then((dta) => {
-            setZones(dta);
-            setZonesLoaded(true);
-        }).catch((e) => {
-            console.log(e.message)
-        });
-    }, [])
-    
-    // retrieve flow info
-    // TODO: include directly into the code later
-    useEffect(() => {
-        setFlowDataLoaded(false);
-        fetch('data/demand/flows.json')
-        .then(response => {
-            return response.json()
-        }).then(data => {
-            setFlowData(data);
-            setFlowDataLoaded(true);
-        }).catch((e) => {
-            console.log(e.message);
-        });
-    }, [])
-
-    // calculate stats for selected zone
-    useEffect(() => {
-        
-        // do nothing until data loaded
-        if (! (flowDataLoaded & zonesLoaded)) {
-            setFlows([])
-            return
-        }
-
-        // extract flows for specified origin zone, scenario and mode
-        let directedFlows = flowData
-        for (const idx of [selectedScenario, selectedZone, selectedMode]) {
-            directedFlows = directedFlows[idx]
-            if (directedFlows === undefined) {
-                console.log(`Warning: flows.json malformed; no entry for scenario=${selectedScenario}, zone=${selectedZone} and mode=${selectedMode}`)
-                setFlows([])
-                return
-            }
-        }
-        
-        // adjust scaling
-        const maxFlow = Math.max(...directedFlows.map((v) => v ?? 0))  // largest flow
-        //const maxFlow = directedFlows.reduce((rv, v) => rv + (v ?? 0), 0)  // maximum flow
-        //const maxFlow = 100000  // constant flow
-        const scaledFlows = maxFlow > 0 ? directedFlows.map((v) => (v ?? 0) / (maxFlow)) : directedFlows.map((v) => 0)
-        setFlows(scaledFlows)
-
-    }, [flowDataLoaded, selectedZone, selectedMode, selectedScenario])
-
-    // compute mode split statistics
-    useEffect(() =>{
-        if (! flowDataLoaded) {
-            setModeSplit([])
-            return
-        }
-        const stats = flowData[selectedScenario][selectedZone].map((flows, mode) => flows.reduce((rv, v) => rv + v, 0))
-        setModeSplit(stats)
-    }, [flowDataLoaded, selectedScenario, selectedZone])
-    
-    if (! (flowDataLoaded && zonesLoaded)) {
-        return <p>Loading...</p>
-    }
-
     return (
-        <DemandWidget 
-            zones={zones}
-            flows={flows}
-            flowData={flowData}
-            onScenarioSelected={(s) => setSelectedScenario(s)}
-            selectedScenario={selectedScenario}
-            onZoneSelected={(z) => setSelectedZone(z)}
-            selectedZone={selectedZone}
-            onModeSelected={(m) => setSelectedMode(m)}
-            selectedMode={selectedMode}
-            modeSplit={modeSplit}
-        />
+        <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+                <Paper>
+                    <h3>Corridor {currentZone ? currentZone.corridor : ''}{currentZone && currentZone.country != 'Luxembourg' ? ` (${currentZone.country})` : ''}</h3>
+                </Paper>    
+            </Grid>
+            <Grid item xs={12} md={8}>
+                <ErrorBoundary fallback={<div>failure</div>}>
+                    <ZonalFlowMap />
+                </ErrorBoundary>
+            </Grid>
+        </Grid>
     )
 
 }
@@ -289,168 +211,3 @@ function maxZones(arr, {nZones=4}={}) {
 
 
 
-function Sankey({
-    data=[],
-    zones=[],
-    zone=0
-}) {
-    
-    const [sumByZone, setSumByZone] = useState([])
-    const [sumByMode, setSumByMode] = useState([])
-    const [grandTotal, setGrandTotal] = useState()
-    const [zoneNames, setZoneNames] = useState([])
-    const [sankeyMX, setSankeyMX] = useState()
-    
-    useEffect(() => {
-        const sum_by_zone = data.reduce((kv, flows, mode) => flows.map((f, i) => kv[i] += f ? f : 0), new Array(29).fill(0))
-        const max_zones = maxZones(sum_by_zone)
-        const mx = max_zones.map(({idx, val}) => {
-            return data.map((flows, mode) => idx.reduce((rv, i) => rv + flows[i], 0))
-        })
-        setZoneNames(max_zones.map(({idx}) => idx.length == 1 ? zones[idx[0]].corridor : 'other'))
-        console.log(max_zones.map(({idx}) => idx.length == 1 ? zones[idx[0]].corridor : 'other'))
-        setSankeyMX(mx)
-
-        setSumByZone(mx.map((flows) => flows.reduce((kv, v) => kv + v, 0)))
-        setSumByMode([...Array(4).keys()].map((mode) => mx.reduce((kv, v) => kv + v[mode], 0)))
-        setGrandTotal(sum_by_zone.reduce((rv, v) => rv + (v ? v : 0), 0)) 
-    }, [data, zone])
-    
-    let cumsum = 0
-    return (
-        <svg width="100%" height="400px" viewBox={`0 0 ${1000} ${1000}`}>
-            <SankeyBars data={sumByZone} labels={zoneNames} labelOffset={-10} labelAnchor={'end'} x={200} />
-            <SankeyBars data={sumByMode} labels={['cars', 'walking', 'public transport', 'cycling']} x={700} labelOffset={60} />
-            {sankeyMX && sankeyMX.length > 0 && [...Array(4).keys()].map((mode) => <SankeyLines data={sankeyMX} mode={mode} x0={250} x1={450} />)}
-        </svg>
-    )
-}
-
-
-function SankeyBars({data, x=0, getval=(x) => x, labels=undefined, labelOffset=10, labelAnchor='start'}) {
-    const coalesce = (x) => x ? x : 0;
-    const grandTotal = data.reduce((rv, v) => rv + coalesce(getval(v)), 0)
-    let cumsum = 0
-    return <g>
-        {data.map((s, i) => {
-            const pos = 800 * coalesce(getval(s)) / grandTotal
-            const ret = <g>
-                <rect x={x} y={cumsum} width={50} height={pos} fill={`rgb(${i / data.length * 255}, 100, 100)`} />
-                {labels && <text x={x + labelOffset} y={cumsum + pos / 2} style={{fontSize: '13pt', textAnchor: labelAnchor}}>{labels[i]}</text>}
-            </g>
-            cumsum += pos + 10
-            return ret
-        })}
-    </g>
-}
-
-function sum(data, {from=0, to=-1}={}) {
-    to = to == -1 ? data.length : to
-    let res = 0
-    for (let i=from; i<to; i++) {
-        res += data[i]
-    }
-    return res
-}
-
-function SankeyLines({data, mode=0, x0=0, x1=500}) {
-    return <g>
-        {data.map((flows_by_mode, zone) => {
-            return <SankeyLine data={data} zone={zone} mode={mode} x0={x0} x1={x1} />
-        })}
-    </g>
-}
-
-
-function SankeyLine({data, zone=0, mode=0, x0=50, x1=450,height=800, separation=10}) {
-
-    const sum_by_zone = data.map((flows) => flows.reduce((kv, v) => kv + v, 0))
-    const sum_by_mode = [...Array(4).keys()].map((mode) => data.reduce((kv, v) => kv + v[mode], 0))
-    const grand_total = sum_by_zone.reduce((kv, v) => kv + v, 0)
-    const f = height / grand_total
-
-    const offset_left = (sum(sum_by_zone, {to: zone}) + sum(data[zone], {to: mode})) * f + zone * separation
-    const delta = data[zone][mode] * f
-    const offset_right = (sum(sum_by_mode, {to: mode}) + sum(data.map((flws) => flws[mode]), {to: zone})) * f + mode * separation
-    
-    return <path d={`M ${x0},${offset_left} l ${0},${delta} l ${x1},${offset_right - offset_left} l ${0},${-delta} Z`} style={{fill: 'rgba(255, 100, 100, .8)'}}/>
-    //return <path d={`M ${x0},${offset_left} l ${0},${delta} c 100,0 ${width - x0-100},0 ${width - x0},${offset_right - offset_left} l ${0},${-delta} c ${width - x0-100},0 100,0 ${x0 - width},${offset_left - offset_right - delta} z`} style={{fill: 'rgba(255, 100, 100, .8)'}}/>
-
-}
-
-
-function DemandWidget({
-    zones,
-    flows,
-    onScenarioSelected=(s) => undefined,
-    onModeSelected=(s) => undefined,
-    onZoneSelected=(z) => undefined,
-    selectedScenario=undefined,
-    selectedMode=undefined,
-    selectedZone=undefined,
-    modeSplit=[],
-    flowData=[]
-}) {
-    
-    
-    const currentZone = selectedZone ? zones[selectedZone] : undefined;
-    const total = modeSplit.reduce((rv, v) => rv + v, 0);
-    const [kind, setKind] = useState('bar')
-
-    return (
-        <Grid container spacing={2}>
-            <Grid item xs={12}>
-                <h2>Transport demand</h2>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <Grid item>
-                    <Paper sx={{"p": 2}}>
-                        <Typography variant="body1">
-                            Map of trips taken between regions in Luxembourg on an average working day { selectedScenario == 1 ? "as projected in the PNM2035" : "as observed in the 'LuxMobil' survey in 2017"}.
-                        </Typography>
-                        <FormGroup>
-                            <FormControlLabel control={<Switch onChange={(event, checked) => onScenarioSelected(checked ? 1 : 0)} />} checked={selectedScenario == 1} label="Project to 2035" />
-                            <ToggleButtonGroup
-                                color="primary"
-                                exclusive
-                                aria-label="mode of transport"
-                                onChange={(evt, newVal) => {onModeSelected(newVal);}}
-                                value={selectedMode}
-                            >
-                                <ToggleButton value={0} aria-label="car trips"><IconCar height="1.6em" color="black" /></ToggleButton>
-                                <ToggleButton value={2} aria-label="public transport trips"><IconBus height="2em" color="black" /></ToggleButton>
-                                <ToggleButton value={3} aria-label="bicycle trips"><IconBicycle height="1.5em" color="black" /></ToggleButton>
-                                <ToggleButton value={1} aria-label="walks"><IconPedestrian height="2em" color="black" /></ToggleButton>
-                            </ToggleButtonGroup>
-                        </FormGroup>
-                    </Paper>
-                </Grid>
-                <Grid item>
-                    <Paper>
-                        <h3>Corridor {currentZone ? currentZone.corridor : ''}{currentZone && currentZone.country != 'Luxembourg' ? ` (${currentZone.country})` : ''}</h3>
-                        <FormGroup>
-                            <ToggleButtonGroup color="primary" exclusive aria-label="visualization type"
-                                onChange={(evt, newVal) => {setKind(newVal);}}
-                                value={kind}
-                            >
-                                <ToggleButton value={'pie'} aria-label="pie chart">pie</ToggleButton>
-                                <ToggleButton value={'bar'} aria-label="stacked bar plot">bars</ToggleButton>
-                                <ToggleButton value={'sankey'} aria-label="sankey">sankey</ToggleButton>
-                            </ToggleButtonGroup>
-                        </FormGroup>
-                        {(kind == 'pie' || kind == 'bar') && <ModeSplitGraph data={modeSplit} kind={kind} />}
-                        {(kind == 'sankey') && <Sankey data={flowData[selectedScenario][selectedZone]} zone={selectedZone} zones={zones} />}
-                    </Paper>    
-                </Grid>
-            </Grid>
-            <Grid item xs={12} md={8}>
-                <CorridorMap
-                    zones={zones}
-                    flows={flows}
-                    selectedZone={selectedZone}
-                    onZoneSelected={(z) => onZoneSelected(z)} />
-            </Grid>
-        </Grid>
-    )
-
-}
