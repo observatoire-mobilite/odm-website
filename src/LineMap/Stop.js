@@ -13,7 +13,7 @@ export default function Stop({stop}) {
     const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
 
     const textStyle = {
-        fontSize: stop.r ? stop.r * .8 : 5,
+        fontSize: (stop.r > 13 && stop.label != 'Senningerberg' && stop.label != 'Leudelange') ? 15 : 5,
         paintOrder: 'stroke',
         stroke: 'white',
         strokeWidth: stop.r ? stop.r / 20: 1,
