@@ -1,32 +1,31 @@
-import {useState} from 'react';
-import BusMapDialog from './BusMapDialog.js';
-import LineMap from './LineMap'
-import { ErrorBoundary } from "react-error-boundary";
+import {Suspense, lazy, Fragment} from 'react';
+import CircularProgress from '@mui/material/CircularProgress'
+import Container from '@mui/material/Container'
+import Typography from '@mui/material/Typography'
 
-import Snackbar from '@mui/material/Snackbar'
-import Alert from '@mui/material/Alert'
+const LineMap = lazy(() => import('./LineMap'))
+const BusMapDialog = lazy(() => import('./BusMapDialog'))
 
 
-function ErrorNotice({error, resetErrorBoundary}) {
-    const [open, setOpen] = useState(true)
-    const handleClose = (evt) => { setOpen(false); }
-    return (<Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
-        <Alert severity="error" sx={{ width: '100%' }} onClose={handleClose}>
-            {error.message}
-        </Alert>
-    </Snackbar>)
+
+const fallback = () => {
+    return (<Fragment>
+        <CircularProgress style={{position: 'relative', top: '50%', left: 'calc(50% - 1em)'}} />
+        <Typography style={{position: 'relative', top: '50%', textAlign: "center"}} >Loading map...</Typography>
+    </Fragment>
+    )
 }
 
 
 export default function BusMap() {
 
     return (
-        <LineMap mapdata="data/publictransport/busmap.json">
-            <ErrorBoundary FallbackComponent={ErrorNotice} onReset={(details) => {
-                console.log(details)
-            }}>
-                <BusMapDialog />
-            </ErrorBoundary>
-        </LineMap>    
+        <Container style={{position: 'relative', width: '100%', height: 'calc(100vh - 150px)'}}>
+            <Suspense fallback={fallback()}>
+                <LineMap mapdata="data/publictransport/busmap.json">
+                    <BusMapDialog />
+                </LineMap>
+            </Suspense>    
+        </Container>
     )
 }

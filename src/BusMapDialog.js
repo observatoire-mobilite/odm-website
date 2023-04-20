@@ -1,5 +1,4 @@
-import {useContext, forwardRef, useCallback, useMemo, useState, useEffect, Fragment} from 'react';
-import {MapContext} from './LineMap/MapState.js';
+import {forwardRef, useCallback, useMemo, useState, useEffect, Fragment} from 'react';
 import YearToggle from './YearToggle';
 
 import Button from '@mui/material/Button';
@@ -43,7 +42,8 @@ import AlertTitle from '@mui/material/AlertTitle'
 
 import FAQList from './FAQ/List'
 import FAQEntry from './FAQ/Entry'
-
+import { useLineMapStore } from './LineMap/store/index.js';
+import { shallow } from 'zustand/shallow';
 
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -65,27 +65,13 @@ const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
 export default function BusMapDialog() {
     console.count('busmapdialog')
-    const {currentStop, setCurrentStop} = useContext(MapContext)
-    const handleClose = useCallback(() => {setCurrentStop(null)})
-
-    const [busStatsLoaded, setBusStatsLoaded] = useState(false);
-    const [busStats, setBusStats] = useState();
-
+    const [currentStop, setCurrentStop, fetchStats] = useLineMapStore((state) => [state.currentStop, state.setCurrentStop, state.fetchStopStats], shallow)
     const {showBoundary} = useErrorBoundary()
-
     useEffect(() => {
-        setBusStatsLoaded(false);
-        fetch('data/publictransport/busstats.json')
-        .then((r) => r.json())
-        .then((dta) => {
-            setBusStats(dta);
-            setBusStatsLoaded(true);
-        }).catch((e) => {
-            showBoundary(new Error('Failed to retrieve data from server'))
-        });
+        fetchStats('data/publictransport/busstats.json')
+        .catch((e) => {showBoundary(new Error('Failed to retrieve data from server'))});
     }, [])
-
-    if (! busStatsLoaded) return
+    const handleClose = useCallback(() => {setCurrentStop(null)})
     
     return (
         <Dialog
@@ -110,26 +96,29 @@ export default function BusMapDialog() {
             </AppBar>
             <Offset />
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                {currentStop && (busStats['daily'][2023][currentStop.label] === undefined ? <NoBusData currentStop={currentStop} /> : <BusData currentStop={currentStop} busStats={busStats} />)}
+                <ErrorBoundary FallbackComponent={NoBusData}>
+                    <BusData />
+                </ErrorBoundary>
             </Container>
         </Dialog>
     );
 }
 
-
-function BusData({currentStop, busStats}) {
+ 
+function BusData({}) {
     // internal state
-    const [currentYear, setCurrentYear] = useState(2023)
-    const data = busStats['daily'][currentYear][currentStop.label]
-    const daily = data['corrected_boardings'].map((v, i) => v + data['corrected_disembarkments'][i])
-    const nonzero = (d) => d.reduce((kv, v) => ((v ?? 0) > 0 ? 1 : 0) + kv, 0)
-    const sum = (d) => d.reduce((kv, v) => (v ?? 0) + kv, 0)
-    const annual_total = sum(daily)
-    const counting_ratio = sum(data['share_counted_stops']) / nonzero(data['share_counted_stops'])
+    const [currentYear, setCurrentYear, currentStop, busStats] = useLineMapStore((state) => [state.currentYear, state.setCurrentYear, state.currentStop, state.stopStats], shallow)
     
     // local data processing
     const displayData = useMemo(() => {
-        if (! currentStop) return
+        if (currentStop === null || busStats === null) return
+        const data = busStats['daily'][currentYear][currentStop.label]
+        const daily = data['corrected_boardings'].map((v, i) => (v ?? 0) + (data['corrected_disembarkments'][i] ?? 0))
+        const nonzero = (d) => d.reduce((kv, v) => ((v ?? 0) > 0 ? 1 : 0) + kv, 0)
+        const sum = (d) => d.reduce((kv, v) => (v ?? 0) + kv, 0)
+        const annual_total = sum(daily)
+        const counting_ratio = sum(data['share_counted_stops']) / nonzero(data['share_counted_stops'])
+
         return {
             daily,
             daily_average: annual_total / nonzero(daily),
@@ -137,8 +126,7 @@ function BusData({currentStop, busStats}) {
             total_stops: sum(data['total_stops']),
             counting_ratio
         }
-    }, [currentStop, currentYear])
-
+    }, [currentStop, currentYear, busStats])
 
     return (<Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
         <Grid item xs={4}>
@@ -177,7 +165,9 @@ function BusData({currentStop, busStats}) {
 }
 
 
-function NoBusData({currentStop}) {
+function NoBusData({}) {
+    const [currentStop] = useLineMapStore((state) => [state.currentStop], shallow)
+  
     return (<Fragment>
         <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 4 }}>
             <AlertTitle>No data available</AlertTitle>

@@ -2,7 +2,6 @@ import { useState, forwardRef, useEffect, useRef, useCallback, useMemo, memo, Su
 import LineMap from './LineMap'
 import { useTheme } from '@mui/material/styles';
 
-import {MapContext} from './LineMap/MapState.js';
 import YearToggle from './YearToggle';
 
 import Button from '@mui/material/Button';
@@ -39,8 +38,11 @@ import { AggregateStatistics, FancyNumber } from './PageTram.js'
 import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
 import BarChart from './BarChart'
+import IconTrain from './ODMIcons/IconTrain';
 
 import { DateTime } from "luxon";
+import { useErrorBoundary } from 'react-error-boundary';
+import { useLineMapStore } from './LineMap/store'
 
 
 
@@ -61,24 +63,13 @@ const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 
 
 export function MapDialog() {
     console.count('trainmapdialog')
-    const {currentStop, setCurrentStop} = useContext(MapContext)
+    const {showBoundary} = useErrorBoundary()
+    const [currentStop, setCurrentStop, currentYear, setCurrentYear, fetchStats, stats] = useLineMapStore((state) => [state.currentStop, state.setCurrentStop, state.currentYear, state.setCurrentYear, state.fetchStopStats, state.stopStats])
     const handleClose = useCallback(() => {setCurrentStop(null); })
 
-    const [statsLoaded, setStatsLoaded] = useState(false);
-    const [stats, setStats] = useState({});
-
-    const [currentYear, setCurrentYear] = useState(2023)
-
     useEffect(() => {
-        setStatsLoaded(false);
-        fetch('data/publictransport/trainstats.json')
-        .then((r) => r.json())
-        .then((dta) => {
-            setStats(dta);
-            setStatsLoaded(true);
-        }).catch((e) => {
-            console.log(e.message)
-        });
+        fetchStats('data/publictransport/trainstats.json')
+        .catch((e) => showBoundary(e) );
     }, [])
 
     const displayData = useMemo(() => {
@@ -106,7 +97,7 @@ export function MapDialog() {
         }
     }, [currentStop])
     
-    if (! statsLoaded) return
+    if (stats === null) return
     
     return (
         <Dialog
@@ -125,28 +116,23 @@ export function MapDialog() {
                     >
                         <CloseIcon />
                     </IconButton>
-                    <h1>{currentStop?.label}</h1>
+                    <h1>{currentStop?.label} <IconTrain height="1em" aria-label="train stop" /></h1>
+                    
+                    
                 </Toolbar>
             </AppBar>
             <Offset />
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <SingleStat 
-                            title="Trips per day"
+                            title="Trips per weekday"
                             caption={`boardings and deboardings on average per day in ${currentYear}`}
                             value={displayData?.dailyAvg}
                         />
                     </Grid>
-                    <Grid item xs={4}>
-                        <SingleStat 
-                            title="Trips per month"
-                            caption={`boardings and deboardings per month in ${currentYear}`}
-                            value={displayData?.monthlyAvg}
-                        />
-                    </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <SingleStat 
                             title={`Total in ${currentYear}`}
                             caption={`boardings and deboardings in ${currentYear}`}
@@ -174,24 +160,16 @@ export function MapDialog() {
 
 export function LineDialog() {
     console.count('linedialog')
-    const {currentLine, setCurrentLine} = useContext(MapContext)
-    const handleClose = useCallback(() => {setCurrentLine(null);})
+    const {showBoundary} = useErrorBoundary()
+    const [currentLine, setCurrentLine, currentYear, setCurrentYear, fetchStats, stats] = useLineMapStore((state) => [state.currentLine, state.setCurrentLine, state.currentYear, state.setCurrentYear, state.fetchLineStats, state.lineStats])
+    const handleClose = useCallback(() => {setCurrentLine(null); })
 
-    const [statsLoaded, setStatsLoaded] = useState(false);
-    const [stats, setStats] = useState({});
-
-    const [currentYear, setCurrentYear] = useState(2023)
     useEffect(() => {
-        fetch('data/publictransport/trainstats-line.json')
-        .then((r) => r.json())
-        .then((dta) => {
-            setStatsLoaded(true)
-            setStats(dta);
-        }).catch((e) => {
-            console.log(e.message)
-        });
+        fetchStats('data/publictransport/trainstats-line.json')
+        .catch((e) => showBoundary(e) );
     }, [])
 
+    
     const displayData = useMemo(() => {
         const empty = {monthly: []}
         if (currentLine?.line === undefined) return empty
@@ -217,7 +195,7 @@ export function LineDialog() {
     }, [currentLine])
     
     console.log(currentLine)
-    if (! statsLoaded) return
+    if (stats === null) return
     
     return (
         <Dialog
@@ -226,7 +204,7 @@ export function LineDialog() {
             onClose={handleClose}
             TransitionComponent={Transition}
         >
-            <AppBar position="fixed">
+            <AppBar position="fixed" color="secondary">
                 <Toolbar>
                     <IconButton
                         edge="start"
@@ -243,21 +221,14 @@ export function LineDialog() {
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <SingleStat 
-                            title="Trips per day"
-                            caption={`boardings and deboardings on average per day in ${currentYear}`}
+                            title="Passengers per weekday"
+                            caption={`boardings and deboardings divided by two on average per day in ${currentYear}`}
                             value={displayData?.dailyAvg}
                         />
                     </Grid>
-                    <Grid item xs={4}>
-                        <SingleStat 
-                            title="Trips per month"
-                            caption={`boardings and deboardings per month in ${currentYear}`}
-                            value={displayData?.monthlyAvg}
-                        />
-                    </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <SingleStat 
                             title={`Total in ${currentYear}`}
                             caption={`boardings and deboardings in ${currentYear}`}
