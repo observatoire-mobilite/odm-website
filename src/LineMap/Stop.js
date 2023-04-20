@@ -13,7 +13,7 @@ export default function Stop({stop}) {
     const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
 
     const textStyle = {
-        fontSize: stop.r ? stop.r * .8 : 5,
+        fontSize: (stop.r > 13 && stop.label != 'Senningerberg' && stop.label != 'Leudelange') ? 15 : 5,
         paintOrder: 'stroke',
         stroke: 'white',
         strokeWidth: stop.r ? stop.r / 20: 1,
@@ -37,7 +37,7 @@ export default function Stop({stop}) {
         cursor: 'pointer'
     }
 
-    const text = <text x={stop.lx} y={stop.ly} style={textStyle}>{stop.label}</text>
+    const text = <text x={stop.lx ?? (stop.cx  + stop.r * 0.7071 * 1.3)} y={stop.ly ?? (stop.cy - stop.r * 0.7071 * 1.3)} style={textStyle}>{stop.label}</text>
 
     if (stop.path) {
         return(<g id={`stop-${stop.id}`}>

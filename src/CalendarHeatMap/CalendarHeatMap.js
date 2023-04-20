@@ -141,7 +141,7 @@ function HeatMapCircles({
 function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0}) {
   const circleDiameter = 2 * maxRadius
   const displayData = useMemo(() => {
-    
+    if (values === undefined) return
     const janfirst = DateTime.local(year, 1, 1)
     let max = 0
     return Object.entries([...Array(janfirst.daysInYear).keys()].reduce((kv, i) => {
@@ -167,6 +167,8 @@ function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0}) {
     })
 
   }, [year, values])
+
+  if (! displayData) return
 
   return (<g id="heatmap-week">{displayData.map((week, i) => {
     return (

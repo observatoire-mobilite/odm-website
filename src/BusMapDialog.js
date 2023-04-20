@@ -1,4 +1,4 @@
-import {useContext, forwardRef, useCallback, useMemo, useState, useEffect} from 'react';
+import {useContext, forwardRef, useCallback, useMemo, useState, useEffect, Fragment} from 'react';
 import {MapContext} from './LineMap/MapState.js';
 import YearToggle from './YearToggle';
 
@@ -36,6 +36,16 @@ import { AggregateStatistics, FancyNumber } from './PageTram.js'
 import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
 
+import { ErrorBoundary, useErrorBoundary } from "react-error-boundary";
+
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
+
+import FAQList from './FAQ/List'
+import FAQEntry from './FAQ/Entry'
+
+
+
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="left" ref={ref} {...props} />;
 });
@@ -61,7 +71,7 @@ export default function BusMapDialog() {
     const [busStatsLoaded, setBusStatsLoaded] = useState(false);
     const [busStats, setBusStats] = useState();
 
-    const [currentYear, setCurrentYear] = useState(2023)
+    const {showBoundary} = useErrorBoundary()
 
     useEffect(() => {
         setBusStatsLoaded(false);
@@ -71,38 +81,19 @@ export default function BusMapDialog() {
             setBusStats(dta);
             setBusStatsLoaded(true);
         }).catch((e) => {
-            console.log(e.message)
+            showBoundary(new Error('Failed to retrieve data from server'))
         });
     }, [])
-
-    const displayData = useMemo(() => {
-        if (currentStop?.label) {
-            if (busStats['daily'][currentYear][currentStop.label] === undefined) return
-            if (busStats['hourly'][currentYear][currentStop.label] === undefined) return
-            if (busStats['hourly'][currentYear][currentStop.label][0] === undefined) return
-            if (busStats['hourly'][currentYear][currentStop.label][1] === undefined) return
-            return {
-                hourly: Array.from({length: 24}, (_, h) => ({
-                    hour: h,
-                    count_weekend: busStats['hourly'][currentYear][currentStop.label][1]['corrected_boardings'][h] ?? 0,
-                    count_weekday: busStats['hourly'][currentYear][currentStop.label][0]['corrected_boardings'][h] ?? 0
-                })),
-                daily: busStats['daily'][currentYear][currentStop.label]['corrected_boardings']
-            }
-        } else {
-            return
-        }
-    }, [currentStop, currentYear])
-    console.log(displayData)
 
     if (! busStatsLoaded) return
     
     return (
         <Dialog
             fullScreen
-            open={currentStop}
+            open={currentStop !== null}
             onClose={handleClose}
             TransitionComponent={Transition}
+            keepMounted
         >
             <AppBar position="fixed">
                 <Toolbar>
@@ -118,51 +109,116 @@ export default function BusMapDialog() {
                 </Toolbar>
             </AppBar>
             <Offset />
-            {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={4}>
-                        <SingleStat 
-                            title="Passengers on a weekend"
-                            caption="boardings averaged over time"    
-                            value={displayData?.hourly.reduce((kv, v) => kv + v.count_weekend ?? 0, 0)}
-                        />
-                    </Grid>
-                    <Grid item xs={4}>
-                        <SingleStat 
-                            title="Passengers on a weekday"
-                            caption="boardings averaged over time"    
-                            value={displayData?.hourly.reduce((kv, v) => kv + v.count_weekday ?? 0, 0)}
-                        />
-                    </Grid>
-                    <Grid item xs={4}>
-                        <SingleStat 
-                            title="Passengers per month"
-                            caption="boardings averaged over time"    
-                            value={displayData?.daily.reduce((kv, v) => kv + v ?? 0, 0)}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <ComplexStat
-                            title="Passengers per day"
-                        >
-                            <Box sx={{p: 2}}>
-                                <YearToggle />
-                                <CalendarHeatMap year={2023} getValues={(x) => x} data={displayData?.daily} />
-                            </Box>
-                        </ComplexStat>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <ComplexStat
-                            title="Passengers per hour"
-                        >
-                            <HourlyTraffic countsByHour={displayData?.hourly} />
-                        </ComplexStat>
-                    </Grid>
-                </Grid>
-            </Container>:<h1>No data</h1>}
+                {currentStop && (busStats['daily'][2023][currentStop.label] === undefined ? <NoBusData currentStop={currentStop} /> : <BusData currentStop={currentStop} busStats={busStats} />)}
+            </Container>
         </Dialog>
     );
 }
 
 
+function BusData({currentStop, busStats}) {
+    // internal state
+    const [currentYear, setCurrentYear] = useState(2023)
+    const data = busStats['daily'][currentYear][currentStop.label]
+    const daily = data['corrected_boardings'].map((v, i) => v + data['corrected_disembarkments'][i])
+    const nonzero = (d) => d.reduce((kv, v) => ((v ?? 0) > 0 ? 1 : 0) + kv, 0)
+    const sum = (d) => d.reduce((kv, v) => (v ?? 0) + kv, 0)
+    const annual_total = sum(daily)
+    const counting_ratio = sum(data['share_counted_stops']) / nonzero(data['share_counted_stops'])
+    
+    // local data processing
+    const displayData = useMemo(() => {
+        if (! currentStop) return
+        return {
+            daily,
+            daily_average: annual_total / nonzero(daily),
+            annual_total,
+            total_stops: sum(data['total_stops']),
+            counting_ratio
+        }
+    }, [currentStop, currentYear])
+
+
+    return (<Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
+        <Grid item xs={4}>
+            <SingleStat 
+                title="Daily average movements"
+                caption="boardings and deboardings averaged over time"    
+                value={displayData?.daily_average}
+            />
+        </Grid>
+        <Grid item xs={4}>
+            <SingleStat 
+                title="Annual total"
+                caption={`total boardings and deboardings in ${currentYear}`}
+                value={displayData?.annual_total}
+            />
+        </Grid>
+        <Grid item xs={4}>
+            <SingleStat 
+                title="Counting ratio"
+                caption="Times a vehicle stopped"    
+                value={displayData?.counting_ratio}
+                unit={`%`}
+            />
+        </Grid>
+        <Grid item xs={12}>
+            <ComplexStat
+                title="Passengers per day"
+            >
+                <Box sx={{p: 2}}>
+                    <YearToggle currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
+                    <CalendarHeatMap year={2023} data={displayData?.daily} />
+                </Box>
+            </ComplexStat>
+        </Grid>
+    </Grid>)
+}
+
+
+function NoBusData({currentStop}) {
+    return (<Fragment>
+        <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 4 }}>
+            <AlertTitle>No data available</AlertTitle>
+            There is nothing to display, because are strictly no data listed under the label "{currentStop?.label}".
+        </Alert>
+        <Container maxWidth="md">
+            <Paper>
+                <FAQList>
+                    <FAQEntry title="What is going on?" name="panel-1">
+                        <Typography>If you see this dialog, it means that ODM has strictly no data on file for the chosen location or line. This is not a case of incomplete or partial data, but the complete absence of any observations over the entire timespan otherwise covered by ODM.</Typography>
+                    </FAQEntry>
+                    <FAQEntry title="How is this possible?" name="panel-2">
+                        <Typography>Obviously, data have been lost. So far, we know of three reasons:
+                            <ol>
+                                <li>data get lost on their way from the vehicles to ODM due to technical problems or process errors.</li>
+                                <li>there never were any data, due to operational reasons. For example, some lines are serviced exclusively by vehicles lacking passenger counting equipment.</li>
+                                <li>there is an issue with the way ODM processed the data. For this particular dataset, we found the main source of errors to be the allocation of stop events to lines and locations. While that should be a simple task, it is not due to the lack of truly coherent data governance practices. Harmonizing those is a core task of the ODM programme.</li>
+                            </ol>
+                        </Typography>
+                    </FAQEntry>
+                    <FAQEntry title="So now what?" name="panel-3">
+                        <Typography>
+                            We aim for maximum data quality.
+                            At this stage, we cannot exclude ODM itself from the list of possible error sources (see preceeding question).
+                            Therefore, we encourage you to <a href="mailto:observatoire@mob.etat.lu">let us know</a> if you stumbled onto this dialog.
+                        </Typography>
+                        <Typography>
+                            In the current version, data gaps are known for:
+                            <ul>
+                                <li>all stops in Germany between Vianden and Bittburg</li>
+                                <li>Kahren in Germany</li>
+                                <li>Micheville in France</li>
+                                <li>Neubrück in Belgium</li>
+                                <li>Kalborn</li>
+                            </ul>
+                        </Typography>
+                    </FAQEntry>
+                </FAQList>
+            </Paper>
+        </Container>
+
+    </Fragment>)
+
+}
