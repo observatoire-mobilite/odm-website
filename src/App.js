@@ -11,7 +11,7 @@ import BusMap from './BusMap.js';
 import PageChargy from  './PageChargy.js';
 import Layout from './Layout.js';
 import PageTrain from './PageTrain.js';
-import PageFleet from './PageFleet.js';
+import Fleet from './PageFleet.js';
 
 export default function App() {
   return (

@@ -50,10 +50,9 @@ export function MainMenu() {
       <NavItem to="/cycling" title="Cycling and walking" icon={<IconBicycle height="50%" />} />
       <NavItem to="/busmap" title="Bus Map" icon={<IconBus height="66%" />} />
       <NavItem to="/tram" title="Tramway" icon={<IconTramway height="80%" />} />
-      <NavItem to="/charging" title="EV Chargers" icon={<EvStationIcon />} />
       <NavItem to="/railway" title="Railways" icon={<IconTrain height="80%" />} />
-      <NavItem to="/charging" title="EV Chargers" icon={<EvStationIcon />} />
       <NavItem to="/fleet" title="Vehilce Fleet" icon={<CarRentalIcon />} />
+      <NavItem to="/charging" title="EV Chargers" icon={<EvStationIcon />} />
       <Divider sx={{ my: 1 }} />
     </List>
   )
