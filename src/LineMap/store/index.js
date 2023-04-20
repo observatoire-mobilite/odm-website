@@ -3,6 +3,14 @@ import { create } from 'zustand'
 export const useLineMapStore = create((set) => ({
     viewBox: {x: 0, y: 0, width: 100, height: 100},
     setViewBox: (viewBox) => set({ viewBox }),
+    zoomTo: ({x, y, z}) => set(({ viewBox }) => {
+      return { viewBox: {
+            x: x - viewBox.width,
+            y: y - viewBox.height / 2,
+            width: viewBox.width, 
+            height: viewBox.height
+        }}
+    }),
     currentStop: null,
     setCurrentStop: (currentStop) => set({ currentStop }),
     currentLine: null,
