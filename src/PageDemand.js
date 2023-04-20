@@ -1,4 +1,4 @@
-import {useMemo, useState, useEffect, useCallback, Fragment } from 'react';
+import {useMemo, useState, useEffect, useCallback, Fragment, lazy, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
 import FormGroup from '@mui/material/FormGroup';
@@ -18,12 +18,13 @@ import {SVGTramway} from './ODMIcons/IconTramway.js';
 import { useTheme } from '@mui/material/styles';
 import BarChart from './BarChart'
 import {useErrorBoundary, ErrorBoundary} from 'react-error-boundary'
-import ZonalFlowMap from './ZonalFlowMap'
+//import ZonalFlowMap from './ZonalFlowMap'
 import {useZonalFlowMapStore} from './ZonalFlowMap/store'
 import Barchart from './BarChart';
-import Skeleton from '@mui/material/Skeleton'
+import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery';
 import FancyNumber from './DataGrids/FancyNumber'
+const ZonalFlowMap = lazy(() => import('./ZonalFlowMap'))
 
 
 
@@ -93,12 +94,21 @@ export default function PageDemand() {
 
             </Grid>
             <Grid item xs={12} sm={6} md={8} maxHeight="95vh">
-                <ErrorBoundary fallback={<div>failure</div>}>
+                <Suspense fallback={fallback}>
                     <ZonalFlowMap height="auto" width="100%" />
-                </ErrorBoundary>
+                </Suspense>
             </Grid>
         </Grid>
     </Container>
     )
 
+}
+
+
+const fallback = () => {
+    return (<Fragment>
+        <CircularProgress style={{position: 'relative', top: '50%', left: 'calc(50% - 1em)'}} />
+        <Typography style={{position: 'relative', top: '50%', textAlign: "center"}} >Loading map...</Typography>
+    </Fragment>
+    )
 }
