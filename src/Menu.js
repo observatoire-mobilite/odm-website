@@ -20,7 +20,6 @@ import IconBus from './ODMIcons/IconBus.js';
 import IconTramway from './ODMIcons/IconTramway.js';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import IconTrain from './ODMIcons/IconTrain.js';
-import EvStationIcon from '@mui/icons-material/EvStation';
 
 import { NavLink, useLocation } from "react-router-dom";
 
