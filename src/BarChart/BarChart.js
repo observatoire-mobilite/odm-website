@@ -44,7 +44,7 @@ export default function BarChart({data, labels=[], icons=[], svgWidth=1618, svgH
         const minValue = ymin === null ? Math.min(...data) : ymin
         return data.map((v) => ({value: v, scaledValue: v === null ? null : ((v ?? 0) - minValue) / (maxValue - minValue)}))
     }, [data])
-
+    const ref = useRef(null)
     const theme = useTheme() 
     const n = data.length
     const dx = svgWidth / n

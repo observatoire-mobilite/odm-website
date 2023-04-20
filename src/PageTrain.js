@@ -59,7 +59,7 @@ const Transition = forwardRef(function Transition(props, ref) {
 // adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
-const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
 
 export function MapDialog() {
     console.count('trainmapdialog')
@@ -112,37 +112,33 @@ export function MapDialog() {
                         edge="start"
                         color="inherit"
                         onClick={handleClose}
-                        aria-label="close"
+                        aria-label="fermer ce dialogue pour retourner vers la carte du réseau"
                     >
                         <CloseIcon />
                     </IconButton>
-                    <h1>{currentStop?.label} <IconTrain height="1em" aria-label="train stop" /></h1>
-                    
-                    
+                    <h1>{currentStop?.label}</h1>
                 </Toolbar>
             </AppBar>
             <Offset />
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={6}>
                         <SingleStat 
-                            title="Trips per weekday"
-                            caption={`boardings and deboardings on average per day in ${currentYear}`}
+                            title="Moyenne journalière (lu-ve)"
+                            caption={`montées + descentes par mois en ${currentYear}`}
                             value={displayData?.dailyAvg}
                         />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={6}>
                         <SingleStat 
-                            title={`Total in ${currentYear}`}
-                            caption={`boardings and deboardings in ${currentYear}`}
+                            title={`Total annuel`}
+                            caption={`montées + descentes par mois en ${currentYear}`}
                             value={displayData?.total}
                         />
                     </Grid>
                     <Grid item xs={12}>
-                        <ComplexStat
-                            title="Passengers per month"
-                        >
+                        <ComplexStat title={`Montées + descentes par mois en ${currentYear}`}>
                             <Box sx={{p: 2}}>
                                 <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
                             </Box>
@@ -152,7 +148,7 @@ export function MapDialog() {
                         </ComplexStat>
                     </Grid>
                 </Grid>
-            </Container>:<h1>No data</h1>}
+            </Container>:<h1>Pas de données</h1>}
         </Dialog>
     );
 }
@@ -176,9 +172,8 @@ export function LineDialog() {
         try {
             const monthly = stats[currentLine?.line][currentYear]['monthly']
             const daily = stats[currentLine?.line][currentYear]['daily']
-            const n_months = monthly.reduce((kv, v) => kv + (v === null ? 0 : 1), 0)
             const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
-            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: daily, monthlyAvg: null, total}
+            return {monthly, labels: MONTHS, dailyAvg: daily, monthlyAvg: null, total}
         } catch (error) {
             return empty
         }
@@ -210,7 +205,7 @@ export function LineDialog() {
                         edge="start"
                         color="inherit"
                         onClick={handleClose}
-                        aria-label="close"
+                        aria-label="fermer ce dialogue et retourner vers la carte du réseau"
                     >
                         <CloseIcon />
                     </IconButton>
@@ -221,23 +216,23 @@ export function LineDialog() {
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={6}>
+                    <Grid item sm={6} xs={12}>
                         <SingleStat 
-                            title="Passengers per weekday"
-                            caption={`boardings and deboardings divided by two on average per day in ${currentYear}`}
+                            title="Moyenne journalière (lu.-ve.)"
+                            caption={`voyageurs (=(montées + descentes) / 2) par mois en ${currentYear}`}
                             value={displayData?.dailyAvg}
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item sm={6} xs={12}>
                         <SingleStat 
-                            title={`Total in ${currentYear}`}
-                            caption={`boardings and deboardings in ${currentYear}`}
+                            title={`Total annuel`}
+                            caption={`voyageurs (=(montées + descentes) / 2) par mois en ${currentYear}`}
                             value={displayData?.total}
                         />
                     </Grid>
                     <Grid item xs={12}>
                         <ComplexStat
-                            title="Passengers per month"
+                            title={`Voyageurs par mois en ${currentYear}`}
                         >
                             <Box sx={{p: 2}}>
                                 <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
@@ -248,7 +243,7 @@ export function LineDialog() {
                         </ComplexStat>
                     </Grid>
                 </Grid>
-            </Container>:<h1>No data</h1>}
+            </Container>:<h1>Pas de données</h1>}
         </Dialog>
     );
 }
