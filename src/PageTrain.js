@@ -125,14 +125,14 @@ export function MapDialog() {
             {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={4}>
                         <SingleStat 
                             title="Trips per weekday"
                             caption={`boardings and deboardings on average per day in ${currentYear}`}
                             value={displayData?.dailyAvg}
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={4}>
                         <SingleStat 
                             title={`Total in ${currentYear}`}
                             caption={`boardings and deboardings in ${currentYear}`}
