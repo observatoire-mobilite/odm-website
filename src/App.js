@@ -6,8 +6,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import PageDemand from './PageDemand.js'
 import PageTram from './PageTram.js'
 import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
-import PublicTransportStops from './PublicTransport.js';
-import {BusMap} from './BusMap.js';
+import BusMap from './BusMap.js';
 import Layout from './Layout.js';
 import PageTrain from './PageTrain.js';
 

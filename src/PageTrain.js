@@ -45,7 +45,7 @@ import { DateTime } from "luxon";
 
 
 export default function PageTrain() {
-    return (<LineMap><MapDialog /></LineMap>)
+    return (<LineMap><MapDialog /><LineDialog /></LineMap>)
 }
 
 
@@ -62,7 +62,7 @@ const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 
 export function MapDialog() {
     console.count('trainmapdialog')
     const {currentStop, setCurrentStop} = useContext(MapContext)
-    const handleClose = useCallback(() => {setCurrentStop(null)})
+    const handleClose = useCallback(() => {setCurrentStop(null); })
 
     const [statsLoaded, setStatsLoaded] = useState(false);
     const [stats, setStats] = useState({});
@@ -86,14 +86,11 @@ export function MapDialog() {
         console.log(stats)
         if (currentStop?.label === undefined) return empty
         try {
-            const monthly = stats[currentStop.label][currentYear]['week_avg']
+            const monthly = stats[currentStop.label][currentYear]['monthly']
+            const daily = stats[currentStop.label][currentYear]['daily']
             const n_months = monthly.reduce((kv, v) => kv + (v === null ? 0 : 1), 0)
-            const n_days = monthly.reduce((kv, v, i) => {
-                const first = DateTime.local(currentYear, i+1)
-                return kv + (v === null ? 0 : first.daysInMonth)
-            }, 0)
             const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
-            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: total / n_days, monthlyAvg: total / n_months, total}
+            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: daily, monthlyAvg: null, total}
         } catch (error) {
             return empty
         }
@@ -129,6 +126,117 @@ export function MapDialog() {
                         <CloseIcon />
                     </IconButton>
                     <h1>{currentStop?.label}</h1>
+                </Toolbar>
+            </AppBar>
+            <Offset />
+            {displayData ?
+            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+                <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
+                    <Grid item xs={4}>
+                        <SingleStat 
+                            title="Trips per day"
+                            caption={`boardings and deboardings on average per day in ${currentYear}`}
+                            value={displayData?.dailyAvg}
+                        />
+                    </Grid>
+                    <Grid item xs={4}>
+                        <SingleStat 
+                            title="Trips per month"
+                            caption={`boardings and deboardings per month in ${currentYear}`}
+                            value={displayData?.monthlyAvg}
+                        />
+                    </Grid>
+                    <Grid item xs={4}>
+                        <SingleStat 
+                            title={`Total in ${currentYear}`}
+                            caption={`boardings and deboardings in ${currentYear}`}
+                            value={displayData?.total}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <ComplexStat
+                            title="Passengers per month"
+                        >
+                            <Box sx={{p: 2}}>
+                                <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
+                            </Box>
+                            <Box sx={{p: 2}}>
+                                <BarChart data={displayData?.monthly} labels={MONTHS} ymax={allMax} />
+                            </Box>
+                        </ComplexStat>
+                    </Grid>
+                </Grid>
+            </Container>:<h1>No data</h1>}
+        </Dialog>
+    );
+}
+
+
+export function LineDialog() {
+    console.count('linedialog')
+    const {currentLine, setCurrentLine} = useContext(MapContext)
+    const handleClose = useCallback(() => {setCurrentLine(null);})
+
+    const [statsLoaded, setStatsLoaded] = useState(false);
+    const [stats, setStats] = useState({});
+
+    const [currentYear, setCurrentYear] = useState(2023)
+    useEffect(() => {
+        fetch('data/publictransport/trainstats-line.json')
+        .then((r) => r.json())
+        .then((dta) => {
+            setStatsLoaded(true)
+            setStats(dta);
+        }).catch((e) => {
+            console.log(e.message)
+        });
+    }, [])
+
+    const displayData = useMemo(() => {
+        const empty = {monthly: []}
+        if (currentLine?.line === undefined) return empty
+        try {
+            const monthly = stats[currentLine?.line][currentYear]['monthly']
+            const daily = stats[currentLine?.line][currentYear]['daily']
+            const n_months = monthly.reduce((kv, v) => kv + (v === null ? 0 : 1), 0)
+            const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
+            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: daily, monthlyAvg: null, total}
+        } catch (error) {
+            return empty
+        }
+    }, [currentLine, currentYear])
+
+    const allMax = useMemo(() => {
+        if (currentLine?.line === undefined) return null
+        try {
+            return Math.max(...Object.values(stats[currentLine.line]).map((v) => Math.max(...v['monthly'])))
+        } catch (error) {
+            console.log(error)
+            return null
+        }
+    }, [currentLine])
+    
+    console.log(currentLine)
+    if (! statsLoaded) return
+    
+    return (
+        <Dialog
+            fullScreen
+            open={currentLine !== null}
+            onClose={handleClose}
+            TransitionComponent={Transition}
+        >
+            <AppBar position="fixed">
+                <Toolbar>
+                    <IconButton
+                        edge="start"
+                        color="inherit"
+                        onClick={handleClose}
+                        aria-label="close"
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                    <h1>CFL ligne {currentLine?.line}</h1>
                 </Toolbar>
             </AppBar>
             <Offset />
