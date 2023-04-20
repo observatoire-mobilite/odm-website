@@ -9,6 +9,7 @@ import {Cycling, Trucks, Cars} from './PageRoadCounts.js';
 import BusMap from './BusMap.js';
 import Layout from './Layout.js';
 import PageTrain from './PageTrain.js';
+import PageFleet from './PageFleet.js';
 
 export default function App() {
   return (
@@ -22,7 +23,7 @@ export default function App() {
         <Route path="cartraffic" element={<Cars />} />
         <Route path="trucktraffic" element={<Trucks />} />
         <Route path="cycling" element={<Cycling />} />
-        <Route path="fleet" element={<Fleet />} />
+        <Route path="fleet" element={<PageFleet />} />
         <Route path="*" element={<NoMatch />} />
       </Route>
     </Routes>
@@ -44,16 +45,6 @@ function Home() {
 }
 
 
-function Fleet() {
-  return (
-    <div>
-      <h2>Flotte automobile du Luxembourg</h2>
-      <Typography variant="body1">
-        Véhicules immatriculés au Luxembourg
-      </Typography>
-    </div>
-  )
-}
 
 function NoMatch() {
   return (

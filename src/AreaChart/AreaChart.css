@@ -1,0 +1,65 @@
+
+.areachart {
+    stroke: white;
+    stroke-width: 3px;
+}
+
+.areachart[data-scaledvalue="null"] {
+    fill: #d3d3d3
+}
+
+.areachart[data-scaledvalue="0"] {
+    fill: #ffbb1c
+}
+
+.areachart[data-scaledvalue="1"] {
+    fill: #ccc01d
+}
+
+.areachart[data-scaledvalue="2"] {
+    fill: #9bbf36
+}
+
+.areachart[data-scaledvalue="3"] {
+    fill: #69bb52
+}
+
+.areachart[data-scaledvalue="4"] {
+    fill: #2db46d
+}
+
+.areachart[data-scaledvalue="5"] {
+    fill: #00aa84
+}
+
+.areachart[data-scaledvalue="6"] {
+    fill: #009f96
+}
+
+.areachart[data-scaledvalue="7"] {
+    fill: #0093a1
+}
+
+.areachart[data-scaledvalue="8"] {
+    fill: #0085a3
+}
+
+.areachart[data-scaledvalue="9"] {
+    fill: #05779c
+}
+
+/* value "10" is when indeed the maximum value is reached */
+.areachart[data-scaledvalue="10"] {
+    fill: #05779c
+}
+
+
+.valuePicker {
+    fill: none;
+    stroke: none;
+}
+
+.valuePicker:hover {
+    fill: #ffbb1c;
+    opacity: 0.6;
+}
