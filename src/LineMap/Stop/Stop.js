@@ -1,11 +1,12 @@
 import { useCallback, useContext } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { animated, useSpring } from '@react-spring/web'
-import {MapContext} from './MapState.js'
+import { useLineMapStore } from '../store';
+
 
 
 export default function Stop({stop}) {
-    const { setCurrentStop } = useContext(MapContext)
+    const [ setCurrentStop ] = useLineMapStore((state) => [state.setCurrentStop])
     const iAmChosen = useCallback(() => setCurrentStop(stop))
     const theme = useTheme()
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Fragment} from 'react';
 import { Outlet, useSearchParams } from "react-router-dom";
 import { styled, createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -19,8 +19,11 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import {MainMenu} from './Menu.js';
-import ErrorBoundary from './ErrorBoundary';
-
+import { ErrorBoundary } from "react-error-boundary";
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+import FAQList from './FAQ/List'
+import FAQEntry from './FAQ/Entry'
 
 function Copyright(props) {
   return (
@@ -188,7 +191,7 @@ export default function Layout() {
         >
           <Toolbar />
           <Container maxWidth="100vw">
-            <ErrorBoundary>
+            <ErrorBoundary fallbackComponent={ErrorNotice}>
               <Outlet />
             </ErrorBoundary>
             <Copyright sx={{ pt: 4 }} />
@@ -198,4 +201,24 @@ export default function Layout() {
       </Box>
     </ThemeProvider>
   );
+}
+
+
+function ErrorNotice({error}) {
+  return (<Fragment>
+    <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 4 }}>
+      <AlertTitle>Something went wrong</AlertTitle>
+        {error.message}
+    </Alert>
+    <Container maxWidth="md">
+      <Paper>
+          <FAQList>
+              <FAQEntry title="What just happened??" name="panel-1">
+                  <Typography>If you see this dialog, it means that the ODM dashboard you have been trying to use crashed</Typography>
+              </FAQEntry>
+          </FAQList>
+      </Paper>
+    </Container>
+  </Fragment>
+  )
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { animated, useSpring, to } from '@react-spring/web'
 import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
 
@@ -9,18 +9,32 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import LockIcon from '@mui/icons-material/Lock';
+import { styled } from '@mui/material/styles'
+import { useLineMapStore } from '../store';
+import { shallow } from 'zustand/shallow';
+
+const SVGBox = styled('svg')(({theme}) => ({
+    width: '100%',
+    height: 'calc(100vh - 150px)',
+    touchAction: 'none',
+    backgroundColor: theme.palette.background.default,
+    willChange: 'transform',
+    transformOrigin: 'center',
+    cursor: 'grab',
+    userSelect: 'none',
+}))
 
 
 // custom action hook
 const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
 
 
-export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5, backgroundColor='white'}) {
+export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5}) {
     /* A SVG tag with the ability of dynamimc pan and zoom in its viewbox */
     
     const mapRef = useRef()
-    const [viewBox, setViewBox] = useState({x: 0, y: 0, ...svgSize})
-
+    const [viewBox, setViewBox] = useLineMapStore((state) => [state.viewBox, state.setViewBox], shallow)
+    
     useEffect(() => {
         const handler = (e) => e.preventDefault()
         document.addEventListener('gesturestart', handler)
@@ -32,13 +46,15 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
             document.removeEventListener('gestureend', handler)
         }
     }, [])
-    
+
     // handler: zoom to a specific point on the map
-    const resetZoom = ({}) => {
+    const resetZoom = () => {
         const box = mapRef.current.getBoundingClientRect()
         const apparent_width = svgSize.height * box.width / box.height
         setViewBox({x: -(apparent_width / 2 - box.width / 2), y: 0, ...svgSize})
     }
+
+    useLayoutEffect(() => resetZoom(), [])
 
     const zoom = ({zl=1, origin: [ox, oy], relative=false}) => {
         // size of contaire (svg tag) in screen units
@@ -118,28 +134,17 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     )
     
     return (<Box style={{position: 'relative', height: '100%'}}>
-        <svg ref={mapRef} 
+        <SVGBox ref={mapRef} 
             preserveAspectRatio="xMinYMid meet"
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} 
-            style={{
-                width: '100%',
-                height: 'calc(100vh - 150px)',
-                touchAction: 'none',
-                backgroundColor,
-                willChange: 'transform',
-                transformOrigin: 'center',
-                cursor: 'grab',
-                userSelect: 'none',
-            }}
         >
             {children}
-        </svg>
+        </SVGBox>
 
         <Stack style={{right: '0', position: 'absolute', top: '0'}}>
             <IconButton onClick={(evt) => zoom({zl: 1.1, relative: true, origin: [0.5, 0.5]})} color="primary" title="zoom in on map"><ZoomInIcon /></IconButton>
             <IconButton onClick={(evt) => zoom({zl: 0.9, relative: true, origin: [0.5, 0.5]})} color="primary" title="zoom out of map"><ZoomOutIcon /></IconButton>
             <IconButton onClick={(evt) => resetZoom({})} color="primary" title="put entrie country into view"><CropFreeIcon /></IconButton>
-            <IconButton color="primary" title="lock map - can simplify scrolling down to other widgets" disabled><LockIcon /></IconButton>
         </Stack>
       </Box>
     )

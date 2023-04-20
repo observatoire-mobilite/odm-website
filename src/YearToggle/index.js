@@ -10,7 +10,7 @@ export default function YearToggle({from=2020, to=2023, currentYear=2023, onChan
     return (<ToggleButtonGroup exclusive value={currentYear} aria-label="year to explore" onChange={onChange}>
         {special && <ToggleButton value={special} aria-label={special}>{special}</ToggleButton>}
         {Array.from({length: to-from + 1}).map((_, i) => {
-            return (<ToggleButton value={from + i} aria-label={from + i}>{from + i}</ToggleButton>)
+            return (<ToggleButton key={`toggle-${i}`} value={from + i} aria-label={from + i}>{from + i}</ToggleButton>)
         })}
      </ToggleButtonGroup>
     )
