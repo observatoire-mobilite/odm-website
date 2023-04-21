@@ -40,6 +40,10 @@ import ComplexStat from './DataGrids/ComplexStat.js'
 import BarChart from './BarChart'
 import IconTrain from './ODMIcons/IconTrain';
 
+
+import DataDialog from './LineMap/DataDialog'
+import PassengerServiceGrid from './LineMap/PassengerServiceGrid'
+
 import { DateTime } from "luxon";
 import { useErrorBoundary } from 'react-error-boundary';
 import { useLineMapStore } from './LineMap/store'
@@ -47,205 +51,26 @@ import { useLineMapStore } from './LineMap/store'
 
 
 export default function PageTrain() {
-    return (<LineMap><MapDialog /><LineDialog /></LineMap>)
-}
-
-
-
-const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="left" ref={ref} {...props} />;
-});
-
-// adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
-const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
-
-const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
-
-export function MapDialog() {
-    console.count('trainmapdialog')
-    const {showBoundary} = useErrorBoundary()
-    const [currentStop, setCurrentStop, currentYear, setCurrentYear, fetchStats, stats] = useLineMapStore((state) => [state.currentStop, state.setCurrentStop, state.currentYear, state.setCurrentYear, state.fetchStopStats, state.stopStats])
-    const handleClose = useCallback(() => {setCurrentStop(null); })
-
-    useEffect(() => {
-        fetchStats('data/publictransport/trainstats.json')
-        .catch((e) => showBoundary(e) );
-    }, [])
-
-    const displayData = useMemo(() => {
-        const empty = {monthly: []}
-        console.log(stats)
-        if (currentStop?.label === undefined) return empty
-        try {
-            const monthly = stats[currentStop.label][currentYear]['monthly']
-            const daily = stats[currentStop.label][currentYear]['daily']
-            const n_months = monthly.reduce((kv, v) => kv + (v === null ? 0 : 1), 0)
-            const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
-            return {monthly, labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'] , dailyAvg: daily, monthlyAvg: null, total}
-        } catch (error) {
-            return empty
-        }
-    }, [currentStop, currentYear])
-
-    const allMax = useMemo(() => {
-        if (currentStop?.label === undefined) return null
-        try {
-            return Math.max(...Object.values(stats[currentStop.label]).map((v) => Math.max(...v['week_avg'])))
-        } catch (error) {
-            console.log(error)
-            return null
-        }
-    }, [currentStop])
-    
-    if (stats === null) return
-    
     return (
-        <Dialog
-            fullScreen
-            open={currentStop !== null}
-            onClose={handleClose}
-            TransitionComponent={Transition}
-        >
-            <AppBar position="fixed">
-                <Toolbar>
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        onClick={handleClose}
-                        aria-label="fermer ce dialogue pour retourner vers la carte du réseau"
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                    <h1>{currentStop?.label}</h1>
-                </Toolbar>
-            </AppBar>
-            <Offset />
-            {displayData ?
-            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item xs={12} sm={6}>
-                        <SingleStat 
-                            title="Moyenne journalière (lu-ve)"
-                            caption={`montées + descentes par mois en ${currentYear}`}
-                            value={displayData?.dailyAvg}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <SingleStat 
-                            title={`Total annuel`}
-                            caption={`montées + descentes par mois en ${currentYear}`}
-                            value={displayData?.total}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <ComplexStat title={`Montées + descentes par mois en ${currentYear}`}>
-                            <Box sx={{p: 2}}>
-                                <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
-                            </Box>
-                            <Box sx={{p: 2}}>
-                                <BarChart data={displayData?.monthly} labels={MONTHS} ymax={allMax} />
-                            </Box>
-                        </ComplexStat>
-                    </Grid>
-                </Grid>
-            </Container>:<h1>Pas de données</h1>}
-        </Dialog>
-    );
+        <LineMap>
+            <DataDialog>
+                <PassengerServiceGrid 
+                    statsLabel="Line"
+                    comment=""
+                    unit="voyageurs (montées + descentes divisées par 2)"
+                    idField="id"
+                    fromYear={2017}
+                />
+            </DataDialog>
+            <DataDialog>
+                <PassengerServiceGrid 
+                    statsLabel="Stop"
+                    comment=""
+                    unit="montées + descentes"
+                    idField="id"
+                    fromYear={2017}
+                />
+            </DataDialog>
+        </LineMap>
+    )
 }
-
-
-export function LineDialog() {
-    console.count('linedialog')
-    const {showBoundary} = useErrorBoundary()
-    const [currentLine, setCurrentLine, currentYear, setCurrentYear, fetchStats, stats] = useLineMapStore((state) => [state.currentLine, state.setCurrentLine, state.currentYear, state.setCurrentYear, state.fetchLineStats, state.lineStats])
-    const handleClose = useCallback(() => {setCurrentLine(null); })
-
-    useEffect(() => {
-        fetchStats('data/publictransport/trainstats-line.json')
-        .catch((e) => showBoundary(e) );
-    }, [])
-
-    
-    const displayData = useMemo(() => {
-        const empty = {monthly: []}
-        if (currentLine?.line === undefined) return empty
-        try {
-            const monthly = stats[currentLine?.line][currentYear]['monthly']
-            const daily = stats[currentLine?.line][currentYear]['daily']
-            const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
-            return {monthly, labels: MONTHS, dailyAvg: daily, monthlyAvg: null, total}
-        } catch (error) {
-            return empty
-        }
-    }, [currentLine, currentYear])
-
-    const allMax = useMemo(() => {
-        if (currentLine?.line === undefined) return null
-        try {
-            return Math.max(...Object.values(stats[currentLine.line]).map((v) => Math.max(...v['monthly'])))
-        } catch (error) {
-            console.log(error)
-            return null
-        }
-    }, [currentLine])
-    
-    console.log(currentLine)
-    if (stats === null) return
-    
-    return (
-        <Dialog
-            fullScreen
-            open={currentLine !== null}
-            onClose={handleClose}
-            TransitionComponent={Transition}
-        >
-            <AppBar position="fixed" color="secondary">
-                <Toolbar>
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        onClick={handleClose}
-                        aria-label="fermer ce dialogue et retourner vers la carte du réseau"
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                    <h1>CFL ligne {currentLine?.line}</h1>
-                </Toolbar>
-            </AppBar>
-            <Offset />
-            {displayData ?
-            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-                    <Grid item sm={6} xs={12}>
-                        <SingleStat 
-                            title="Moyenne journalière (lu.-ve.)"
-                            caption={`voyageurs (=(montées + descentes) / 2) par mois en ${currentYear}`}
-                            value={displayData?.dailyAvg}
-                        />
-                    </Grid>
-                    <Grid item sm={6} xs={12}>
-                        <SingleStat 
-                            title={`Total annuel`}
-                            caption={`voyageurs (=(montées + descentes) / 2) par mois en ${currentYear}`}
-                            value={displayData?.total}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <ComplexStat
-                            title={`Voyageurs par mois en ${currentYear}`}
-                        >
-                            <Box sx={{p: 2}}>
-                                <YearToggle from={2017} to={2023} currentYear={currentYear} onChange={(evt, val) => setCurrentYear(val ?? currentYear)} />
-                            </Box>
-                            <Box sx={{p: 2}}>
-                                <BarChart data={displayData?.monthly} labels={MONTHS} ymax={allMax} />
-                            </Box>
-                        </ComplexStat>
-                    </Grid>
-                </Grid>
-            </Container>:<h1>Pas de données</h1>}
-        </Dialog>
-    );
-}
-
-

@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { shallow } from 'zustand/shallow'
+
 
 export const useLineMapStore = create((set) => ({
     viewBox: {x: 0, y: 0, width: 100, height: 100},
@@ -33,3 +35,39 @@ export const useLineMapStore = create((set) => ({
       set({ lineStats: await resp.json() })
     }
   }))
+
+
+export const useLineMapStoreStats = (statsLabel, idField, fields=[]) => {
+  const [stats, current, setCurrent, currentYear, setCurrentYear] = useLineMapStore(
+    (state) => [state[`stats${statsLabel}`], state[`current${statsLabel}`], state[`current${statsLabel}`], state.currentYear, state.setCurrentYear],
+    shallow
+  )
+
+  const data = useMemo(() => {
+    if (current === null || currentYear === null) return null
+    return stats[current[idField]][currentYear]
+  }, [current, currentYear])
+
+  const props = useMemo(() => {
+    if (current === null) return fields.map((_) => null)
+    return fields.map((field) => current[field] ?? null)
+  }, current)
+
+
+  return ({currentYear, data, current, setCurrentYear, setCurrent})
+}
+
+
+export const useLineMapStoreCurrent = (statsLabel, fields) => {
+  const [current, setCurrent] = useLineMapStore(
+    (state) => [state[`current${statsLabel}`], state[`current${statsLabel}`]],
+    shallow
+  )
+  
+  const props = useMemo(() => {
+    if (current === null) return fields.map((_) => null)
+    return fields.map((field) => current[field] ?? null)
+  }, current)
+
+  return [setCurrent, ...props]
+}

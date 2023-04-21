@@ -1,7 +1,8 @@
-import { useState, forwardRef, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext } from 'react';
+import { forwardRef, useCallback, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { useErrorBoundary } from 'react-error-boundary';
+import { useLineMapStoreStats } from './LineMap/store'
 
 import Dialog from '@mui/material/Dialog';
 import AppBar from '@mui/material/AppBar';
@@ -9,51 +10,20 @@ import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
-
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 
-import YearToggle from './YearToggle';
-import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
-import SingleStat from './DataGrids/SingleStat.js'
-import ComplexStat from './DataGrids/ComplexStat.js'
-import BarChart from './BarChart'
 
-import { DateTime } from "luxon";
-import { useLineMapStore } from './LineMap/store'
+const Transition = forwardRef(function Transition(props, ref) {
+    return <Slide direction="top" ref={ref} {...props} />;
+});
+  
+// adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
+const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
+export default function DataDialog({stateLabel='Line', idField='id', labelField='label', prefix='Line', byLine=null, appBarColor='primary'}) {
+    const [setCurrent, id, label] = useLineMapStoreCurrent(stateLabel, [idField, labelField])
+    const handleClose = useCallback(() => (evt) => setCurrent(null))
 
-
-export default function DataDialog({label, id, prefix="CFL ligne", comment, fromYear=2017, toYear=2023, setCurrent, currentYear, setCurrentYear, stats, appBarColor="secondary"}) {
-    const handleClose = useCallback(() => {setCurrent(null); })
-    
-    const displayData = useMemo(() => {
-        const empty = {monthly: []}
-        if (id === undefined) return empty
-        try {
-            const monthly = stats[id][currentYear]['monthly']
-            const daily = stats[id][currentYear]['daily']
-            const total = monthly.reduce((kv, v) => kv + (v ?? 0), 0)
-            return {monthly, labels: MONTHS, dailyAvg: daily, monthlyAvg: null, total}
-        } catch (error) {
-            return empty
-        }
-    }, [id, currentYear])
-
-    const allMax = useMemo(() => {
-        if (id === undefined) return null
-        try {
-            return Math.max(...Object.values(stats[id]).map((v) => Math.max(...v['monthly'])))
-        } catch (error) {
-            console.log(error)
-            return null
-        }
-    }, [id])
-    
-    if (stats === null) return
-    
     return (
         <Dialog
             fullScreen
@@ -71,16 +41,13 @@ export default function DataDialog({label, id, prefix="CFL ligne", comment, from
                     >
                         <CloseIcon />
                     </IconButton>
-                    <h1>{prefix ? `${prefix} ` : ''}{label}</h1>
+                    <h1>{prefix ? `${prefix} ` : ''}{label ?? '(untitled)'}</h1>
                 </Toolbar>
             </AppBar>
             <Offset />
-            {displayData ?
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                
-            </Container>:<h1>Pas de données</h1>}
+                {children}
+            </Container>
         </Dialog>
     );
 }
-
-

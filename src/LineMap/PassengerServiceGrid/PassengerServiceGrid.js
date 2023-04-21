@@ -11,31 +11,32 @@ import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
 
 import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
-import Container from '@mui/material/Container';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 import YearToggle from './YearToggle';
-import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
-import SingleStat from './DataGrids/SingleStat.js'
-import ComplexStat from './DataGrids/ComplexStat.js'
+import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.jsjs'
+import SingleStat from './DataGrids/SingleStat.js.js'
+import ComplexStat from './DataGrids/ComplexStat.js.js'
 import BarChart from './BarChart'
 
 import { DateTime } from "luxon";
-import { useLineMapStore } from './LineMap/store'
-import { shallow } from 'zustand/shallow'
+import { useLineMapStats } from './LineMap/store'
 
 
 const capitalize = (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
 
 
-export default function PassengerServiceGrid({comment, unit="voyageurs (montées + descentes divisées par 2)", stateLabel="Line"}) {
-
+export default function PassengerServiceGrid({comment, unit="voyageurs (montées + descentes divisées par 2)", statsLabel="Line", idField="id", fromYear=2017, toYear=DateTime.now().year}) {
+    const {
+        currentYear, setCurrentYear, 
+        data: {countingRatio=null, dailyAvg=null, annualTotal=null, monthly=null, daily=null}
+    } = useLineMapStats(statsLabel, idField)
     
-    const [currentYear, setCurrentYear, stats, id] = useLineMapStore((state) => [state.currentYear, state.setCurrentYear, state[`stats${stateLabel}`], state[`current${stateLabel}`]], shallow)
     const handleChangeYear = useCallback((evt, newval) => setCurrentYear(newval ?? currentYear), [])
-
-    const {countingRatio=null, dailyAvg=null, annualTotal=null, monthly=null, daily=null} = stats[id][currentYear]
     
     return (
         <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
@@ -71,6 +72,14 @@ export default function PassengerServiceGrid({comment, unit="voyageurs (montées
                 <ComplexStat
                     title={`${capitalize(unit)} par mois en ${currentYear}`}
                 >
+                    <Tabs
+                        value={value}
+                        onChange={handleChange}
+                        aria-label="icon position tabs example"
+                    >
+                        <Tab icon={<BarChartIcon />} label="par mois" />
+                        <Tab icon={<CalendarMonthIcon />} label="par jour" />
+                    </Tabs>
                     {monthly && <Box sx={{p: 2}}>
                         <BarChart data={monthly} />
                     </Box>}
