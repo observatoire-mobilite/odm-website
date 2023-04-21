@@ -1,4 +1,4 @@
-import {useState, useMemo, useTransition, useEffect, Fragment, Children, useContext, createContext} from 'react'
+import {useState, useMemo, useTransition, useEffect, Fragment, Children, useContext, createContext, useCallback} from 'react'
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, config } from '@react-spring/web'
 //import { HeatMap } from './BusMap.js'
@@ -61,23 +61,27 @@ export default function PageTram() {
     }
 
     const [setCurrentStop, currentStop, fetchStats] = useLineMapStore((state) => [state.setCurrentStop, state.currentStop, state.fetchStopStats])
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(currentStop === null)
+    const handleClick = useCallback((evt) => setOpen(! open))
+    const handleSelect = useCallback((stop) => { setCurrentStop(stop); setOpen(false) })
+    
 
-    return (<Box>
+    return (<Container maxWidth="lg">
         <Drawer open={open} variant="persistent" anchor="right">
             <Offset />
-            <LineGraph stops={data.stops} currentStop={currentStop} onSelection={(stop) => setCurrentStop(stop)} />
+            <LineGraph stops={data.stops} currentStop={currentStop} onSelection={handleSelect} />
         </Drawer>
+        <Typography variant="h4">{currentStop?.label}</Typography>
+        <Button onClick={(evt) => setOpen(! open)}>choisir un autre arrêt</Button>
         <PassengerServiceGrid 
             url='data/publictransport/tramstats.json'
             statsLabel="Stop"
             comment=""
-            unit="montées + descentes divisées"
+            unit="montées + descentes"
             idField="id"
             fromYear={2018}
         />
-        <Button onClick={(evt) => setOpen(! open)}>open</Button>
-        </Box>
+        </Container>
         
     )
 }

@@ -39,20 +39,20 @@ const getAspectRatio = (ref) => {
 
 export default function BarChart({data, labels=[], icons=[], svgWidth=1618, svgHeight=1000, width, height, barWidth=1 / 1.618, ymax=100000, ymin=0, style}) {
     
+    const ref = useRef(null)
+    const theme = useTheme() 
+    const n = data.length
+    const dx = svgWidth / n
     const displayData = useMemo(() => {
         const maxValue = ymax === null ? Math.max(...data) : ymax
         const minValue = ymin === null ? Math.min(...data) : ymin
         return data.map((v) => ({value: v, scaledValue: v === null ? null : ((v ?? 0) - minValue) / (maxValue - minValue)}))
     }, [data])
-    const ref = useRef(null)
-    const theme = useTheme() 
-    const n = data.length
-    const dx = svgWidth / n
     const [springs, api] = useSprings(n, (i) => {
         const s = displayData[i].scaledValue
         return {
-            height: s * svgHeight, 
-            y:  (1 - s) * svgHeight,
+            height: s * (svgHeight), 
+            y:  (1 - s) * (svgHeight),
             label_y: svgHeight * (1 - s) - dx / 6,
             label_value: displayData[i].value
         }

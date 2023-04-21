@@ -60,6 +60,9 @@ export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[])
 
   const data = useMemo(() => {
     if (! current || ! currentYear || ! stats) return {}
+    if (stats[current[idField]] === undefined) {
+      throw new Error(`No such ${statsLabel.toLowerCase()} "${current[idField]}"`)
+    }
     return stats[current[idField]][currentYear]
   }, [stats, current, currentYear])
   const props = useMemo(() => {

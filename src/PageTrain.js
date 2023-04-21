@@ -6,7 +6,7 @@ import PassengerServiceGrid from './LineMap/PassengerServiceGrid'
 export default function PageTrain() {
     return (
         <LineMap url='data/publictransport/trainmap.json'>
-            <DataDialog statsLabel="Line" idField="line" labelField="line">
+            <DataDialog statsLabel="Line" idField="line" labelField="line" prefix="CFL ligne">
                 <PassengerServiceGrid 
                     url='data/publictransport/trainstats-line.json'
                     statsLabel="Line"

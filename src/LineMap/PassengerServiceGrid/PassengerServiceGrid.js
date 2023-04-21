@@ -28,62 +28,63 @@ import { useLineMapCurrentStats } from '../store'
 
 
 const capitalize = (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
 
 
 export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year}) {
-    const {
-        currentYear, setCurrentYear, 
-        data: {counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, day_offset=0, monthly=null, daily=null}
-    } = useLineMapCurrentStats(url, statsLabel, idField)
-    
+    const { currentYear, setCurrentYear, data } = useLineMapCurrentStats(url, statsLabel, idField)
+    const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
+          day_offset=0, monthly=null, daily=null} = data ?? {}
+    const [ currentTab, setCurrentTab] = useState('monthly')
     const handleChangeYear = useCallback((evt, newval) => setCurrentYear(newval ?? currentYear), [])
     
     return (
-        <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-            {comment && <Grid item xs={12} sx={{p: 2}}>
+        <Grid container direction="row" justifyContent="space-between" alignItems="stretch" spacing={2}>
+            {comment && <Grid item xs={12}>
                 {comment}
             </Grid>}
-            <Grid item xs={12} sx={{p: 2}}>
+            <Grid item xs={12}>
                 <YearToggle from={fromYear} to={toYear} currentYear={currentYear} onChange={handleChangeYear}  />
             </Grid>
-            <Grid item md={counting_ratio ? 3 : 6} sm={6} xs={12}>
+            <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
                 <SingleStat 
                     title="Moyenne journalière (lu.-ve.)"
                     caption={`${unit} par jour en ${currentYear}`}
                     value={annual_daily_average_corrected}
                 />
             </Grid>
-            <Grid item md={counting_ratio ? 3 : 6} sm={6} xs={12}>
+            <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
                 <SingleStat 
                     title="Total annuel"
                     caption={`${unit} en ${currentYear}`}
                     value={annual_total_corrected}
                 />
             </Grid>
-            {counting_ratio && <Grid item md={3} sm={12} xs={12}>
+            {counting_ratio && <Grid item md={4} sm={12} xs={12}>
                 <SingleStat 
-                    title={`Taux de comptage`}
-                    caption={`rapport entre haltes comtpés et haltes observés`}
+                    title="Taux de comptage"
+                    caption="rapport entre haltes comtpés et haltes observés"
                     value={counting_ratio}
+                    unit="%"
                 />
             </Grid>
             }
             <Grid item xs={12}>
                 <ComplexStat
-                    title={`${capitalize(unit)} par mois en ${currentYear}`}
+                    title={`${capitalize(unit)} ${currentTab == 'monthly' ? 'par mois' : 'par jour'} en ${currentYear}`}
                 >
                     <Tabs
-                        value={"par mois"}
-                        onChange={(evt, newval) => alert(newval)}
-                        aria-label="icon position tabs example"
+                        value={currentTab}
+                        onChange={(evt, newval) => setCurrentTab(newval ?? currentTab)}
+                        aria-label={`choisir le niveau d'aggrégation des données de ${unit}`}
                     >
-                        <Tab icon={<BarChartIcon />} label="par mois" />
-                        <Tab icon={<CalendarMonthIcon />} label="par jour" />
+                        {monthly && <Tab icon={<BarChartIcon />} label="par mois" value="monthly" />}
+                        {daily && <Tab icon={<CalendarMonthIcon />} label="par jour" value="daily" />}
                     </Tabs>
-                    {monthly && <Box sx={{p: 2}}>
-                        <BarChart data={monthly} />
+                    {monthly && currentTab == 'monthly' && <Box sx={{p: 2}}>
+                        <BarChart data={monthly} svgWidth={1618 * 3} svgHeight={1000} labels={MONTHS} ymax={null} width="100%" height="auto" />
                     </Box>}
-                    {daily && <Box sx={{p: 2}}>
+                    {daily && currentTab == 'daily' && <Box sx={{p: 2}}>
                         <CalendarHeatMap year={currentYear} data={daily} offsetDay={day_offset} />
                     </Box>}
                 </ComplexStat>
