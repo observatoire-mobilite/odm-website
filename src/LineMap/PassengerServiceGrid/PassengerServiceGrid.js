@@ -17,24 +17,24 @@ import Tabs from '@mui/material/Tabs';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
-import YearToggle from './YearToggle';
-import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.jsjs'
-import SingleStat from './DataGrids/SingleStat.js.js'
-import ComplexStat from './DataGrids/ComplexStat.js.js'
-import BarChart from './BarChart'
+import YearToggle from '../../YearToggle';
+import CalendarHeatMap from '../../CalendarHeatMap/CalendarHeatMap.js'
+import SingleStat from '../../DataGrids/SingleStat.js'
+import ComplexStat from '../../DataGrids/ComplexStat.js'
+import BarChart from '../../BarChart'
 
 import { DateTime } from "luxon";
-import { useLineMapStats } from './LineMap/store'
+import { useLineMapCurrentStats } from '../store'
 
 
 const capitalize = (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
 
 
-export default function PassengerServiceGrid({comment, unit="voyageurs (montées + descentes divisées par 2)", statsLabel="Line", idField="id", fromYear=2017, toYear=DateTime.now().year}) {
+export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year}) {
     const {
         currentYear, setCurrentYear, 
-        data: {countingRatio=null, dailyAvg=null, annualTotal=null, monthly=null, daily=null}
-    } = useLineMapStats(statsLabel, idField)
+        data: {counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, day_offset=0, monthly=null, daily=null}
+    } = useLineMapCurrentStats(url, statsLabel, idField)
     
     const handleChangeYear = useCallback((evt, newval) => setCurrentYear(newval ?? currentYear), [])
     
@@ -46,25 +46,25 @@ export default function PassengerServiceGrid({comment, unit="voyageurs (montées
             <Grid item xs={12} sx={{p: 2}}>
                 <YearToggle from={fromYear} to={toYear} currentYear={currentYear} onChange={handleChangeYear}  />
             </Grid>
-            <Grid item md={countingRatio ? 3 : 6} sm={6} xs={12}>
+            <Grid item md={counting_ratio ? 3 : 6} sm={6} xs={12}>
                 <SingleStat 
                     title="Moyenne journalière (lu.-ve.)"
                     caption={`${unit} par jour en ${currentYear}`}
-                    value={dailyAvg}
+                    value={annual_daily_average_corrected}
                 />
             </Grid>
-            <Grid item md={countingRatio ? 3 : 6} sm={6} xs={12}>
+            <Grid item md={counting_ratio ? 3 : 6} sm={6} xs={12}>
                 <SingleStat 
                     title="Total annuel"
                     caption={`${unit} en ${currentYear}`}
-                    value={annualTotal}
+                    value={annual_total_corrected}
                 />
             </Grid>
-            {countingRatio && <Grid item md={3} sm={12} xs={12}>
+            {counting_ratio && <Grid item md={3} sm={12} xs={12}>
                 <SingleStat 
                     title={`Taux de comptage`}
                     caption={`rapport entre haltes comtpés et haltes observés`}
-                    value={countingRatio}
+                    value={counting_ratio}
                 />
             </Grid>
             }
@@ -73,8 +73,8 @@ export default function PassengerServiceGrid({comment, unit="voyageurs (montées
                     title={`${capitalize(unit)} par mois en ${currentYear}`}
                 >
                     <Tabs
-                        value={value}
-                        onChange={handleChange}
+                        value={"par mois"}
+                        onChange={(evt, newval) => alert(newval)}
                         aria-label="icon position tabs example"
                     >
                         <Tab icon={<BarChartIcon />} label="par mois" />
@@ -84,7 +84,7 @@ export default function PassengerServiceGrid({comment, unit="voyageurs (montées
                         <BarChart data={monthly} />
                     </Box>}
                     {daily && <Box sx={{p: 2}}>
-                        <CalendarHeatMap year={currentYear} data={daily} />
+                        <CalendarHeatMap year={currentYear} data={daily} offsetDay={day_offset} />
                     </Box>}
                 </ComplexStat>
             </Grid>

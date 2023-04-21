@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
+import { useMemo, useEffect } from 'react'
+import { useErrorBoundary } from 'react-error-boundary'
 
 
 export const useLineMapStore = create((set) => ({
@@ -27,47 +29,71 @@ export const useLineMapStore = create((set) => ({
     stopStats: null,
     fetchStopStats: async (url) => {
       const resp = await fetch(url)
-      set({ stopStats: await resp.json() })
+      set({ statsStop: await resp.json() })
     },
-    lineStats: null,
+    statsLine: null,
     fetchLineStats: async (url) => {
       const resp = await fetch(url)
-      set({ lineStats: await resp.json() })
+      set({ statsLine: await resp.json() })
     }
   }))
 
 
-export const useLineMapStoreStats = (statsLabel, idField, fields=[]) => {
-  const [stats, current, setCurrent, currentYear, setCurrentYear] = useLineMapStore(
-    (state) => [state[`stats${statsLabel}`], state[`current${statsLabel}`], state[`current${statsLabel}`], state.currentYear, state.setCurrentYear],
+export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[]) {
+  const [
+    fetchStats, stats,
+    current, setCurrent,
+    currentYear, setCurrentYear
+  ] = useLineMapStore(
+    (state) => [
+      state[`fetch${statsLabel}Stats`], state[`stats${statsLabel}`], 
+      state[`current${statsLabel}`], state[`setCurrent${statsLabel}`], 
+      state.currentYear, state.setCurrentYear],
     shallow
   )
 
-  const data = useMemo(() => {
-    if (current === null || currentYear === null) return null
-    return stats[current[idField]][currentYear]
-  }, [current, currentYear])
+  const {showBoundary} = useErrorBoundary()
+  useEffect(() => {
+      fetchStats(url)
+      .catch((e) => {showBoundary(new Error('Failed to retrieve data from server'))});
+  }, [url])
 
+  const data = useMemo(() => {
+    if (! current || ! currentYear || ! stats) return {}
+    return stats[current[idField]][currentYear]
+  }, [stats, current, currentYear])
   const props = useMemo(() => {
     if (current === null) return fields.map((_) => null)
     return fields.map((field) => current[field] ?? null)
-  }, current)
+  }, [current])
 
 
   return ({currentYear, data, current, setCurrentYear, setCurrent})
 }
 
 
-export const useLineMapStoreCurrent = (statsLabel, fields) => {
+export function useLineMapCurrent(statsLabel, fields=[]) {
   const [current, setCurrent] = useLineMapStore(
-    (state) => [state[`current${statsLabel}`], state[`current${statsLabel}`]],
+    (state) => [state[`current${statsLabel}`], state[`setCurrent${statsLabel}`]],
     shallow
   )
   
   const props = useMemo(() => {
     if (current === null) return fields.map((_) => null)
     return fields.map((field) => current[field] ?? null)
-  }, current)
+  },  [current, fields])
 
   return [setCurrent, ...props]
+}
+
+
+export function useLineMap(url) {
+  const {showBoundary} = useErrorBoundary()
+  const [lineMap, fetchLineMap] = useLineMapStore((state) => [state.lineMap, state.fetchLineMap], shallow)
+
+  useEffect(() => {
+      fetchLineMap(url).catch((e) => showBoundary(e));
+  }, [url])
+
+  return lineMap
 }

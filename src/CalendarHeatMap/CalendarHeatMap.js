@@ -8,7 +8,7 @@ import { ColorRampProperty } from 'maplibre-gl';
 import './CalendarHeatMap.css'
 
 
-export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, getValue}) {
+export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, getValue, offsetDay=0}) {
     /* Displays the daily variation of some quantity throughout a year.*/
 
     const values = useMemo(() => {
@@ -18,9 +18,9 @@ export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, ge
       <SVGcanvas>
           <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
           <HeatMapDayLabels />
-          <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} />
+          <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} offsetDay={offsetDay} />
           <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
-          <HeatMapWeekBars year={year} xOffset={150} values={values} />
+          <HeatMapWeekBars year={year} xOffset={150} values={values} offsetDay={offsetDay} />
       </SVGcanvas>
     )
         
@@ -87,7 +87,7 @@ function HeatMapDayLabels({yOffset=0, fontSize=60}) {
 
 
 function HeatMapCircles({
-  year, values=[], log=false,
+  year, values=[], log=false, offsetDay=0,
   minRadius=10, maxRadius=50,
   minValue=0, maxValue='auto',
   xOffset=0, yOffset=0,
@@ -102,7 +102,7 @@ function HeatMapCircles({
   
     return Array.from({length: janfirst.daysInYear}, (_, i) => {
       const day = janfirst.plus({days: i})
-      const value = values[i] === undefined ? null : values[i]
+      const value = i < offsetDay ? null : (values[i - offsetDay] === undefined ? null : values[i - offsetDay])
       const scaledValue = value === null ? null : (value - xmin) / xmax
       const category = value === null ? 'null' : Math.floor(scaledValue * 10)
       const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * circleDiameter
@@ -138,7 +138,7 @@ function HeatMapCircles({
 }
 
 
-function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0}) {
+function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, offsetDay=0}) {
   const circleDiameter = 2 * maxRadius
   const displayData = useMemo(() => {
     if (values === undefined) return
@@ -148,10 +148,11 @@ function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0}) {
     
       // first step: group daily  values by week 
       // `x` serves as proxy - no dealing with weekyear
-      if (values[i] === undefined) return kv
+      const value = i < offsetDay ? null : (values[i - offsetDay] === undefined ? null : values[i - offsetDay])
+      if (value === null) return kv
       const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * circleDiameter
       kv[x] = kv[x] ?? []
-      kv[x].push(values[i])
+      kv[x].push(value)
       return kv
     
     }, {})).map(([x,vals]) => {

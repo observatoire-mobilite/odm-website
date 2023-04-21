@@ -133,7 +133,7 @@ export default function Layout() {
         }}
       >
         <Container maxWidth="100vw">
-          <ErrorBoundary>
+          <ErrorBoundary FallbackComponent={ErrorNotice}>
             <Outlet />
           </ErrorBoundary>
           <Copyright sx={{ pt: 4 }} />
@@ -191,7 +191,7 @@ export default function Layout() {
         >
           <Toolbar />
           <Container maxWidth="100vw">
-            <ErrorBoundary fallbackComponent={ErrorNotice}>
+            <ErrorBoundary FallbackComponent={ErrorNotice}>
               <Outlet />
             </ErrorBoundary>
             <Copyright sx={{ pt: 4 }} />

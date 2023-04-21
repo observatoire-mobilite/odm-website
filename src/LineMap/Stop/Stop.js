@@ -1,70 +1,89 @@
-import { useCallback, useContext } from 'react';
-import { useTheme } from '@mui/material/styles';
-import { animated, useSpring } from '@react-spring/web'
-import { useLineMapStore } from '../store';
+import { useCallback, Fragment } from 'react';
+import { useLineMapCurrent } from '../store';
+import { styled } from '@mui/material';
 
+// styles: town labels
+const StopLabel = styled('text')(({theme}) => ({
+    paintOrder: 'stroke',
+    stroke: theme.palette.primary.contrastText,
+    fill: theme.palette.text,
+    alignmentBaseline: 'central'
+}))
 
+const [StopMarkerCircle, StopMarkerPath] = ['circle', 'path'].map((k) => styled(k)(({theme}) => ({
+    stroke: theme.palette.grey[900],
+    strokeWidth: 1,
+    fill: 'none',
+})))
+
+const [StopMarkerCircleOverlay, StopMarkerPathOverlay] = ['circle', 'path'].map((k) => styled(k)(({theme}) => ({
+    fill: theme.palette.secondary.main,
+    stroke: theme.palette.secondary.light,
+    cursor: 'pointer',
+    pointerEvents: 'visible',
+    opacity: 0,
+    transition: 'opacity 0.5s',
+    '&:hover': {
+        opacity: 1
+    }
+})))
+
+const StopMarkerAnnularOverlay = styled('circle')(({theme}) => ({
+    stroke: theme.palette.secondary.main,
+    strokeWidth: 5,
+    fill: 'none',
+    opacity: 0,
+    cursor: 'pointer',
+    pointerEvents: 'visibleStroke',
+    transition: 'opacity 0.5s',
+    '&:hover': {
+        opacity: 1
+    }
+}))
 
 export default function Stop({stop}) {
-    const [ setCurrentStop ] = useLineMapStore((state) => [state.setCurrentStop])
-    const iAmChosen = useCallback(() => setCurrentStop(stop))
-    const theme = useTheme()
+    const [ setCurrentStop ] = useLineMapCurrent('Stop')
+    const handleClick = useCallback((evt) => { setCurrentStop(stop) }, [stop])
 
-    //console.count('busstop')
-    const [springs, api] = useSpring(() => ({r: stop.r, opacity: 0}))
+    return (<g id={`stop-${stop.id}`}>
+        {stopmarker(stop, handleClick)}
+    </g>)
 
-    const textStyle = {
-        fontSize: (stop.r > 13 && stop.label != 'Senningerberg' && stop.label != 'Leudelange') ? 15 : 5,
-        paintOrder: 'stroke',
-        stroke: 'white',
-        strokeWidth: stop.r ? stop.r / 20: 1,
-        alignmentBaseline: 'central'
+}
+
+function stopmarker(stop, handleClick) {
+
+    const label = (
+        <StopLabel
+            fontSize={(stop.r > 13 && stop.label != 'Senningerberg' && stop.label != 'Leudelange') ? 15 : 7}
+            x={stop.lx ?? (stop.cx  + stop.r * 0.7071 * 1.3)}
+            y={stop.ly ?? (stop.cy - stop.r * 0.7071 * 1.3)}
+        >{stop.label}</StopLabel>
+    )
+
+    if (stop.id == 407) {
+        return (<Fragment>
+            <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} />
+            {label}
+            <StopMarkerAnnularOverlay cx={stop.cx} cy={stop.cy} r={stop.r} onClick={handleClick} /> 
+        </Fragment>)
     }
 
-    const stopMarkerStyle = {    
-        stroke: 'black',
-        fill: 'none'
-    }
-
-    const highlightedStopMarkerStyle = {
-        fill: theme.palette.secondary.main,
-        stroke: theme.palette.secondary.light,
-        opacity: springs.opacity,
-    }
-
-    const hiddenStopMarkerStyle = {
-        fill: 'none',
-        stroke: 'none',
-        cursor: 'pointer'
-    }
-
-    const text = <text x={stop.lx ?? (stop.cx  + stop.r * 0.7071 * 1.3)} y={stop.ly ?? (stop.cy - stop.r * 0.7071 * 1.3)} style={textStyle}>{stop.label}</text>
-
-    if (stop.path) {
-        return(<g id={`stop-${stop.id}`}>
-            {text}
-            <path d={stop.path} style={stopMarkerStyle} />
-            <animated.path d={stop.path} style={highlightedStopMarkerStyle} />
-            <path d={stop.path} style={hiddenStopMarkerStyle} 
-                pointerEvents="visible"
-                onMouseEnter={() => api.start({opacity: 1})} 
-                onMouseLeave={() => api.start({opacity: 0})}
-                onClick={iAmChosen}
-            />
-        </g>)
-    }
+    if (stop.path)
+        return(<Fragment>
+            <StopMarkerPath d={stop.path} />
+            {label}
+            <StopMarkerPathOverlay d={stop.path} onClick={handleClick}/>
+        </Fragment>)
     
-    if (stop.cx && stop.cy && stop.r) {
-        return (<g id={`stop-${stop.id}`}>
-            {text}
-            <circle cx={stop.cx} cy={stop.cy} r={stop.r} style={stopMarkerStyle} />
-            <animated.circle cx={stop.cx} cy={stop.cy} r={springs.r} style={highlightedStopMarkerStyle} />
-            <circle cx={stop.cx} cy={stop.cy} r={stop.r + 5} style={hiddenStopMarkerStyle}
-                pointerEvents="visible"
-                onMouseEnter={() => api.start({r: stop.r + 5, opacity: 1})} 
-                onMouseLeave={() => api.start({r: stop.r, opacity: 0})}
-                onClick={() => setCurrentStop(stop)}
-            /> 
-        </g>)
-    }
+    if (stop.cx && stop.cy && stop.r)
+        return (<Fragment>
+            <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} />
+            {label}
+            <StopMarkerCircleOverlay cx={stop.cx} cy={stop.cy} r={stop.r + 5} onClick={handleClick} /> 
+        </Fragment>)
+
+    console.log(`WARNING: no geometry specified for "${stop.label}" (${stop.id})`)
+    return (<Fragment></Fragment>)
+
 }

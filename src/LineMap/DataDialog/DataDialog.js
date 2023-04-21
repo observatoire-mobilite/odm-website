@@ -1,8 +1,6 @@
-import { forwardRef, useCallback, useMemo } from 'react';
-import { useTheme } from '@mui/material/styles';
+import { forwardRef, useCallback } from 'react';
 import { styled } from '@mui/material/styles';
-import { useErrorBoundary } from 'react-error-boundary';
-import { useLineMapStoreStats } from './LineMap/store'
+import { useLineMapCurrent } from '../store'
 
 import Dialog from '@mui/material/Dialog';
 import AppBar from '@mui/material/AppBar';
@@ -11,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import Slide from '@mui/material/Slide';
 
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -20,10 +19,10 @@ const Transition = forwardRef(function Transition(props, ref) {
 // adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
-export default function DataDialog({stateLabel='Line', idField='id', labelField='label', prefix='Line', byLine=null, appBarColor='primary'}) {
-    const [setCurrent, id, label] = useLineMapStoreCurrent(stateLabel, [idField, labelField])
-    const handleClose = useCallback(() => (evt) => setCurrent(null))
-
+export default function DataDialog({children, statsLabel, idField='id', labelField='label', prefix='', byLine=null, appBarColor='primary'}) {
+    const [setCurrent, id, label] = useLineMapCurrent(statsLabel, [idField, labelField])
+    const handleClose = useCallback((evt) => setCurrent(null))
+    
     return (
         <Dialog
             fullScreen
