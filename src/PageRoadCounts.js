@@ -6,11 +6,8 @@ import {TraficData} from './RoadTraffic.js'
 export function Cycling() {
   return (
     <div>
-      <h2>Cycling traffic</h2>
-      <Typography variant="body1">
-        Bicycles counted by the NRA's national counting station network.
-      </Typography>
       <TraficData
+          vehicleTypeLabel='vélos'
           locationsPath={() => 'data/road/Compteurs_xy.csv'}
           countsByDayPath={(year) => `data/road/Bike/comptage_${year}_velo_days_year.csv`}
           countsByHourPath={(year) => `data/road/Bike/comptage_${year}_velo_day_hour.csv`}
@@ -24,11 +21,8 @@ export function Cycling() {
 export function Trucks() {
   return (
     <div>
-      <h2>Heavy-duty vehicle traffic</h2>
-      <Typography variant="body1">
-        Heavy-duty trucks (vehicles longer than 6.5m) counted by the NRA's national counting station network.
-      </Typography>
       <TraficData
+          vehicleTypeLabel='camions'
           locationsPath={() => 'data/road/Compteurs_xy.csv'}
           countsByDayPath={(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`}
           countsByHourPath={(year) => `data/road/Mot/comptage_${year}_mot_day_hour.csv`}
@@ -42,11 +36,8 @@ export function Trucks() {
 export function Cars() {
   return (
     <div>
-      <h2>Passenger car traffic</h2>
-      <Typography variant="body1">
-      Passenger cars (vehicles shorter than 6.5m) counted by the NRA's national counting station network.
-      </Typography>
       <TraficData
+          vehicleTypeLabel='voitures'
           locationsPath={() => 'data/road/Compteurs_xy.csv'}
           countsByDayPath={(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`}
           countsByHourPath={(year) => `data/road/Mot/comptage_${year}_mot_day_hour.csv`}

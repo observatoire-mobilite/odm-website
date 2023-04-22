@@ -28,15 +28,21 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 
+import BarChart from './BarChart';
 import {Chart} from './LineChart/Chart.js';
 import {Plot} from './LineChart/Axes.js';
 import ErrorBoundary from './ErrorBoundary.js';
 import SingleStat from './DataGrids/SingleStat.js';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 import Skeleton from '@mui/material/Skeleton';
 
 import { useTheme } from '@mui/material/styles';
-
+import { DateTime } from 'luxon';
 
 // Viewport settings
 const INITIAL_VIEW_STATE = {
@@ -46,6 +52,8 @@ const INITIAL_VIEW_STATE = {
   pitch: 0,
   bearing: 0
 };
+
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
 
 
 function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsPath=() => 'locations.csv'}) {
@@ -88,10 +96,9 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
         }}
       />
       <Stack style={{right: '0', position: 'absolute'}}>
-        <IconButton color="primary" title="zoom in on map"><ZoomInIcon /></IconButton>
-        <IconButton color="primary" title="zoom out of map"><ZoomOutIcon /></IconButton>
-        <IconButton color="primary" title="put entrie country into view"><CropFreeIcon /></IconButton>
-        <IconButton color="primary" title="lock map - can simplify scrolling down to other widgets" disabled><LockIcon /></IconButton>
+        <IconButton color="primary" title="zoomer en avant sur la carte"><ZoomInIcon /></IconButton>
+        <IconButton color="primary" title="zoomer en arrière sur la carte"><ZoomOutIcon /></IconButton>
+        <IconButton color="primary" title="centrer sur le Luxembourg"><CropFreeIcon /></IconButton>
       </Stack>
       {selectedStationIndex === null ? <Typography sx={{p: 2}} style={{
         borderRadius: '.4em',
@@ -103,30 +110,9 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
         color: 'white',
         position: 'absolute',
         textAlign: 'center',
-        backgroundColor: 'rgba(0,0,0, .6)'}}>Click any counting station (dot on the map) to start.<br />Dot-sizes are proportional to average daily traffic.</Typography> : null}
+        backgroundColor: 'rgba(0,0,0, .6)'}}>Cliquez sur un compteur de traffic (disques bleus) sur la carte</Typography> : null}
     </DeckGL>
   )
-}
-
-function HeatMap({countsByDay, year}) {
-
-  const [maxFlow, setMaxFlow] = useState(25000)
-  useEffect(() => { 
-    const q = countsByDay.map(c => c.count).sort()
-    const idx = [Math.floor(q.length * .25), Math.floor(q.length / 2), Math.floor(q.length * .75 )]
-    setMaxFlow(idx.map(i => q[i]))
-  }, [countsByDay])
-
-  return (
-    <CalendarHeatMap
-      year={year} getValue={(x) => x.count} getDate={(x) => x.date} data={countsByDay}
-      titleForValue={(value) => {
-          if (!value) return "no data";
-          return `${value.date}: ${Math.round(value.count)} vehicles`
-      }}
-    />
-  )
-
 }
 
 export function HourlyTraffic({
@@ -136,7 +122,7 @@ export function HourlyTraffic({
   return (
     <ErrorBoundary>
       <Chart xExtent={[0, 24]} yExtent={[0, Math.max(...countsByHour.map(c => c.count_weekday), ...countsByHour.map(c => c.count_weekend))]}>
-        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekday}})} stroke={theme.palette.primary.main} />
+        <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekday}})} stroke={theme.palette.primary.dark} />
         <Chart.LineSeries data={countsByHour.map((c) => {return {x: c.hour, y: c.count_weekend}})} stroke={theme.palette.primary.light}/>
       </Chart>
     </ErrorBoundary>
@@ -145,6 +131,7 @@ export function HourlyTraffic({
 
 
 export function TraficData({
+  vehicleTypeLabel='véhicules',
   years=[2016, 2017, 2018, 2019, 2020, 2021], 
   locationsPath=() => 'data/road/Compteurs_xy.csv',
   countsByDayPath=(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`,
@@ -159,6 +146,7 @@ export function TraficData({
     const [loadingCountsByHour, setLoadingCountsByHour] = useState(true);
     const [filteredCountsByDay, setFilteredCountsByDay] = useState();
     const [filteredCountsByHour, setFilteredCountsByHour] = useState();
+    const [currentTab, setCurrentTab] = useState('monthly')
     const [year, setYear] = useState(years.at(-1));
     const [station, setStation] = useState(1);
     useEffect(() => {
@@ -195,39 +183,79 @@ export function TraficData({
       setFilteredCountsByHour(counts);
     }, [station, countsByHour])
 
+    const monthly = useMemo(() => {
+      if (! filteredCountsByDay) return []
+      const stats = filteredCountsByDay.reduce((kv, v) => {
+        const month = DateTime.fromISO(v.date).month
+        kv[month] = (kv[month] ?? 0) + (v?.count ?? 0)
+        return kv
+      }, {})
+      return Object.values(stats)
+    }, [filteredCountsByDay])
+    
     return (
       <Grid container spacing={2}>
+        <Grid item xs={12}>
+          comptages automatiques de l'Administration des points et chaussées - plus d'informations sur <a href="https://pch.gouvernement.lu/fr/administration/competences/comptage-trafic.html" target="_blank">site des PCH</a>
+        </Grid>
         <Grid item xs={12} lg={6} xl={5} minHeight="50vh">
           <Suspense fallback={<p>Loading...</p>}>
             <StationMap onSelect={setStation} countsByStation={countsByStation.overall} locationsPath={locationsPath} />
           </Suspense>
+        </Grid>
+        <Grid item xs={12}>
+          <YearToggle from={Math.min(...years)} to={Math.max(...years)} currentYear={year} onChange={(evt, val) => setYear(val)} />
         </Grid>
         <Grid item xs={12} lg={6} xl={7}>
           <Typography variant="h4">{station.ROUTE} {station.LOCALITE}</Typography>
           <Grid container spacing={2} sx={{p: 2}}>
             <Grid item xs={6}>
               <SingleStat 
-                  title="Average daily traffic"
-                  caption={`based on counting data for ${year}`}    
+                  title="Trafic moyen journalier"
+                  subtitle="un jour en semaine (lu.-ve.)"
+                  caption={`${vehicleTypeLabel} par jour dans les deux directions`}    
                   value={countsByStation?.overall && countsByStation.overall[station.POSTE_ID]}
-                  unit="cars"
                 />
             </Grid>
             <Grid item xs={6}>
               <SingleStat 
-                  title="Traffic on weekends"
-                  caption="total number of vehicles counted"    
+                  title="Trafic moyen journalier"
+                  subtitle="un jour le weekend (sa.-di.)"
+                  caption={`${vehicleTypeLabel} par jour dans les deux sens`}
                   value={countsByStation.weekend && countsByStation.weekend[station.POSTE_ID]}
                 />
             </Grid>
             <Grid item xs={12}>
               <Paper sx={{p: 2}}>
-                <YearToggle from={Math.min(...years)} to={Math.max(...years)} currentYear={year} onChange={(evt, val) => setYear(val)} />
-                {loadingCountsByDay ? <CanvasSkeleton /> : <HeatMap countsByDay={filteredCountsByDay} year={year} />}
+                <Typography variant="h6" color="primary">
+                  {`Trafic dans les deux sens par ${currentTab=='monthly' ? 'mois' : 'jour'} en ${year}`}
+                </Typography>
+        
+                <Tabs
+                  value={currentTab}
+                  onChange={(evt, newval) => setCurrentTab(newval ?? currentTab)}
+                  aria-label={`choisir le niveau d'aggrégation`}
+                >
+                  <Tab icon={<BarChartIcon />} label="par mois" value="monthly" />
+                  <Tab icon={<CalendarMonthIcon />} label="par jour" value="daily" />
+                </Tabs>
+                {currentTab == 'monthly' && <Box sx={{p: 2}}>
+                  <BarChart data={monthly} svgWidth={1618 * 3} svgHeight={1000} ymax={null} labels={MONTHS} />
+                </Box>}
+                {currentTab == 'daily' && <Box sx={{p: 2}}>
+                  <CalendarHeatMap getValue={(x) => x.count} getDate={(x) => x.date} year={year} data={filteredCountsByDay} />
+                </Box>}
               </Paper>
             </Grid>
             <Grid item xs={12}>
               <Paper sx={{p: 2}}>
+                <Typography variant="h6" color="primary">
+                  {`Trafic moyen par heure dans les deux sens en ${year}`}
+                </Typography>
+                <Typography variant="subtitle" color="primary.dark">en semaine (lu.-ve.)</Typography>
+                <Typography variant="subtitle"> et </Typography>
+                <Typography variant="subtitle" color="primary.light">le weekend</Typography>
+                
                 {loadingCountsByHour ? "Loading ..." : <HourlyTraffic countsByHour={filteredCountsByHour} /> }
               </Paper>
             </Grid>
