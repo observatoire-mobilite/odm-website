@@ -73,6 +73,7 @@ export default function PageTram() {
         </Drawer>
         <Typography variant="h4">{currentStop?.label}</Typography>
         <Button onClick={(evt) => setOpen(! open)}>choisir un autre arrêt</Button>
+        <Typography variant="caption">données du comptage automatique LUXTRAM corrigées pour le taux de comptage</Typography>
         <PassengerServiceGrid 
             url='data/publictransport/tramstats.json'
             statsLabel="Stop"

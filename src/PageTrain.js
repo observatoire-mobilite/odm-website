@@ -7,10 +7,10 @@ export default function PageTrain() {
     return (
         <LineMap url='data/publictransport/trainmap.json'>
             <DataDialog statsLabel="Line" idField="line" labelField="line" prefix="CFL ligne">
-                <PassengerServiceGrid 
+                <PassengerServiceGrid
                     url='data/publictransport/trainstats-line.json'
                     statsLabel="Line"
-                    comment=""
+                    comment="compilation basée sur les données CFL"
                     unit="voyageurs (montées + descentes divisées par 2)"
                     idField="line"
                     fromYear={2017}
@@ -20,7 +20,7 @@ export default function PageTrain() {
                 <PassengerServiceGrid 
                     url='data/publictransport/trainstats.json'
                     statsLabel="Stop"
-                    comment=""
+                    comment="compilation basée sur les données CFL"
                     unit="montées + descentes"
                     idField="label"
                     fromYear={2017}
