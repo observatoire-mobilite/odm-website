@@ -65,7 +65,7 @@ export default function PageDemand() {
                                             onChange={ (evt) => setCurrentScenario(evt.target.checked ? 1 : 0) } 
                                         />
                                     }
-                                    label="Project to 2035" 
+                                    label="Projection PNM 2035" 
                                 />
                             </FormGroup>
                         </Grid>
