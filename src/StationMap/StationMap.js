@@ -62,16 +62,17 @@ export default function StationMap({stations, onSelect=((e) => undefined), count
           <IconButton color="primary" title="lock map - can simplify scrolling down to other widgets" disabled><LockIcon /></IconButton>
         </Stack>
         {currentIndex === null ? <Typography sx={{p: 2}} style={{
-          borderRadius: '.4em',
-          top: 'calc(50% - 4em)',
-          width: '20em',
-          inlineSize: '15em',
-          left: 'calc(50% - 10em)',
-          fontSize: '1em',
-          color: 'white',
-          position: 'absolute',
-          textAlign: 'center',
-          backgroundColor: 'rgba(0,0,0, .6)'}}>Click any counting station (dot on the map) to start.<br />Dot-sizes are proportional to average charged energy.</Typography> : null}
+        borderRadius: '.4em',
+        top: 'calc(50% - 4em)',
+        width: '20em',
+        inlineSize: '15em',
+        left: 'calc(50% - 10em)',
+        fontSize: '1em',
+        color: 'white',
+        position: 'absolute',
+        textAlign: 'center',
+        backgroundColor: 'rgba(0,0,0, .6)'}}>Cliquez sur une borne de recharge (disques bleus) sur la carte</Typography> : null}
+
       </DeckGL>
     )
   }
