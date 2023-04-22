@@ -48,16 +48,10 @@ export default function Flows({url='data/demand/flows.json', maxStrokeWidth=20, 
     
     const displayData = useMemo(() => {
         if (currentZone === null || flows === null || zones === null) return null
-        const modes = flows[currentScenario][currentZone.index]
-        const allflows = modes[0].map((_, toZone) => ({
-            toZone, 
-            flow: modes.reduce((kv, mode) => kv + (mode[toZone] ?? 0), 0)
-        }))
-        const flow = hideInternalFlow ? allflows.filter(({toZone}) => toZone != currentZone.index ) : allflows
-        const maxFlow = Math.max(...flow.map(({flow}) => flow))
-        
+        const flow = flows[currentZone.index][`flux_${currentScenario == 0 ? 2017 : 2035}`]
+        const maxFlow = Math.max(...flow)
         const [x1, y1] = zones[currentZone.index].centroid ?? [0, 0]
-        return flow.map(({flow, toZone}) => {
+        return flow.map((flow, toZone) => {
             const [x2, y2] = zones[toZone].centroid ?? country2point(zones[toZone], viewBox)
             return {x1, y1, x2, y2, strokeWidth: flow / maxFlow * maxStrokeWidth}
         })

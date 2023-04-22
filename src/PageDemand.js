@@ -35,15 +35,15 @@ export default function PageDemand() {
     
     const displayData = useMemo(() => {
         if (flows === null || currentScenario === null || currentZone === null) return null
-        const data = flows[currentScenario][currentZone.index]
-        
-        const sum = (d) => d.reduce((kv, v) => kv + (v ?? 0), 0)
-        const byMode = data.map((mode) => sum(mode))
-        const total = sum(byMode)
-        const internal = Math.ceil(data.reduce((kv, mode) => kv + (mode[currentZone.index] ?? 0), 0) / total * 100)
-        console.log(internal, total)
-        const corridor = `${currentZone?.corridor ?? ''} ${currentZone?.country == 'Luxembourg' ? '' : (currentZone?.country ?? '')}`
-        return {byMode, corridor, total, internal}
+        const data = flows[currentZone.index]
+        const inLU = currentZone?.country == 'Luxembourg'
+        const temp = data[`partmodale_${currentScenario == 0 ? 2017 : 2035}`]
+        const byMode = [temp[0], temp[2], temp[3], ...(inLU ? [temp[1]] : [])]
+        const total = byMode.reduce((kv, v) => kv + (v ?? 0), 0)
+        const internal = inLU ? Math.round(data[`flux_${currentScenario == 0 ? 2017 : 2035}`][currentZone.index] / total * 100) : null
+        const corridor = `${currentZone?.corridor ?? ''} ${inLU ? '' : (currentZone?.country ?? '')}`
+        const notACorridor = currentZone?.corridor == 'Ville de Luxembourg' || currentZone?.corridor == 'Nordstad' || currentZone?.corridor == 'Ceinture suburbaine'
+        return {byMode, corridor, total, internal, notACorridor}
     }, [flows, currentZone, currentScenario, screenMD])
     
     return (<Container maxWidth="lg" sx={{mt: 2}}>
@@ -52,11 +52,11 @@ export default function PageDemand() {
                 <Paper sx={{p: 2, width: '100%'}}>
                     <Grid container direction="column" justifyContent="flex-start" alignItems="stretch" sx={{height: 1}}>
                         <Grid item>
-                            <Typography variant="h6">Corridor {displayData?.corridor ?? '(none chosen)'}</Typography>
+                            <Typography variant="h6">{displayData?.notACorridor ? '': 'Corridor '}{displayData?.corridor ?? '(none chosen)'}</Typography>
                         </Grid>
                         <Grid item>
-                            <Typography>Total: <FancyNumber count={displayData?.total ?? 0} />&nbsp;<small>déplacements / jour</small></Typography>
-                            <Typography>Mobilité interne: <FancyNumber count={displayData?.internal ?? 0} />&nbsp;<small>%</small></Typography>
+                            <Typography>Total: <FancyNumber count={displayData?.total ?? '??'} />&nbsp;<small>déplacements / jour</small></Typography>
+                            {displayData?.internal !== null && <Typography>Déplacements internes: <FancyNumber count={displayData?.internal} />&nbsp;<small>%</small></Typography>}
                             <FormGroup>
                                 <FormControlLabel 
                                     control={
@@ -78,16 +78,16 @@ export default function PageDemand() {
                                 height="auto"
                                 icons={[
                                     <SVGCar style={{transform: 'scale(0.25)'}} />,
-                                    <SVGPedestrian style={{transform: 'scale(0.25)'}} />,
                                     <SVGTramway style={{transform: 'scale(0.2)'}} />,
-                                    <SVGBicycle style={{transform: 'scale(0.3)'}} />
+                                    <SVGBicycle style={{transform: 'scale(0.3)'}} />,
+                                    <SVGPedestrian style={{transform: 'scale(0.25)'}} />,
                                 ]}
                                 ymin="0"
                                 ymax={null}    
                             />}
                         </Container></Grid>
                         <Grid item>
-                            <Typography variant='caption'>Déplacements par jour et par mode en relation avec le corridor {displayData?.corridor ?? '(none chosen)'}</Typography>
+                            <Typography variant='caption'>Déplacements par jour ouvrable (lu.-ve.) ayant leur origine ou destination dans la zone choisie}</Typography>
                         </Grid>
                     </Grid>
                 </Paper>
