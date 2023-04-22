@@ -51,8 +51,12 @@ import TwoWheelerIcon from '@mui/icons-material/TwoWheelerOutlined';
 import VanIcon from '@mui/icons-material/AirportShuttle';
 import AgeIcon from '@mui/icons-material/CakeOutlined';
 import ColorIcon from '@mui/icons-material/ColorLensOutlined';
-
 import AreaChart from './AreaChart'
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+
+
+
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
 
 
 export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval) => null}) {
@@ -61,6 +65,17 @@ export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval)
             return (<ToggleButton key={label} value={label} aria-label={label}>{icons[i] ?? label}</ToggleButton>)
         })}
      </ToggleButtonGroup>
+    )
+}
+
+
+export function AggLevelDropdown({labels, current=null, onChange=(evt, newval) => null}) {
+    return (<FormControl sx={{ m: 1, minWidth: 120 }}>
+            <InputLabel id="select-year">Aggrégation</InputLabel>
+            <Select labelId="select-year" id="select-year-small" value={current} label="Year" onChange={onChange} >
+                { labels.map((value, index) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
+            </Select>
+        </FormControl>
     )
 }
 
@@ -86,17 +101,29 @@ export default function Fleet() {
         })
     }, [])
 
+    const dates = useMemo(() => {
+        if (stats === null) return []
+        return stats['refdates'].map((d) => {
+            const date = DateTime.fromISO(d)
+            return `${MONTHS[date.month - 1]} ${date.year}`
+        })
+    }, [stats])
+    console.log(currentStat)
+
     if (! statsLoaded) return
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
+            <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={2}>
+                <Grid item xs={12}>
+                    Compilation des donnes de la SNCA - données disponibles en OpenData
+                </Grid>
                 <Grid item xs={12}>
                     <ComplexStat
-                        title="Évolution de la composition du parc automobile"
+                        title="Parc automobile selon la SNCA depuis 2017"
                     >
                         <Grid container direction="row" justifyContent="space-between" sx={{p: 2}}>
-                            <Grid item>
+                            <Grid item xs={12}>
                                 <AggLevel 
                                     current={currentCat} 
                                     onChange={(evt, newval) => setCurrentCat(newval ?? currentCat)}
@@ -107,20 +134,14 @@ export default function Fleet() {
                                             <IconTruck color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />,
                                             <IconBus color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
                                 />
-                            </Grid>
-                            <Grid item>
-                                <AggLevel 
+                                <AggLevelDropdown 
                                     current={currentStat} 
-                                    onChange={(evt, newval) => setCurrentStat(newval ?? currentStat)}
+                                    onChange={(evt) => setCurrentStat(evt.target.value ?? currentStat)}
                                     labels={['carburant', 'année', 'marque', 'couleur']}
-                                    icons={[<IconEngine color={theme.palette.text.secondary} width="1.2rem" height="1.2rem" />, 
-                                            <AgeIcon />,
-                                            <VanIcon />, 
-                                            <ColorIcon color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
                                 />
                             </Grid>
                             <Grid item xs={12} sx={{m: 2}}>
-                                <AreaChart data={stats[currentCat][currentStat]} xlabels={stats['refdates']} />
+                                <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} />
                             </Grid>
                         </Grid>
 
