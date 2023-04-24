@@ -1,28 +1,47 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext, Fragment } from 'react';
 import { animated, useSpring, useSprings, to } from '@react-spring/web'
 import { DateTime } from "luxon";
-import { createUseGesture, dragAction, pinchAction, scrollAction, wheelAction } from '@use-gesture/react'
-import { createMemoryHistory } from '@remix-run/router';
-import { width } from '@mui/system';
-import { ColorRampProperty } from 'maplibre-gl';
+import { styled } from '@mui/material/styles'
 import './CalendarHeatMap.css'
+import HeatMapCircles from './HeatMapCircles';
+import Tooltip from './Tooltip';
+
+
+function TooltipWrapper({children}) {
+
+  const [info, setInfo] = useState(null)
+  
+  const [spring, api] = useSpring(() => ({
+    x: 0,
+    y: 0,
+    display: 'block'
+  }))
+
+  return (<Fragment>{children}<Tooltip style={spring} /></Fragment>)
+
+}
 
 
 export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, getValue, offsetDay=0}) {
     /* Displays the daily variation of some quantity throughout a year.*/
+    
+    const handleClick = (info) => {
+      console.log(info)
+    }
 
     const [intYear, values] = useMemo(() => {
       const intYear = parseInt(year)  // just a precaution: if `year` is passed as a string, the component fails miserably (with misleading error messages)
       return [intYear, (getDate && getValue) ? objectsToArray(intYear, data, getDate, getValue) : data]
     }, [year, data])
-    return (
+    return (<TooltipWrapper>
       <SVGcanvas>
           <HeatMapMonths year={intYear} xOffset={150} yOffset={yOffset}/>
           <HeatMapDayLabels />
-          <HeatMapCircles year={intYear} xOffset={150} yOffset={yOffset} values={values} offsetDay={offsetDay} />
+          <HeatMapCircles year={intYear} xOffset={150} yOffset={yOffset} values={values} offsetDay={offsetDay} onClick={handleClick} />
           <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
           <HeatMapWeekBars year={intYear} xOffset={150} values={values} offsetDay={offsetDay} />
       </SVGcanvas>
+      </TooltipWrapper>
     )
         
 }
@@ -39,11 +58,9 @@ function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.v
 }
 
 
-function SVGcanvas({children, width='100%', height=undefined, vertical=false}) {
-    const proportion = useMemo(() => 950 / 5450, [])
-    
-    return (
-        <svg width={width} height={height} viewBox="0 -150 5450 950">
+function SVGcanvas({children, width='100%', height=undefined, vertical=false, ...rest}) {
+  return (
+        <svg width={width} height={height} viewBox="0 -150 5450 950" {...rest} >
             {children}
         </svg>
     )
@@ -87,56 +104,6 @@ function HeatMapDayLabels({yOffset=0, fontSize=60}) {
 }
 
 
-function HeatMapCircles({
-  year, values=[], log=false, offsetDay=0,
-  minRadius=10, maxRadius=50,
-  minValue=0, maxValue='auto',
-  xOffset=0, yOffset=0,
-  ...args
-}) {
-  const circleDiameter = 2 * maxRadius
-  const displayData = useMemo(() => {
-    const janfirst = DateTime.local(year, 1, 1)
-    const valuesFillna = values.map(v => v ?? 0)
-    const xmax = maxValue == 'auto' ? Math.max(...valuesFillna) : maxValue
-    const xmin = minValue == 'auto' ? Math.min(...valuesFillna) : minValue
-  
-    return Array.from({length: janfirst.daysInYear}, (_, i) => {
-      const day = janfirst.plus({days: i})
-      const value = i < offsetDay ? null : (values[i - offsetDay] === undefined ? null : values[i - offsetDay])
-      const scaledValue = value === null ? null : (value - xmin) / xmax
-      const category = value === null ? 'null' : Math.floor(scaledValue * 10)
-      const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * circleDiameter
-      const y = yOffset + (day.weekday - 1) * circleDiameter
-      const r = minRadius + scaledValue * (maxRadius - minRadius)
-      return {i, day, value, category, x, y, r}
-    })
-
-  }, [year, values])
-  console.count('heat-map-circles')
-
-  return (
-    <g id='heatmap-circles'>{displayData.map((point) => {
-      return (
-        <g key={`heatmap-day-${point.i}-circle`} transform={`translate(${point.x}, ${point.y})`}>
-          <animated.circle key={`heatmap-day-${point.i}-circle`}
-            cx={maxRadius} cy={maxRadius} r={point.r} 
-            className="heatmap"
-            data-value={point.value}
-            data-scaledvalue={point.category}
-          />
-          <rect key={`heatmap-day-${point.i}-ui`}
-            x={0} y={0}
-            width={circleDiameter} height={circleDiameter}
-            className="heatmap-ui"
-            pointerEvents="visible"
-            title={`${point.day.toISODate()}: ${point.value}`}
-          />
-        </g>
-      )    
-    })}</g>
-  )
-}
 
 
 function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, offsetDay=0}) {

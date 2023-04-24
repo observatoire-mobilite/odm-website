@@ -2,8 +2,6 @@ import {useState, useMemo, useTransition, useEffect, Fragment, Children, useCont
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, config } from '@react-spring/web'
 //import { HeatMap } from './BusMap.js'
-import CalendarHeatMap from './CalendarHeatMap'
-import { HourlyTraffic } from './RoadTraffic.js'
 
 
 import Button from '@mui/material/Button';
@@ -64,6 +62,10 @@ export default function PageTram() {
     const [open, setOpen] = useState(currentStop === null)
     const handleClick = useCallback((evt) => setOpen(! open))
     const handleSelect = useCallback((stop) => { setCurrentStop(stop); setOpen(false) })
+    useEffect(() => {
+        setCurrentStop(data.stops[0])
+        setOpen(false)
+    }, [])
     
 
     return (<Container maxWidth="lg">
@@ -71,9 +73,11 @@ export default function PageTram() {
             <Offset />
             <LineGraph stops={data.stops} currentStop={currentStop} onSelection={handleSelect} />
         </Drawer>
-        <Typography variant="h4">{currentStop?.label}</Typography>
-        <Button onClick={(evt) => setOpen(! open)}>choisir un autre arrêt</Button>
-        <Typography variant="caption">données du comptage automatique LUXTRAM corrigées pour le taux de comptage</Typography>
+        <Typography variant="caption">Données du comptage automatique LUXTRAM corrigées pour le taux de comptage</Typography>
+        <Grid container>
+            <Grid item><Typography variant="h4">{currentStop?.label}</Typography></Grid>
+            <Grid item justifyContent="middle"><Button onClick={(evt) => setOpen(! open)}>choisir un autre arrêt</Button></Grid>
+        </Grid>
         <PassengerServiceGrid 
             url='data/publictransport/tramstats.json'
             statsLabel="Stop"

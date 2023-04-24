@@ -32,7 +32,6 @@ import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import { animated, useSpring, config } from '@react-spring/web'
 import CalendarHeatMap from './CalendarHeatMap/CalendarHeatMap.js'
-import { HourlyTraffic } from './RoadTraffic.js'
 import { AggregateStatistics, FancyNumber } from './PageTram.js'
 import SingleStat from './DataGrids/SingleStat.js'
 import ComplexStat from './DataGrids/ComplexStat.js'
@@ -69,11 +68,10 @@ export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval)
 }
 
 
-export function AggLevelDropdown({labels, current=null, onChange=(evt, newval) => null}) {
+export function AggLevelDropdown({labels, displayLabels=[], current=null, onChange=(evt, newval) => null}) {
     return (<FormControl sx={{ m: 1, minWidth: 120 }}>
-            <InputLabel id="select-year">Aggrégation</InputLabel>
-            <Select labelId="select-year" id="select-year-small" value={current} label="Year" onChange={onChange} >
-                { labels.map((value, index) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
+            <Select aria-label="caractéristique à visualiser" id="select-year-small" value={current} label="Year" onChange={onChange} >
+                { labels.map((value, i) => <MenuItem key={value} value={value}>{displayLabels[i] ?? value}</MenuItem>)}
             </Select>
         </FormControl>
     )
@@ -116,11 +114,11 @@ export default function Fleet() {
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={2}>
                 <Grid item xs={12}>
-                    Compilation des donnes de la SNCA - données disponibles en OpenData
+                    Compilation des donnes de la SNCA - données disponibles <a href="https://data.public.lu/fr/datasets/parc-automobile-du-luxembourg" target="_blank">en OpenData</a>
                 </Grid>
                 <Grid item xs={12}>
                     <ComplexStat
-                        title="Parc automobile selon la SNCA depuis 2017"
+                        title="Parc automobile depuis 2017 (SNCA)"
                     >
                         <Grid container direction="row" justifyContent="space-between" sx={{p: 2}}>
                             <Grid item xs={12}>
@@ -134,7 +132,13 @@ export default function Fleet() {
                                             <IconTruck color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />,
                                             <IconBus color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
                                 />
-                                <AggLevelDropdown 
+                                <AggLevelDropdown
+                                    displayLabels={[
+                                        'motorisation',
+                                        <span>année de 1<sup>ère</sup> immatriculation</span>,
+                                        'constructeurs (top 7)',
+                                        'couleur'
+                                    ]} 
                                     current={currentStat} 
                                     onChange={(evt) => setCurrentStat(evt.target.value ?? currentStat)}
                                     labels={['carburant', 'année', 'marque', 'couleur']}

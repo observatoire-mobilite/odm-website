@@ -48,7 +48,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
             </Grid>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
                 <SingleStat 
-                    title="Moyenne journalière (lu.-ve.)"
+                    title="Moyenne journalière (lu-ve)"
                     caption={`${unit} par jour en ${currentYear}`}
                     value={annual_daily_average_corrected}
                 />
@@ -63,7 +63,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
             {counting_ratio && <Grid item md={4} sm={12} xs={12}>
                 <SingleStat 
                     title="Taux de comptage"
-                    caption="rapport entre haltes comtpés et haltes observés"
+                    caption="rapport entre haltes comtpées et haltes observées"
                     value={counting_ratio}
                     unit="%"
                 />
@@ -82,7 +82,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                         {daily && <Tab icon={<CalendarMonthIcon />} label="par jour" value="daily" />}
                     </Tabs>
                     {monthly && currentTab == 'monthly' && <Box sx={{p: 2}}>
-                        <BarChart data={monthly} svgWidth={1618 * 3} svgHeight={1000} labels={MONTHS} ymax={null} width="100%" />
+                        <BarChart data={Array.from({length: 12}, (_, i) => monthly[i] ?? null)} svgWidth={1618 * 3} svgHeight={1000} labels={MONTHS} ymax={null} width="100%" />
                     </Box>}
                     {daily && currentTab == 'daily' && <Box sx={{p: 2}}>
                         <CalendarHeatMap year={currentYear} data={daily} offsetDay={day_offset} />

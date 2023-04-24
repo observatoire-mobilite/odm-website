@@ -1,9 +1,9 @@
-import {TraficData} from './RoadTraffic.js'
+import RoadTraffic from "./RoadTraffic"
 
 
 export function Cycling() {
   return (
-      <TraficData
+      <RoadTraffic
           vehicleTypeLabel='vélos'
           locationsPath={() => 'data/road/Compteurs_xy.csv'}
           countsByDayPath={(year) => `data/road/Bike/comptage_${year}_velo_days_year.csv`}
@@ -16,7 +16,7 @@ export function Cycling() {
 
 export function Trucks() {
   return (
-      <TraficData
+      <RoadTraffic
           vehicleTypeLabel='camions'
           locationsPath={() => 'data/road/Compteurs_xy.csv'}
           countsByDayPath={(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`}
@@ -29,7 +29,7 @@ export function Trucks() {
 
 export function Cars() {
   return (
-      <TraficData
+      <RoadTraffic
           vehicleTypeLabel='voitures'
           locationsPath={() => 'data/road/Compteurs_xy.csv'}
           countsByDayPath={(year) => `data/road/Mot/comptage_${year}_mot_days_year.csv`}
