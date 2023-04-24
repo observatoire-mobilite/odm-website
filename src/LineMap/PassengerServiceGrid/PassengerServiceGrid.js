@@ -82,7 +82,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                         {daily && <Tab icon={<CalendarMonthIcon />} label="par jour" value="daily" />}
                     </Tabs>
                     {monthly && currentTab == 'monthly' && <Box sx={{p: 2}}>
-                        <BarChart data={monthly} svgWidth={1618 * 3} svgHeight={1000} labels={MONTHS} ymax={null} width="100%" height="auto" />
+                        <BarChart data={monthly} svgWidth={1618 * 3} svgHeight={1000} labels={MONTHS} ymax={null} width="100%" />
                     </Box>}
                     {daily && currentTab == 'daily' && <Box sx={{p: 2}}>
                         <CalendarHeatMap year={currentYear} data={daily} offsetDay={day_offset} />
