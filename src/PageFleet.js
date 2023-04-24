@@ -114,7 +114,7 @@ export default function Fleet() {
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={2}>
                 <Grid item xs={12}>
-                    Compilation des donnes de la SNCA - données disponibles <a href="https://data.public.lu/fr/datasets/parc-automobile-du-luxembourg" target="_blank">en OpenData</a>
+                    Compilation des donnes de la SNCA - données disponibles en <a href="https://data.public.lu/fr/datasets/parc-automobile-du-luxembourg" target="_blank">OpenData</a>
                 </Grid>
                 <Grid item xs={12}>
                     <ComplexStat
