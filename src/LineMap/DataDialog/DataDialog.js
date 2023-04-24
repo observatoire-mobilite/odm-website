@@ -13,7 +13,7 @@ import Slide from '@mui/material/Slide';
 
 
 const Transition = forwardRef(function Transition(props, ref) {
-    return <Slide direction="top" ref={ref} {...props} />;
+    return <Slide direction="up" ref={ref} {...props} />;
 });
   
 // adjusts for the height of the AppBar (cf. https://mui.com/material-ui/react-app-bar/#fixed-placement)
