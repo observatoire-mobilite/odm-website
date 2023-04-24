@@ -60,8 +60,8 @@ export default function RoadTraffic({comment=null, ...rest}) {
 function NoData() {
   return (
     <Container sx={{m: 6}}>
-      <Alert severity="warning" sx={{p: 2}}>
-        <AlertTitle>Pas de données pour le compteur et l'année choisie</AlertTitle>
+      <Alert severity="info" sx={{p: 2}}>
+        <AlertTitle>Pas de données pour le compteur et l'année choisis.</AlertTitle>
         <Typography>Veuillez choisir soit un autre compteur ou une autre année. Généralement, la disponibilité de données augmente avec les années.</Typography>
       </Alert>
     </Container>  
