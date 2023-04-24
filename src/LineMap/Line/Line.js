@@ -25,6 +25,7 @@ const LineUIOverlay = styled('g')(({theme}) => ({
     strokeLineend: "round",
     cursor: 'pointer',
     pointerEvents: 'visibleStroke',
+    transition: 'opacity 0.5s',
     '&:hover': {
         opacity: 1, 
         strokeWidth: 5
@@ -36,7 +37,7 @@ export default function Line({line}) {
     //console.count('busline')
     const [ setCurrentLine ] = useLineMapCurrent('Line')
     const key = `line-${line.id}`
-    const iAmTheChosenOne = useCallback((evt) => { setCurrentLine(line)})
+    const iAmTheChosenOne = useCallback((evt) => { setCurrentLine(line) })
 
     return (<g id={key}>
         <LineUnderlay>
