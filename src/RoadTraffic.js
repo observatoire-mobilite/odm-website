@@ -70,9 +70,6 @@ function StationMap({onSelect=((e) => undefined), countsByStation=[], locationsP
 
   const maxCount = Math.max(...countsByStation.filter(c => Number.isFinite(c)))
   const theme = useTheme()
-  //const primary = useMemo(() => hexToRgb(theme.palette.primary.main))
-  const primary = theme.palette.primary.main_rgb
-
   return (
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative', height: '100%'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
       <Map mapLib={maplibregl} mapStyle="style.json" />
@@ -149,6 +146,7 @@ export function TraficData({
     const [currentTab, setCurrentTab] = useState('monthly')
     const [year, setYear] = useState(years.at(-1));
     const [station, setStation] = useState(1);
+    
     useEffect(() => {
       setLoadingCountsByDay(true);
       load(countsByDayPath(year), CSVLoader).then(dta => {
@@ -196,31 +194,33 @@ export function TraficData({
     return (
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          comptages automatiques de l'Administration des points et chaussées - plus d'informations sur <a href="https://pch.gouvernement.lu/fr/administration/competences/comptage-trafic.html" target="_blank">site des PCH</a>
+          Comptages automatiques de l'Administration des points et chaussées (APC) - source: <a href="https://pch.gouvernement.lu/fr/administration/competences/comptage-trafic.html" target="_blank">Comptage du trafic - Administration des ponts et chaussées</a>
         </Grid>
-        <Grid item xs={12} lg={6} xl={5} minHeight="50vh">
+        <Grid item xs={12} md={6} lg={5} minHeight="40vh">
           <Suspense fallback={<p>Loading...</p>}>
             <StationMap onSelect={setStation} countsByStation={countsByStation.overall} locationsPath={locationsPath} />
           </Suspense>
         </Grid>
-        <Grid item xs={12}>
-          <YearToggle from={Math.min(...years)} to={Math.max(...years)} currentYear={year} onChange={(evt, val) => setYear(val)} />
-        </Grid>
-        <Grid item xs={12} lg={6} xl={7}>
-          <Typography variant="h4">{station.ROUTE} {station.LOCALITE}</Typography>
+        <Grid item xs={12} md={6} lg={7}>
           <Grid container spacing={2} sx={{p: 2}}>
+            <Grid item xs={12}>
+              <Typography variant="h4">{station.ROUTE} {station.LOCALITE}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <YearToggle from={Math.min(...years)} to={Math.max(...years)} currentYear={year} onChange={(evt) => { setYear(parseInt(evt.target.value) ?? year) }} />
+            </Grid>
             <Grid item xs={6}>
               <SingleStat 
                   title="Trafic moyen journalier"
-                  subtitle="un jour en semaine (lu.-ve.)"
-                  caption={`${vehicleTypeLabel} par jour dans les deux directions`}    
+                  subtitle="un jour en semaine (lu-ve)"
+                  caption={`${vehicleTypeLabel} par jour dans les deux sens`}    
                   value={countsByStation?.overall && countsByStation.overall[station.POSTE_ID]}
                 />
             </Grid>
             <Grid item xs={6}>
               <SingleStat 
                   title="Trafic moyen journalier"
-                  subtitle="un jour le weekend (sa.-di.)"
+                  subtitle="un jour le weekend (sa-di)"
                   caption={`${vehicleTypeLabel} par jour dans les deux sens`}
                   value={countsByStation.weekend && countsByStation.weekend[station.POSTE_ID]}
                 />
@@ -252,9 +252,9 @@ export function TraficData({
                 <Typography variant="h6" color="primary">
                   {`Trafic moyen par heure dans les deux sens en ${year}`}
                 </Typography>
-                <Typography variant="subtitle" color="primary.dark">en semaine (lu.-ve.)</Typography>
+                <Typography variant="subtitle" color="primary.dark">en semaine (lu-ve)</Typography>
                 <Typography variant="subtitle"> et </Typography>
-                <Typography variant="subtitle" color="primary.light">le weekend</Typography>
+                <Typography variant="subtitle" color="primary.light">le weekend (sa-di)</Typography>
                 
                 {loadingCountsByHour ? "Loading ..." : <HourlyTraffic countsByHour={filteredCountsByHour} /> }
               </Paper>
