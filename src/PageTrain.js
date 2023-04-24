@@ -10,7 +10,7 @@ export default function PageTrain() {
                 <PassengerServiceGrid
                     url='data/publictransport/trainstats-line.json'
                     statsLabel="Line"
-                    comment="compilation basée sur les données CFL"
+                    comment="Compilation basée sur les données du comptage manuel des  CFL"
                     unit="voyageurs (montées + descentes divisées par 2)"
                     idField="line"
                     fromYear={2017}
@@ -20,7 +20,7 @@ export default function PageTrain() {
                 <PassengerServiceGrid 
                     url='data/publictransport/trainstats.json'
                     statsLabel="Stop"
-                    comment="compilation basée sur les données CFL"
+                    comment="Compilation basée sur les données du comptage manuel des CFL"
                     unit="montées + descentes"
                     idField="label"
                     fromYear={2017}
