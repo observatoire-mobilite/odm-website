@@ -65,7 +65,7 @@ export default function StationMap({countsByStation=[], ymax=null, radiusScale=.
     const handleResetView = useCallback((evt) => { setViewState(INITIAL_VIEW_STATE) })
     const handleZoomIn = useCallback((evt) => { setViewState({...viewState, zoom: viewState.zoom + .5}) })
     const handleZoomOut = useCallback((evt) => { setViewState({...viewState, zoom: viewState.zoom - .5}) })
-    console.log(viewState)
+    
     return (
       <DeckGL 
         controller={{doubleClickZoom: false, touchRotate: false}}
@@ -104,3 +104,49 @@ export default function StationMap({countsByStation=[], ymax=null, radiusScale=.
     )
   }
   
+
+
+export function StationMapIsolated({currentStation, setCurrentStation, compare=(a, b) => a == b, ...rest}) {
+  const theme = useTheme()
+  const [colorPrimary, colorSecondary] = useMemo(() => ([
+    theme.palette.primary.main_rgb,
+    theme.palette.secondary.main_rgb
+  ]))
+  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
+  const handleResetView = useCallback((evt) => { setViewState(INITIAL_VIEW_STATE) })
+  const handleZoomIn = useCallback((evt) => { setViewState({...viewState, zoom: viewState.zoom + .5}) })
+  const handleZoomOut = useCallback((evt) => { setViewState({...viewState, zoom: viewState.zoom - .5}) })
+  
+  return (
+    <DeckGL 
+      controller={{doubleClickZoom: false, touchRotate: false}}
+      style={{position: 'relative', height: '100%'}}
+      getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}
+      viewState={viewState}
+      onViewStateChange={(evt) => setViewState(evt.viewState)}
+    >
+      <Map mapLib={maplibregl} mapStyle="style.json" doubleClickZoom={false} />
+      <ScatterplotLayer 
+        getFillColor={(s) => compare(s, currentStation) ? colorSecondary : colorPrimary}
+        getRadius={10}
+        {...rest}
+        opacity={0.8}
+        radiusMinPixels={10}
+        radiusMaxPixels={30}
+        pickable={true}
+        highlightColor={theme.palette.secondary.dark}
+        autoHighlight={true}
+        onClick={({object}, evt) => { setCurrentStation(object ?? currentStation); }}
+        updateTriggers={{
+          getFillColor: [currentStation]
+        }}
+      />
+      <Stack style={{right: '0', position: 'absolute'}}>
+        <IconButton color="primary" title="zoomer en avant sur la carte" onClick={handleZoomIn}><ZoomInIcon /></IconButton>
+        <IconButton color="primary" title="zoomer en arrière sur la carte" onClick={handleZoomOut}><ZoomOutIcon /></IconButton>
+        <IconButton color="primary" title="centrer sur le Luxembourg" onClick={handleResetView}><CropFreeIcon /></IconButton>
+      </Stack>
+      {currentStation === null ? <InitialHint sx={{p: 2}}>Cliquez sur un compteur de traffic (disques bleus) sur la carte</InitialHint> : null}
+    </DeckGL>
+  )
+}

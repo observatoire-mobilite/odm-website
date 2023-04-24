@@ -25,7 +25,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
 import { useTheme } from '@mui/material/styles';
-import StationMap from './RoadTraffic/StationMap'
+import { StationMapIsolated } from './RoadTraffic/StationMap'
 
 export default function PageChargy() {
 
@@ -38,9 +38,16 @@ export default function PageChargy() {
         .then(res => setStationList(res))
     }, [])
 
+    
     return(<Grid container spacing={2}>
         <Grid item xs={12} lg={6} xl={5} minHeight="50vh">
-            <StationMap stations={stationList} onSelect={(s) => setCurrentStation(s)}/>
+            <StationMapIsolated 
+              data={stationList}
+              getPosition={({x, y}) => [x, y]}
+              setCurrentStation={setCurrentStation}
+              currentStation={currentStation}
+              compare={(a, b) => a.name == b.name}
+            />
         </Grid>
         <Grid item xs={12} lg={6} xl={7}>
           <Typography variant="h4">{currentStation?.name ?? '(veuillez choisir une station sur la carte)'}</Typography>
