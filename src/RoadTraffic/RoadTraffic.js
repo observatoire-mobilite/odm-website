@@ -29,6 +29,9 @@ function Layout({comment, children}) {
       {comment && <Grid item xs={12}>
         {comment}
       </Grid>}
+      <Grid item xs={12} sx={{p: 2}}>
+        <Typography variant="caption">Comptages automatiques de l'Administration des ponts et chaussées - infos détaillées sur <a href="https://pch.gouvernement.lu/fr/administration/competences/comptage-trafic.html" target="_blank">Comptage du trafic</a> - données disponibles en <a href="https://data.public.lu/fr/datasets/pch-comptage-du-trafic-sur-le-reseau-routier-national/" target="_blank">OpenData</a></Typography>
+      </Grid>
       <Grid item xs={12} md={6} lg={5} minHeight="40vh">
         <StationMap />
       </Grid>
