@@ -22,9 +22,9 @@ export default function useRoadTrafficData({countsByDayPath, countsByHourPath, g
       if (! hourly || ! daily) return null
       const stats = { 
         hourly: hourly.filter(({id}) => id == currentStation?.POSTE_ID),
-        daily: daily.filter(({id}) => id == currentStation?.POSTE_ID)
+        daily: daily.filter(({id}) => id == currentStation?.POSTE_ID).map((v) => ({...v, count: v.count == 'NA' ? null : parseInt(v.count)}))
       }
-  
+      console.log(stats)
       const monthly = stats.daily.reduce((kv, {date, count}) => {
         kv[date.month] = (kv[date.month] ?? 0) + (count ?? 0)
         return kv
