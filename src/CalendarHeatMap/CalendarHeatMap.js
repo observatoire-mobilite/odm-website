@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext, Fragment } from 'react';
 import { animated, useSpring, useSprings, to } from '@react-spring/web'
 import { DateTime } from "luxon";
-import { styled } from '@mui/material/styles'
+import { getContrastRatio, styled } from '@mui/material/styles'
 import './CalendarHeatMap.css'
 import HeatMapCircles from './HeatMapCircles';
 import Tooltip from './Tooltip';
+
+
+const WEEKDAYS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'sept.', 'octobre', 'nov.','décembre']
+
+  
 
 
 function TooltipWrapper({children}) {
@@ -85,7 +91,7 @@ function HeatMapMonths({year, xOffset=0, yOffset=0}) {
           d={`M ${x_firstmonday},${yOffset} L${x1+100},${yOffset} l0,${y0} l-100,0 l0,${700-y0} L${x0},700 l0,${y1 - 700 - 100} L${x_firstmonday},${y1 - 100} z`}
           style={{fill: i % 2 == 1 ? 'lightgray' : 'none', stroke: 'none'}} 
         />
-        <text x={x0} y={800} style={{fontSize: '100px'}}>{firstday.toFormat('LLL')}</text>
+        <text x={x0} y={800} style={{fontSize: '100px'}}>{MONTHS[firstday.month - 1] ?? '(ERROR)'}</text>
       </g>)
       firstday = nextmonth  // prepare next loop
       return ret
@@ -95,10 +101,9 @@ function HeatMapMonths({year, xOffset=0, yOffset=0}) {
 
 
 function HeatMapDayLabels({yOffset=0, fontSize=60}) {
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   return (
       <g>{[...Array(7).keys()].map((i) =>
-          <text key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100} style={{'fontSize': fontSize, 'alignmentBaseline': 'middle'}}>{weekdays[i]}</text>
+          <text key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100} style={{'fontSize': fontSize, 'alignmentBaseline': 'middle'}}>{WEEKDAYS[i]}</text>
       )}</g> 
   )
 }
