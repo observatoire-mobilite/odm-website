@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState, useCallback } from "react"
 import { shallow } from "zustand/shallow"
 
 import { useTheme, styled } from '@mui/material/styles';
@@ -61,9 +61,19 @@ export default function StationMap({countsByStation=[], ymax=null, radiusScale=.
       theme.palette.primary.main_rgb,
       theme.palette.secondary.main_rgb
     ]))
-    
+    const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
+    const handleResetView = useCallback((evt) => { setViewState(INITIAL_VIEW_STATE) })
+    const handleZoomIn = useCallback((evt) => { setViewState({...viewState, zoom: viewState.zoom + .5}) })
+    const handleZoomOut = useCallback((evt) => { setViewState({...viewState, zoom: viewState.zoom - .5}) })
+    console.log(viewState)
     return (
-      <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} style={{position: 'relative', height: '100%'}} getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}>
+      <DeckGL 
+        controller={{doubleClickZoom: false, touchRotate: false}}
+        style={{position: 'relative', height: '100%'}}
+        getCursor={({isHovering}) => isHovering ? 'pointer' : 'grab'}
+        viewState={viewState}
+        onViewStateChange={(evt) => setViewState(evt.viewState)}
+      >
         <Map mapLib={maplibregl} mapStyle="style.json" doubleClickZoom={false} />
         <ScatterplotLayer 
           data={locations?.filter(({POSTE_ID}) => overview[POSTE_ID] > 0) ?? locations}
@@ -77,7 +87,7 @@ export default function StationMap({countsByStation=[], ymax=null, radiusScale=.
           pickable={true}
           highlightColor={theme.palette.secondary.dark}
           autoHighlight={true}
-          onClick={({object}, evt) => { evt.preventDefault(); setCurrentStation(object ?? currentStation); }}
+          onClick={({object}, evt) => { setCurrentStation(object ?? currentStation); }}
           updateTriggers={{
             getRadius: [overview, maxCount],
             getPosition: [locations],
@@ -85,9 +95,9 @@ export default function StationMap({countsByStation=[], ymax=null, radiusScale=.
           }}
         />
         <Stack style={{right: '0', position: 'absolute'}}>
-          <IconButton color="primary" title="zoomer en avant sur la carte"><ZoomInIcon /></IconButton>
-          <IconButton color="primary" title="zoomer en arrière sur la carte"><ZoomOutIcon /></IconButton>
-          <IconButton color="primary" title="centrer sur le Luxembourg"><CropFreeIcon /></IconButton>
+          <IconButton color="primary" title="zoomer en avant sur la carte" onClick={handleZoomIn}><ZoomInIcon /></IconButton>
+          <IconButton color="primary" title="zoomer en arrière sur la carte" onClick={handleZoomOut}><ZoomOutIcon /></IconButton>
+          <IconButton color="primary" title="centrer sur le Luxembourg" onClick={handleResetView}><CropFreeIcon /></IconButton>
         </Stack>
         {currentStation === null ? <InitialHint sx={{p: 2}}>Cliquez sur un compteur de traffic (disques bleus) sur la carte</InitialHint> : null}
       </DeckGL>
