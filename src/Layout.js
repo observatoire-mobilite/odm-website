@@ -10,6 +10,7 @@ import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import Badge from '@mui/material/Badge';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
@@ -24,6 +25,7 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import FAQList from './FAQ/List'
 import FAQEntry from './FAQ/Entry'
+import { useLineMapReset } from './LineMap/store/index.js';
 
 function Copyright(props) {
   return (
@@ -204,20 +206,19 @@ export default function Layout() {
 }
 
 
-function ErrorNotice({error}) {
+function ErrorNotice({error, resetErrorBoundary}) {
+  const reset = useLineMapReset()
   return (<Fragment>
-    <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 4 }}>
-      <AlertTitle>Something went wrong</AlertTitle>
-        {error.message}
-    </Alert>
     <Container maxWidth="md">
-      <Paper>
-          <FAQList>
-              <FAQEntry title="What just happened??" name="panel-1">
-                  <Typography>If you see this dialog, it means that the ODM dashboard you have been trying to use crashed</Typography>
-              </FAQEntry>
-          </FAQList>
-      </Paper>
+    <Alert severity="error" sx={{ width: '100%', mt: 8, mb: 4 }}>
+      <AlertTitle>Something went wrong</AlertTitle>
+        <p>{error.message}</p>
+        <p>Hitting the button below will reset the application's state - i.e. it will forget e.g. which lines or stops 
+          were selected just before this problem occured. You might also try refreshing the page. If the problem persists,
+          please file a bug-report.
+        </p>
+        <Button onClick={() => { reset(); resetErrorBoundary() }} color="error" variant="contained">Try Again</Button>
+    </Alert>
     </Container>
   </Fragment>
   )
