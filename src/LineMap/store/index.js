@@ -35,7 +35,8 @@ export const useLineMapStore = create((set) => ({
     fetchLineStats: async (url) => {
       const resp = await fetch(url)
       set({ statsLine: await resp.json() })
-    }
+    },
+    reset: () => set({statsStop: null, statsLine: null, currentStop: null, currentLine: null, currentYear: 2023})
   }))
 
 
@@ -51,7 +52,7 @@ export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[])
       state.currentYear, state.setCurrentYear],
     shallow
   )
-
+console.log(stats)
   const {showBoundary} = useErrorBoundary()
   useEffect(() => {
       fetchStats(url)
@@ -74,6 +75,10 @@ export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[])
   return ({currentYear, data, current, setCurrentYear, setCurrent})
 }
 
+
+export function useLineMapReset() {
+  return useLineMapStore((state) => state.reset)
+}
 
 export function useLineMapCurrent(statsLabel, fields=[]) {
   const [current, setCurrent] = useLineMapStore(
