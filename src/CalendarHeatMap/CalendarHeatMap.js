@@ -11,16 +11,17 @@ import './CalendarHeatMap.css'
 export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, getValue, offsetDay=0}) {
     /* Displays the daily variation of some quantity throughout a year.*/
 
-    const values = useMemo(() => {
-      return (getDate && getValue) ? objectsToArray(year, data, getDate, getValue) : data
+    const [intYear, values] = useMemo(() => {
+      const intYear = parseInt(year)  // just a precaution: if `year` is passed as a string, the component fails miserably (with misleading error messages)
+      return [intYear, (getDate && getValue) ? objectsToArray(intYear, data, getDate, getValue) : data]
     }, [year, data])
     return (
       <SVGcanvas>
-          <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
+          <HeatMapMonths year={intYear} xOffset={150} yOffset={yOffset}/>
           <HeatMapDayLabels />
-          <HeatMapCircles year={year} xOffset={150} yOffset={yOffset} values={values} offsetDay={offsetDay} />
+          <HeatMapCircles year={intYear} xOffset={150} yOffset={yOffset} values={values} offsetDay={offsetDay} />
           <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
-          <HeatMapWeekBars year={year} xOffset={150} values={values} offsetDay={offsetDay} />
+          <HeatMapWeekBars year={intYear} xOffset={150} values={values} offsetDay={offsetDay} />
       </SVGcanvas>
     )
         
@@ -141,7 +142,7 @@ function HeatMapCircles({
 function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, offsetDay=0}) {
   const circleDiameter = 2 * maxRadius
   const displayData = useMemo(() => {
-    if (values === undefined) return
+    if (! values) return
     const janfirst = DateTime.local(year, 1, 1)
     let max = 0
     return Object.entries([...Array(janfirst.daysInYear).keys()].reduce((kv, i) => {
@@ -157,7 +158,7 @@ function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, off
     
     }, {})).map(([x,vals]) => {
       // second step step: calculate average day per week
-      // and retain its maximum while at the same time
+      // and retain its maximum at the same time
       const value = vals.reduce((kv, v) => kv + v, 0) / vals.length
       max = Math.max(value, max)
       return {x, value}
@@ -166,6 +167,7 @@ function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, off
       // finally, scale by max (assuming minimum is zero)
       return {...week, scaledValue: week.value / max, category: Math.floor(week.value / max * 10)}
     })
+  
 
   }, [year, values])
 

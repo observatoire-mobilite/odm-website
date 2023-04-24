@@ -36,7 +36,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
     const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
           day_offset=0, monthly=null, daily=null} = data ?? {}
     const [ currentTab, setCurrentTab] = useState('monthly')
-    const handleChangeYear = useCallback((evt) => setCurrentYear(evt.target.value ?? currentYear), [])
+    const handleChangeYear = useCallback((evt) => setCurrentYear(parseInt(evt.target.value) ?? currentYear), [])
     
     return (
         <Grid container direction="row" justifyContent="space-between" alignItems="stretch" spacing={2}>
