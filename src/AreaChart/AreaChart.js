@@ -1,7 +1,6 @@
 import { useState, forwardRef, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext, Fragment } from 'react';
 import { animated, useSprings, useSpring, config } from '@react-spring/web'
-import { useTheme } from '@mui/material/styles';
-import './AreaChart.css'
+import { useTheme, styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -11,15 +10,8 @@ import FancyNumber from '../DataGrids/FancyNumber.js';
 import { DateTime } from 'luxon';
 
 
-export default function AreaChart({data, xlabels}) {
-    /* expects data to be an object whose properties are the series to be plotted
-        data = {
-            group1: [ <values> ],
-            group2: [ <values> ],
-        }
-    */
-    const ref = useRef(null)
-    const theme = useTheme()
+export default function AreaChart({xlabels, data}) {
+    console.count('area-chart')
     
     const displayData = useMemo(() => {
         const keys = Object.keys(data)
@@ -58,50 +50,117 @@ export default function AreaChart({data, xlabels}) {
         })
     }, [data])
 
-    const [springs, api] = useSprings(displayData.length, (i) => ({ to: { d: displayData[i].d }}), [displayData])
-    const n = displayData.length
-    const m = displayData[0].data.length
-    console.count('area')
+    return(<AreaPlot displayData={displayData} xlabels={xlabels}>
+            <AreaCurves displayData={displayData} />
+        </AreaPlot>)
 
+}
+
+
+const AreaCurveLabel = styled(animated('text'))(({theme}) =>({
+    justifyContent: "center",
+    alignmentBaseline: "middle",
+    fill: theme.palette.primary.contrastText
+}))
+
+
+const colors = ['#ffbb1c', '#ccc01d', '#9bbf36', '#69bb52', '#2db46d',
+                '#00aa84', '#009f96', '#0093a1', '#0085a3', '#05779c', 
+                '#05779c']  // last color twice -> category 10 -> anything that would exactly map to 9
+const AreaCurvePath = styled(animated('path'))(({theme}) => ({
+    stroke: theme.palette.primary.contrastText,
+    strokeWidth: 1,
+    fill: theme.palette.grey[400],
+    ...Object.fromEntries(colors.map((fill, i) => ([`&[data-scaledvalue="${i}"]`, { fill }]))),
+}))
+
+
+
+function AreaCurves({displayData}) {
+    
+
+    const [springs, api] = useSprings(displayData.length, (i) => ({ to: { d: displayData[i].d }}), [displayData])
+    console.count('area-curves')
+
+    return (
+        <g>
+            {springs.map((spring, i) => (
+                <g key={`area-group-${i}`}>
+                    <AreaCurvePath data-scaledvalue={10 - i} d={spring.d} />
+                    <AreaCurveLabel  x={displayData[i].label_x} y={displayData[i].label_y}>{displayData[i].label}</AreaCurveLabel>
+                </g>
+            ))}
+        </g>)
+
+}
+
+
+export function AreaPlot({children, displayData, xlabels, viewBox={x: 0, y: 0, width: 1000, height: 620}}) {
+    /* expects data to be an object whose properties are the series to be plotted
+        data = {
+            group1: [ <values> ],
+            group2: [ <values> ],
+        }
+    */
+    console.count('area-tooltip')
+    
     const [pointer, act] = useSpring(() => ({to: {x: 0, y: 0}, config: config.stiff }))
     const [info, setInfo] = useState(null)
-
-    const locateMouse = ({clientX, clientY}) => {
-        if (! ref?.current) return
-        const {x, y, width, height}= ref.current.getBoundingClientRect()
-        const [rx, ry] = [(clientX - x) / width, (clientY - y) / height]
+    const canvasRef = useRef(null)
+    const tooltipRef = useRef(null)
+    const theme = useTheme()
+    const spacing = useMemo(() => [0, 1, 2].map((_, i) => parseFloat(theme.spacing(i))), [])
+    const n = xlabels.length
+    
+    const locateMouse = useCallback(({clientX, clientY}) => {
+        const {x, y, width: canvasWidth, height: canvasHeight}= canvasRef.current.getBoundingClientRect()
         
-        const i = Math.floor(rx * xlabels.length)
+        // relative position of mouse on canvas
+        const [rx, ry] = [(clientX - x) / canvasWidth, (clientY - y) / canvasHeight]
+        
+        const i = Math.floor(rx * n)
         const chosen = displayData.find(({upper, lower}) => ((1 - ry >= lower[i]) && (1 - ry <= upper[i]))) ?? displayData.at(-1)
         
+        // relative position rounded to next x and y element
+        const x_rel = i / n
+        const y_rel = (1 - chosen.upper[i])
+
+        const {width: tooltipWidth, height: tooltipHeight} = tooltipRef.current.getBoundingClientRect()
+        const [x_tt, y_tt] = [x_rel * canvasWidth, y_rel * canvasHeight]
         act.start({
-            x: i * 1000 / chosen.data.length, 
-            y1: (1 - chosen.lower[i]) * 620,
-            y2: (1 - chosen.upper[i]) * 620,
-            x_t: i / chosen.data.length * width, 
-            name: chosen.name
+            x: x_rel * viewBox.width, 
+            y1: (1 - chosen.lower[i]) * viewBox.height,
+            y2: y_rel * viewBox.height,
+            x_t:  x_tt - (x_tt > tooltipWidth ? tooltipWidth + spacing[2]  : 0), 
+            y_t: (y_tt + tooltipHeight + spacing[1] > canvasHeight ? canvasHeight - tooltipHeight - spacing[1] : y_tt), 
+            name: chosen.name,
         })
         setInfo({
             caption: xlabels[i],
             value: chosen.data[i],
             title: chosen.name, 
-            percent: Math.round(chosen.relative[i] * 1000) / 10
+            percent: Math.round(chosen.relative[i] * 1000) / 10,
         })
-    }
+    })
+        
 
     return (<Box style={{position: 'relative'}}>
-        <svg ref={ref} width="100%" viewBox="0 0 1000 620" onMouseMove={locateMouse} onMouseLeave={(evt) => setInfo(null)}>
-            <AreaCurves displayData={displayData} />
+        <svg ref={canvasRef} width="100%" viewBox="0 0 1000 620" onMouseMove={locateMouse} onMouseLeave={(evt) => setInfo(null)}>
+            {children}
             <animated.line x1={pointer.x} x2={pointer.x} y1={0} y2={620} stroke="black" strokeDasharray="1, 5" />
             <animated.line x1={pointer.x} x2={pointer.x} y1={pointer.y1} y2={pointer.y2} stroke={theme.palette.secondary.main} strokeWidth="4" />
         </svg>
-        <Tooltip 
+        <DataTooltipContainer 
+            ref={tooltipRef}
             {...info} 
             style={{
                 x: pointer.x_t,
-                y: pointer.y2,
-                display: info === null ? 'none': 'block', left: pointer.left
-        }} />
+                y: pointer.y_t,
+                display: info === null ? 'none': 'block'
+            }}
+        >
+            <DataTooltip {...info} />
+        </DataTooltipContainer>
         <Box sx={{display: {xs: 'block', sm: 'none'}, position: 'absolute', top: 'calc(50% - 1rem)', left: 'calc(50% - 1rem)', width: '2rem', height: '2rem'}}>
             <ScreenRotationIcon />
         </Box>
@@ -110,25 +169,28 @@ export default function AreaChart({data, xlabels}) {
 }
 
 
-function AreaCurves({displayData}) {
-    console.count('area-curves')
-    const [springs, api] = useSprings(displayData.length, (i) => ({ to: { d: displayData[i].d }}), [displayData])
-    return (<g>{springs.map((spring, i) => {return <g key={`area-group-${i}`}>
-            <animated.path className="areachart" data-scaledvalue={10 - i} d={spring.d} />
-            <animated.text justifyContent="center" alignmentBaseline="middle" fill="white" x={displayData[i].label_x} y={displayData[i].label_y}>{displayData[i].label}</animated.text>
-        </g>})}</g>)
-}
+
+const DataTooltipContainer = styled(animated('div'))(({theme}) => ({
+    position: 'absolute',
+    left: theme.spacing(1),
+    top: theme.spacing(1),
+    pointerEvents: 'none',
+    width: '15rem',
+    height: '8rem',
+    '&.left': {
+        left: '-15rem'
+    }
+}))
 
 
-function Tooltip({style, caption, value, title, percent=43}) {
-    return (<animated.div style={{position: 'absolute', left: 0, top:0, pointerEvents: 'none', width: '15rem', ...style}}>
-        <Paper sx={{
+function DataTooltip({caption, value, title, percent=43, ...rest}) {
+    return (<Paper sx={{
             p: 2,
             position: 'absolute',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: '100px',
-            minWidth: '200px',
+            width: 1,
+            height: 1
         }}>
             <Grid container spacing={0} direction="row" justifyContent="space-between" alignItems="baseline">
                 <Grid item xs={12}>
@@ -153,6 +215,5 @@ function Tooltip({style, caption, value, title, percent=43}) {
                 </Grid>
             </Grid>
         </Paper>
-        </animated.div>        
     )
 }
