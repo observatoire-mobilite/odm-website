@@ -18,6 +18,7 @@ function TooltipWrapper({children}) {
   const [info, setInfo] = useState(null)
   
   const [spring, api] = useSpring(() => ({
+    opacity: 0,
     x: 0,
     y: 0,
     display: 'block'
