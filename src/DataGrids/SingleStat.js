@@ -40,7 +40,6 @@ export default function SingleStat({title, subtitle=null, caption=null, value, a
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            minWidth: '200px'
         }}>
             <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={2}>
                 <Grid item xs="auto">{avatar}</Grid>

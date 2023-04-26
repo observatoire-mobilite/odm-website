@@ -1,12 +1,10 @@
-import { Fragment, useEffect } from 'react';
+import { Fragment } from 'react';
 import { useTheme } from '@mui/material/styles';
 import ZoomableSVG from './ZoomableSVG'
 import Line from './Line'
 import Stop from './Stop'
-import { useLineMapStore } from './store';
+import { useLineMap } from './store';
 import {styled} from '@mui/material/styles';
-import { useErrorBoundary } from 'react-error-boundary';
-import { shallow } from 'zustand/shallow';
 
 
 const BorderLine = styled('path')(({theme}) => ({
@@ -24,16 +22,10 @@ const StationCircle = styled('circle')(({theme}) => ({
 }))
 
 
-export default function LineMap({mapdata='data/publictransport/trainmap.json', children}) {
+export default function LineMap({url, children}) {
     
     const theme = useTheme()
-    const [lineMap, fetchLineMap] = useLineMapStore((state) => [state.lineMap, state.fetchLineMap], shallow)
-    const {showBoundary} = useErrorBoundary()
-
-    useEffect(() => {
-        fetchLineMap(mapdata).catch((e) => showBoundary(e));
-    }, [])
-
+    const lineMap = useLineMap(url)
     
     if (lineMap === null) return
     return (<Fragment>

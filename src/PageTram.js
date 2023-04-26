@@ -1,9 +1,7 @@
-import {useState, useMemo, useTransition, useEffect, Fragment, Children, useContext, createContext} from 'react'
+import {useState, useMemo, useTransition, useEffect, Fragment, Children, useContext, createContext, useCallback} from 'react'
 import Grid from '@mui/material/Grid';
 import { animated, useSpring, config } from '@react-spring/web'
 //import { HeatMap } from './BusMap.js'
-import CalendarHeatMap from './CalendarHeatMap'
-import { HourlyTraffic } from './RoadTraffic.js'
 
 
 import Button from '@mui/material/Button';
@@ -31,10 +29,11 @@ import YearToggle from './YearToggle'
 
 import FAQList from './FAQ/List'
 import FAQEntry from './FAQ/Entry'
-
+import PassengerServiceGrid from './LineMap/PassengerServiceGrid';
 import { styled } from '@mui/material/styles';
-const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
+import { useLineMapStore } from './LineMap/store';
 
+const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
 export default function PageTram() {
     const data = {
@@ -59,154 +58,37 @@ export default function PageTram() {
         ]
     }
 
-    const [currentStop, setCurrentStop] = useState(data.stops[0])
-    const [currentYear, setCurrentYear] = useState(2023)
-    const [loading, setLoading] = useState(false)
-    const [stats, setStats] = useState()
-    
+    const [setCurrentStop, currentStop, fetchStats] = useLineMapStore((state) => [state.setCurrentStop, state.currentStop, state.fetchStopStats])
+    const [open, setOpen] = useState(currentStop === null)
+    const handleClick = useCallback((evt) => setOpen(! open))
+    const handleSelect = useCallback((stop) => { setCurrentStop(stop); setOpen(false) })
     useEffect(() => {
-        setLoading(true)
-        fetch('data/publictransport/tramstats.json')
-        .then((res) => res.json())
-        .then((res) => {
-            setLoading(false)
-            setStats(res)
-            console.log(res)
-        }).catch((reason) => {
-            console.log(reason)
-        })
+        setCurrentStop(data.stops[0])
+        setOpen(false)
     }, [])
+    
 
-    const [open, setOpen] = useState(false)
-    const toggleDrawer = () => {
-        setOpen(!open);
-    };
-
-    const displayStats = useMemo(() => {
-        if (! stats || ! currentStop?.id || ! currentYear) return {hourly: [], daily: []}
-        
-        const hourlyStats = stats['hourly'][currentStop?.id][currentYear]
-        const hourly = hourlyStats ? Object.values(hourlyStats).reduce((kv, v) => v?.count ?? kv, []) : []
-        console.log(hourly)
-
-        return {
-            daily: (stats && stats['daily'][currentStop?.id] && stats['daily'][currentStop?.id][currentYear]) ? stats['daily'][currentStop?.id][currentYear]['passengers'] : [],
-            hourly
-        }
-    }, [currentYear, currentStop, stats])
-    console.log(displayStats)
-
-    if (loading) return
-
-    return (<Box>
+    return (<Container maxWidth="lg">
         <Drawer open={open} variant="persistent" anchor="right">
             <Offset />
-            <LineGraph stops={data.stops} currentStop={currentStop} onSelection={(stop) => setCurrentStop(stop)} />
+            <LineGraph stops={data.stops} currentStop={currentStop} onSelection={handleSelect} />
         </Drawer>
-        <Grid container direction="row" justifyContent="space-around" alignItems="stretch" spacing={4}>
-            <Grid item xs={12}>
-                <h1>{currentStop.label}</h1>
-            </Grid>
-            <Grid item xs={4}>
-                <SingleStat 
-                    title="Trips on a weekend"
-                    caption="boarding and deboarding events"
-                    value={displayStats.hourly && displayStats.hourly.reduce((kv, v) => kv + v ?? 0, 0)}
-                />
-                <Button onClick={toggleDrawer}>click</Button>
-            
-            </Grid>
-            <Grid item xs={4}>
-                <SingleStat 
-                    title="Trips on a weekday"
-                    caption="boarding and deboarding events"
-                    value={displayStats.hourly && displayStats.hourly.reduce((kv, v) => kv + v ?? 0, 0)}
-                />
-            </Grid>
-            <Grid item xs={4}>
-                <SingleStat 
-                    title="Trips per year"
-                    caption={`boarding and deboarding events observed over ${displayStats.daily && displayStats.daily.reduce((kv, v) => kv + (v && v > 0 ? 1 : 0), 0)} days in ${currentYear}`}
-                    value={displayStats.daily && displayStats.daily.reduce((kv, v) => kv + v ?? 0, 0)}
-                    info={<FAQList>
-                        <FAQEntry title="What do we mean by `trips per year`?" name="panel-1">
-                            <Typography>"Trips per year" is the sum total of all boarding and deboarding events observed by all LUXTRAM tram-cars whose counting equipment was operational as they stopped at {currentStop.label} in {currentYear}.
-                            It is the number of tram-trips that originated and ended at {currentStop.label}.
-                            The result is directly comparable between different stops and thus measures the importance of {currentStop.label} within the LUXTRAM network. 
-                            </Typography>
-                            <Typography>
-                            Beware: it is different from number of individual passangers that rode or even boarded and deboarded the tram;
-                            the simple reason being that people may be counted multiple times.
-                            For example, a commuter arriving at at {currentStop.label} in the morning and leaving via that same stop in the evening counts as two distinct trips.                            
-                            </Typography>
-                        </FAQEntry>
-                        <FAQEntry title="Why are you counting trips and not passengers ?">
-                            <Typography>
-                                Despite their name, passenger counting systems actually count boarding and deboarding events, not passengers.
-                                The difference is subtle, but important:
-                                a passenger is a person taking a trip on a tram.
-                                A trip starts at boarding and ends with deboarding.
-                                Ideally, a counter registers both events.
-                                By design, counters cannot reidentify people between events.
-                                This respects the principle of <a href="https://edps.europa.eu/data-protection/data-protection/glossary/d_en#data_minimization" target="_blank">data minimization</a>,
-                                but reduces our knowledge to the fact that someone just started (respectively finished) a tram-trip at the given stop.
-                                There is no way of knowing when or where that trip finished (respectively began), nor whether the rider has taken other tram-rides before this one.
-                            </Typography>
-                            <Typography>
-                                Over the entire network, every boarding must eventually be followed by a deboarding &emdash; barring sensor error.
-                                Every pair of such events is evidence of a trip, and every trip implies a passenger.
-                                Thus it is possible to calculate the number of passengers transported on the network, even if there is no way of knowing how many of those passengers are in fact the same person taking multiple trips.
-                                Importantly, in this calculation, it only matters that those boardings and deboardings happened, not where.
-                                When only considering the events at one single stop, that reasoning breaks down.
-                            </Typography>
-                        </FAQEntry>
-                        <FAQEntry title="Why do you sum up boardings and deboardings ?"  name="panel-2">
-                            <Typography>
-                            We follow the conventions of the <a hef="https://pnm2035.lu">PNM2305</a>.
-                            Summing boardings and deboardings yields the number of trips, both incoming and outgoing, in relation to a stop.
-                            As a disadvantage, individuals taking more than one trip per day are counted multiple times.
-                            Thus the number of trips cannot be taken as a proxy for the number of passengers.
-                            Summing only boardings (or deboardings) seemingly mitigates that problem.
-                            However, this would severely limit comparability 
-
-                            However, it would be a poor indication
-
-                            </Typography>
-                        </FAQEntry>
-                        <FAQEntry title="How confident are you of those results ?"  name="panel-3">
-                            <Typography>
-                            Automatic passenger counting systems are not perfect. For any number of reasons, counters may miscount, fail to count or fail to transmit the result. There are no corrections made except the clamping of excessive values (&gt; 300 boardings or deboardings).
-                            </Typography>                        
-                        </FAQEntry>
-                        <FAQEntry title="Why aren't there 365 days of observations?"  name="panel-4">
-                            <Typography>
-                            The number of days accounted for in the sum may differ form one year if (a) the calendar year is incomplete, (b) the site has not been updated yet or (c) there were indeed no data recorded.
-                            Trams have been circulating every day, even throughout the COVID-19 panedmic. Gaps in the data are just that.
-                            While the odds of all counters on all vehicles failing on the same day are small, network-wide outages with complete and irreversible data-loss can and do happen when backend systems fail.
-                            </Typography>
-                        </FAQEntry>
-                    </FAQList>}
-                />
-            </Grid>
-            <Grid item xs={12}>
-                <ComplexStat
-                    title="Passengers per day"
-                >
-                    <Box sx={{p: 2}}>
-                        <YearToggle from={2018} to={2023} currentYear={currentYear} onChange={(evt, newVal) => setCurrentYear(newVal ?? currentYear)} />
-                        <CalendarHeatMap year={currentYear} data={displayStats.daily} />
-                    </Box>
-                </ComplexStat>
-            </Grid>
-            <Grid item xs={12}>
-                <ComplexStat
-                    title="Passengers per hour"
-                >
-                    <HourlyTraffic countsByHour={displayStats.hourly ? displayStats.hourly.map((k, i) => ({hour: i, count_weekday: k, count_weekend: k})): []} />
-                </ComplexStat>
-            </Grid>
+        <Typography variant="caption">Données du comptage automatique LUXTRAM corrigées pour le taux de comptage</Typography>
+        <Grid container>
+            <Grid item><Typography variant="h4">{currentStop?.label}</Typography></Grid>
+            <Grid item justifyContent="middle"><Button onClick={(evt) => setOpen(! open)}>choisir un autre arrêt</Button></Grid>
         </Grid>
-    </Box>)
+        <PassengerServiceGrid 
+            url='data/publictransport/tramstats.json'
+            statsLabel="Stop"
+            comment=""
+            unit="montées + descentes"
+            idField="id"
+            fromYear={2018}
+        />
+        </Container>
+        
+    )
 }
 
 

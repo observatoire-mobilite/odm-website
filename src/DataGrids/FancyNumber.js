@@ -13,6 +13,6 @@ export default function FancyNumber({ count, round=0 }) {
           number.to(val => (Math.round(val * Math.pow(10, round)) / Math.pow(10, round)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"))
       }</animated.span>;
     } else {
-      return <span style={{color: 'gray', fontStyle: 'italic'}}>(no data)</span>
+      return <span style={{color: 'gray', fontStyle: 'italic'}}>(pas de données)</span>
     }
 }

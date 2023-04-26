@@ -8,6 +8,8 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import ScreenRotationIcon from '@mui/icons-material/ScreenRotation';
 import FancyNumber from '../DataGrids/FancyNumber.js';
+import { DateTime } from 'luxon';
+
 
 export default function AreaChart({data, xlabels}) {
     /* expects data to be an object whose properties are the series to be plotted

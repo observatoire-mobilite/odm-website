@@ -25,56 +25,51 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
 import { useTheme } from '@mui/material/styles';
-import StationMap from './StationMap'
+import { StationMapIsolated } from './RoadTraffic/StationMap'
 
 export default function PageChargy() {
 
     const [stationList, setStationList] = useState([])
     const [currentStation, setCurrentStation] = useState(null)
-    const [error, setError] = useState(null)
-
+    
     useEffect(() => {
         fetch('data/chargy/stationmap.json')
         .then(res => res.json())
         .then(res => setStationList(res))
-        .catch(err => {
-            //navigator.sendBeacon('/api/log', err)
-            setError('Unable to load chargy station map. Unfortunately, this app is useless now. The system administrator was informed.')
-        })
     }, [])
 
+    
     return(<Grid container spacing={2}>
-        <Snackbar open={error !== null} onClose={() => setError(null)}>
-            <Alert severity="error">{error}</Alert>
-        </Snackbar>
         <Grid item xs={12} lg={6} xl={5} minHeight="50vh">
-            <StationMap stations={stationList} onSelect={(s) => setCurrentStation(s)}/>
+            <StationMapIsolated 
+              data={stationList}
+              getPosition={({x, y}) => [x, y]}
+              setCurrentStation={setCurrentStation}
+              currentStation={currentStation}
+              compare={(a, b) => a.name == b.name}
+            />
         </Grid>
         <Grid item xs={12} lg={6} xl={7}>
-          <Typography variant="h4">{currentStation?.name ?? '(please choose a station)'}</Typography>
+          <Typography variant="h4">{currentStation?.name ?? '(veuillez choisir une station sur la carte)'}</Typography>
           <Grid container spacing={2} sx={{p: 2}}>
             <Grid item xs={4}>
               <SingleStat 
-                  title="Vehicles charged"
-                  caption={`number of performed charging events`}    
-                  value={Math.floor(Math.random() * 100)}
-                  unit="cars / day"
+                  title="Véhicles rechargés"
+                  value={"(coming soon)"}
                 />
             </Grid>
             <Grid item xs={4}>
               <SingleStat 
-                  title="Electrical energy sold"
-                  unit="kWh / day"
-                  caption="total number of energy consumed"    
-                  value={Math.floor(Math.random() * 10000)}
+                  title="Electricité vendue"
+                  unit="kWh / jour"
+                  value={"(coming soon)"}
                 />
             </Grid>
             <Grid item xs={4}>
               <SingleStat 
-                  title="Available power"
+                  title="Puissance installée"
                   value={currentStation?.connectors}
-                  caption={`capabilites of installed hardware`}
-                  unit={`x ${currentStation?.power ?? '(unknown)'} kW`}
+                  unit={`x ${currentStation?.power ?? '(inconnue)'} kW`}
                 />
             </Grid>
             <Grid item xs={12}>

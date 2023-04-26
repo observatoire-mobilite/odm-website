@@ -1,7 +1,5 @@
 import { useCallback, useContext } from 'react';
-import { useTheme } from '@mui/material/styles';
-import { animated, useSpring, to } from '@react-spring/web'
-import { useLineMapStore } from '../store';
+import { useLineMapCurrent } from '../store';
 import {styled} from '@mui/material/styles'
 
 
@@ -27,6 +25,7 @@ const LineUIOverlay = styled('g')(({theme}) => ({
     strokeLineend: "round",
     cursor: 'pointer',
     pointerEvents: 'visibleStroke',
+    transition: 'opacity 0.5s',
     '&:hover': {
         opacity: 1, 
         strokeWidth: 5
@@ -36,10 +35,9 @@ const LineUIOverlay = styled('g')(({theme}) => ({
 
 export default function Line({line}) {
     //console.count('busline')
-    const theme = useTheme()
-    const [ setCurrentLine ] = useLineMapStore((state) => [state.setCurrentLine])
+    const [ setCurrentLine ] = useLineMapCurrent('Line')
     const key = `line-${line.id}`
-    const iAmTheChosenOne = useCallback(() => setCurrentLine(line))
+    const iAmTheChosenOne = useCallback((evt) => { setCurrentLine(line) })
 
     return (<g id={key}>
         <LineUnderlay>
