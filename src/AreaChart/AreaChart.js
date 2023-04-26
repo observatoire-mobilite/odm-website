@@ -95,7 +95,7 @@ export default function AreaChart({data, xlabels}) {
             <animated.line x1={pointer.x} x2={pointer.x} y1={0} y2={620} stroke="black" strokeDasharray="1, 5" />
             <animated.line x1={pointer.x} x2={pointer.x} y1={pointer.y1} y2={pointer.y2} stroke={theme.palette.secondary.main} strokeWidth="4" />
         </svg>
-        <Tooltip 
+        <DataTooltip 
             {...info} 
             style={{
                 x: pointer.x_t,
@@ -120,7 +120,7 @@ function AreaCurves({displayData}) {
 }
 
 
-function Tooltip({style, caption, value, title, percent=43}) {
+function DataTooltip({style, caption, value, title, percent=43}) {
     return (<animated.div style={{position: 'absolute', left: 0, top:0, pointerEvents: 'none', width: '15rem', ...style}}>
         <Paper sx={{
             p: 2,
@@ -142,7 +142,7 @@ function Tooltip({style, caption, value, title, percent=43}) {
                     </Typography>}
                 </Grid>
                 <Grid item xs={4}>
-                    {percent && <Typography variant="caption">
+                    {percent && <Typography variant="h6">
                         <FancyNumber count={percent} round="1" /><small>{`\u202F%`}</small>
                     </Typography>}
                 </Grid>

@@ -51,7 +51,11 @@ import VanIcon from '@mui/icons-material/AirportShuttle';
 import AgeIcon from '@mui/icons-material/CakeOutlined';
 import ColorIcon from '@mui/icons-material/ColorLensOutlined';
 import AreaChart from './AreaChart'
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import Tooltip from '@mui/material/Tooltip'
 
 
 
@@ -61,7 +65,7 @@ const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet'
 export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval) => null}) {
     return (<ToggleButtonGroup exclusive value={current} aria-label="aggregation level" onChange={onChange}>
         {labels.map((label, i) => {
-            return (<ToggleButton key={label} value={label} aria-label={label}>{icons[i] ?? label}</ToggleButton>)
+            return (<Tooltip title={label} describeChild={true}><ToggleButton key={label} value={label}>{icons[i] ?? label}</ToggleButton></Tooltip>)
         })}
      </ToggleButtonGroup>
     )
