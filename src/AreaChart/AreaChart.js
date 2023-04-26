@@ -1,7 +1,6 @@
 import { useState, forwardRef, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext, Fragment } from 'react';
 import { animated, useSprings, useSpring, config } from '@react-spring/web'
 import { useTheme, styled } from '@mui/material/styles';
-import './AreaChart.css'
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -58,6 +57,25 @@ export default function AreaChart({xlabels, data}) {
 }
 
 
+const AreaCurveLabel = styled(animated('text'))(({theme}) =>({
+    justifyContent: "center",
+    alignmentBaseline: "middle",
+    fill: theme.palette.primary.contrastText
+}))
+
+
+const colors = ['#ffbb1c', '#ccc01d', '#9bbf36', '#69bb52', '#2db46d',
+                '#00aa84', '#009f96', '#0093a1', '#0085a3', '#05779c', 
+                '#05779c']  // last color twice -> category 10 -> anything that would exactly map to 9
+const AreaCurvePath = styled(animated('path'))(({theme}) => ({
+    stroke: theme.palette.primary.contrastText,
+    strokeWidth: 1,
+    fill: theme.palette.grey[400],
+    ...Object.fromEntries(colors.map((fill, i) => ([`&[data-scaledvalue="${i}"]`, { fill }]))),
+}))
+
+
+
 function AreaCurves({displayData}) {
     
 
@@ -68,8 +86,8 @@ function AreaCurves({displayData}) {
         <g>
             {springs.map((spring, i) => (
                 <g key={`area-group-${i}`}>
-                    <animated.path className="areachart" data-scaledvalue={10 - i} d={spring.d} />
-                    <animated.text justifyContent="center" alignmentBaseline="middle" fill="white" x={displayData[i].label_x} y={displayData[i].label_y}>{displayData[i].label}</animated.text>
+                    <AreaCurvePath data-scaledvalue={10 - i} d={spring.d} />
+                    <AreaCurveLabel  x={displayData[i].label_x} y={displayData[i].label_y}>{displayData[i].label}</AreaCurveLabel>
                 </g>
             ))}
         </g>)
