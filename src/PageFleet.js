@@ -73,8 +73,8 @@ export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval)
 
 
 export function AggLevelDropdown({labels, displayLabels=[], current=null, onChange=(evt, newval) => null}) {
-    return (<FormControl sx={{ m: 1, minWidth: 120 }}>
-            <Select aria-label="caractéristique à visualiser" id="select-year-small" value={current} label="Year" onChange={onChange} >
+    return (<FormControl sx={{ minWidth: 120 }}>
+            <Select value={current} aria-label="caractéristique à visualiser" onChange={onChange} >
                 { labels.map((value, i) => <MenuItem key={value} value={value}>{displayLabels[i] ?? value}</MenuItem>)}
             </Select>
         </FormControl>
@@ -126,29 +126,35 @@ export default function Fleet() {
                     >
                         <Grid container direction="row" justifyContent="space-between" sx={{p: 2}}>
                             <Grid item xs={12}>
-                                <AggLevel 
-                                    current={currentCat} 
-                                    onChange={(evt, newval) => setCurrentCat(newval ?? currentCat)}
-                                    labels={['Voitures', 'Motos', 'Camionnettes', 'Camions', 'Autobus']}
-                                    icons={[<IconCar color={theme.palette.text.secondary} width="1.2rem" height="1.2rem" />, 
-                                            <TwoWheelerIcon />,
-                                            <VanIcon />, 
-                                            <IconTruck color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />,
-                                            <IconBus color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
-                                />
-                                <AggLevelDropdown
-                                    displayLabels={[
-                                        'motorisation',
-                                        <span>année de 1<sup>ère</sup> immatriculation</span>,
-                                        'constructeurs (top 7)',
-                                        'couleur'
-                                    ]} 
-                                    current={currentStat} 
-                                    onChange={(evt) => setCurrentStat(evt.target.value ?? currentStat)}
-                                    labels={['carburant', 'année', 'marque', 'couleur']}
-                                />
+                                <Grid container direction="row" justifyContent="flex-start" alignItems="center" spacing={2}>
+                                    <Grid item>
+                                        <AggLevel 
+                                            current={currentCat} 
+                                            onChange={(evt, newval) => setCurrentCat(newval ?? currentCat)}
+                                            labels={['Voitures', 'Motos', 'Camionnettes', 'Camions', 'Autobus']}
+                                            icons={[<IconCar color={theme.palette.text.secondary} width="1.2rem" height="1.2rem" />, 
+                                                    <TwoWheelerIcon />,
+                                                    <VanIcon />, 
+                                                    <IconTruck color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />,
+                                                    <IconBus color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
+                                        />
+                                    </Grid>
+                                    <Grid item>
+                                        <AggLevelDropdown
+                                            displayLabels={[
+                                                'motorisation',
+                                                <span>année de 1<sup>ère</sup> immatriculation</span>,
+                                                'constructeurs (top 7)',
+                                                'couleur'
+                                            ]} 
+                                            current={currentStat} 
+                                            onChange={(evt) => setCurrentStat(evt.target.value ?? currentStat)}
+                                            labels={['carburant', 'année', 'marque', 'couleur']}
+                                        />
+                                    </Grid>
+                                </Grid>
                             </Grid>
-                            <Grid item xs={12} sx={{m: 2}}>
+                            <Grid item xs={12}>
                                 <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} />
                             </Grid>
                         </Grid>
