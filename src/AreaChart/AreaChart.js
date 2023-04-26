@@ -51,9 +51,9 @@ export default function AreaChart({data, xlabels}) {
                 data: data[group],
                 relative: rcumsum.at(-1).map((t, j) => (upper[j] - lower[j]) / t),
                 d,
-                label: delta_mid > 0.1 ? group: null,
-                label_x: delta_mid > 0.1 ? dx * mid : null,
-                label_y: delta_mid > 0.1 ? (1 - (delta_mid / 2 + lower[mid])) * dy : null,
+                label: delta_mid > 0.05 ? group: null,
+                label_x: delta_mid > 0.05 ? dx * mid : null,
+                label_y: delta_mid > 0.05 ? (1 - (delta_mid / 2 + lower[mid])) * dy : null,
             }
         })
     }, [data])
