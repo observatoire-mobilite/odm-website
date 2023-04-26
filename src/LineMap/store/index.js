@@ -16,9 +16,9 @@ export const useLineMapStore = create((set) => ({
         }}
     }),
     currentStop: null,
-    setCurrentStop: (currentStop) => set({ currentStop }),
+    setCurrentStop: (currentStop) => set({ currentStop, currentLine: null }),
     currentLine: null,
-    setCurrentLine: (currentLine) => set({ currentLine }),
+    setCurrentLine: (currentLine) => set({ currentLine, currentStop: null }),
     currentYear: 2023,
     setCurrentYear: (currentYear) => set({ currentYear }),
     lineMap: null,
@@ -52,7 +52,6 @@ export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[])
       state.currentYear, state.setCurrentYear],
     shallow
   )
-console.log(stats)
   const {showBoundary} = useErrorBoundary()
   useEffect(() => {
       fetchStats(url)
