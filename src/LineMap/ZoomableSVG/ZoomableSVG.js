@@ -15,13 +15,21 @@ import { shallow } from 'zustand/shallow';
 
 const SVGBox = styled('svg')(({theme}) => ({
     width: '100%',
-    height: 'calc(100vh - 150px)',
     touchAction: 'none',
     backgroundColor: theme.palette.background.default,
     willChange: 'transform',
     transformOrigin: 'center',
     cursor: 'grab',
     userSelect: 'none',
+    '&.fullscreen': {
+        height: 'calc(100vh - 150px)'
+    },
+    '&.halfscreen': {
+        height: 'calc(50vh)'
+    },
+    '&.fullheight': {
+        height: '100%'
+    }
 }))
 
 
@@ -29,7 +37,7 @@ const SVGBox = styled('svg')(({theme}) => ({
 const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
 
 
-export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5}) {
+export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5, svgClass="fullscreen"}) {
     /* A SVG tag with the ability of dynamimc pan and zoom in its viewbox */
     
     const mapRef = useRef()
@@ -135,6 +143,7 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     
     return (<Box style={{position: 'relative', height: '100%'}}>
         <SVGBox ref={mapRef} 
+            className={svgClass}
             preserveAspectRatio="xMinYMid meet"
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} 
         >

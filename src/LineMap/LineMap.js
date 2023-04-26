@@ -22,14 +22,14 @@ const StationCircle = styled('circle')(({theme}) => ({
 }))
 
 
-export default function LineMap({url, children}) {
+export default function LineMap({url, children, svgClass}) {
     
     const theme = useTheme()
     const lineMap = useLineMap(url)
     
     if (lineMap === null) return
     return (<Fragment>
-        <ZoomableSVG>
+        <ZoomableSVG svgClass={svgClass}>
             <g id='frontier'><BorderLine d={lineMap.frontier} /></g>
             <g id='lines'>
                 {lineMap.lines.map((line, idx) => <Line key={`line-${idx}`} line={line} />)}
