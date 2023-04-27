@@ -38,7 +38,7 @@ function Layout({comment, children}) {
       <Grid item xs={12} md={6} lg={7}>
         <Grid container spacing={2} sx={{p: 2}}>
           <Grid item xs={12}>
-            <Typography variant="h4">{currentStation ? `${currentStation?.ROUTE} ${currentStation?.LOCALITE}` : '(aucune station choisie)'}</Typography>
+            <Typography variant="h4">{currentStation ? `${currentStation?.ROUTE} ${currentStation?.LOCALITE}` : 'choisir un compteur sur la carte'}</Typography>
           </Grid>
           <Grid item xs={12}>
             <YearToggle from={Math.min(...YEARS)} to={Math.max(...YEARS)} currentYear={currentYear} onChange={handleChangeCurrentYear} />
@@ -52,10 +52,9 @@ function Layout({comment, children}) {
 
 export default function RoadTraffic({comment=null, ...rest}) {
   const displayData = useRoadTrafficData(rest)
-  console.log(displayData)
   return (
     <Layout comment={comment}>
-      {(displayData && displayData.hourly.length > 0) ? <TrafficData displayData={displayData} comment={comment} /> : <NoData />}
+      {(displayData && displayData.hourly.length > 0) ? <TrafficData displayData={displayData} /> : <NoData />}
     </Layout>
   )
 }
@@ -65,7 +64,7 @@ function NoData() {
     <Container sx={{m: 6}}>
       <Alert severity="info" sx={{p: 2}}>
         <AlertTitle>Pas de données pour le compteur et l'année choisis.</AlertTitle>
-        <Typography>Veuillez choisir soit un autre compteur ou une autre année. Généralement, la disponibilité de données augmente avec les années.</Typography>
+        <Typography>Veuillez choisir soit un autre compteur, soit une année plus récente.</Typography>
       </Alert>
     </Container>  
   )
