@@ -43,9 +43,9 @@ export default function AreaChart({xlabels, data}) {
                 data: data[group],
                 relative: rcumsum.at(-1).map((t, j) => (upper[j] - lower[j]) / t),
                 d,
-                label: delta_mid > 0.1 ? group: null,
-                label_x: delta_mid > 0.1 ? dx * mid : null,
-                label_y: delta_mid > 0.1 ? (1 - (delta_mid / 2 + lower[mid])) * dy : null,
+                label: delta_mid > 0.05 ? group: null,
+                label_x: delta_mid > 0.05 ? dx * mid : null,
+                label_y: delta_mid > 0.05 ? (1 - (delta_mid / 2 + lower[mid])) * dy : null,
             }
         })
     }, [data])
@@ -204,7 +204,7 @@ function DataTooltip({caption, value, title, percent=43, ...rest}) {
                     </Typography>}
                 </Grid>
                 <Grid item xs={4}>
-                    {percent && <Typography variant="caption">
+                    {percent && <Typography variant="h6">
                         <FancyNumber count={percent} round="1" /><small>{`\u202F%`}</small>
                     </Typography>}
                 </Grid>
