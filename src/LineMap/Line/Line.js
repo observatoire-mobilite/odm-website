@@ -14,6 +14,9 @@ const LineTrace = styled('g')(({theme}) => ({
     fill: 'none',
     stroke: theme.palette.primary.main,
     strokeWidth: 2,
+    '&.selected': {
+        stroke: theme.palette.secondary.main
+    }
 }))
 
 const LineUIOverlay = styled('g')(({theme}) => ({
@@ -35,7 +38,7 @@ const LineUIOverlay = styled('g')(({theme}) => ({
 
 export default function Line({line}) {
     //console.count('busline')
-    const [ setCurrentLine ] = useLineMapCurrent('Line')
+    const [ setCurrentLine, currentId ] = useLineMapCurrent('Line', ['id'])
     const key = `line-${line.id}`
     const iAmTheChosenOne = useCallback((evt) => { setCurrentLine(line) })
 
@@ -44,7 +47,7 @@ export default function Line({line}) {
             {line.d.map((d, idx) => <path key={`${key}-underlay-${idx}`} d={d} />)}
         </LineUnderlay>
         <LineTrace>
-            {line.d.map((d, idx) => <path key={`${key}-itinerary-${idx}`} d={d}/>)}
+            {line.d.map((d, idx) => <path key={`${key}-itinerary-${idx}`} d={d} className={line.id == currentId ? 'selected' : null}/>)}
         </LineTrace>
         <LineUIOverlay onClick={iAmTheChosenOne}>
             {line.d.map((d, idx) => <path key={`${key}-uioverlay-${idx}`} d={d} />)}

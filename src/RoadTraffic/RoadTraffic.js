@@ -10,8 +10,10 @@ import YearToggle from '../YearToggle';
 import useRoadTrafficData from './store/useRoadTrafficData';
 import { useRoadTrafficStore } from './store/useRoadTrafficStore';
 
-import { Container } from '@mui/system';
-import { Alert, AlertTitle } from '@mui/material';
+import Container from '@mui/material/Container';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+
 
 export const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
 const YEARS = [2016, 2017, 2018, 2019, 2020, 2021]

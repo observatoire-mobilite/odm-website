@@ -25,7 +25,6 @@ import FancyNumber from './DataGrids/FancyNumber'
 const ZonalFlowMap = lazy(() => import('./ZonalFlowMap'))
 
 
-
 export default function PageDemand() {
     const theme = useTheme()
     const [currentZone, flows, currentScenario, setCurrentScenario] = useZonalFlowMapStore((state) => [state.currentZone, state.flows, state.currentScenario, state.setCurrentScenario])
