@@ -14,7 +14,7 @@ export default function PageTrain() {
 
     const [currentLine, currentStop] = useLineMapStore((state) => [state.currentLine, state.currentStop], shallow)
     const theme = useTheme()
-    const screenMD = useMediaQuery(theme.breakpoints.up('md'));
+    const screenMD = useMediaQuery(theme.breakpoints.up('sm'));
 
     return (
         <Grid container spacing={2} sx={{mt: 1}}>
@@ -27,8 +27,8 @@ export default function PageTrain() {
                 <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : `CFL linge ${currentLine.line}` }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url='data/publictransport/trainstats-line.json'
+                    comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     statsLabel="Line"
-                    comment="Compilation basée sur les données du comptage manuel des  CFL"
                     unit="voyageurs (montées + descentes divisées par 2)"
                     idField="line"
                     fromYear={2017}
@@ -36,8 +36,8 @@ export default function PageTrain() {
                 />}
                 {currentStop && <PassengerServiceGrid 
                     url='data/publictransport/trainstats.json'
+                    comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     statsLabel="Stop"
-                    comment="Compilation basée sur les données du comptage manuel des CFL"
                     unit="montées + descentes"
                     idField="label"
                     fromYear={2017}
