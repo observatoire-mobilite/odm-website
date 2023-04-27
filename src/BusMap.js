@@ -34,7 +34,7 @@ export default function BusMap() {
                 </Paper>
             </Grid>
             <Grid item md={8} xs={12}>
-                <Typography variant="h4">{currentLine === null ? currentStop === null ? '(choisissez un arrêt ou une ligne sur la carte)' : currentStop.label : currentLine.label }</Typography>
+                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : currentLine.label }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url="data/publictransport/busstats-lines.json"
                     statsLabel="Stop"
