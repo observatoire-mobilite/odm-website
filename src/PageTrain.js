@@ -24,7 +24,7 @@ export default function PageTrain() {
                 </Paper>
             </Grid>
             <Grid item md={8} xs={12}>
-                <Typography variant="h4">{currentLine === null ? currentStop === null ? '(choisissez un arrêt ou une ligne sur la carte)' : currentStop.label : `CFL linge ${currentLine.line}` }</Typography>
+                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : `CFL linge ${currentLine.line}` }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url='data/publictransport/trainstats-line.json'
                     statsLabel="Line"
