@@ -63,7 +63,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
             {counting_ratio && <Grid item md={4} sm={12} xs={12}>
                 <SingleStat 
                     title="Taux de comptage"
-                    caption="rapport entre haltes comtpées et haltes observées"
+                    caption="rapport entre haltes comptées et haltes observées"
                     value={counting_ratio}
                     unit="%"
                 />
