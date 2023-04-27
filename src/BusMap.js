@@ -38,7 +38,7 @@ export default function BusMap() {
                 {currentLine && <PassengerServiceGrid
                     url="data/publictransport/busstats-lines.json"
                     statsLabel="Stop"
-                    comment="Extrapolation des données du système de comptage automatique du RGTR et du TICE à base du taux de comptage des arrêts de la zone choisie"
+                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR et du TICE à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     unit="passagers (montées + descentes divisées par 2)"
                     idField="line"
                     fromYear={2020}
@@ -46,7 +46,7 @@ export default function BusMap() {
                 {currentStop && <PassengerServiceGrid 
                     url="data/publictransport/busstats.json"
                     statsLabel="Stop"
-                    comment="Extrapolation des données du système de comptage automatique du RGTR et du TICE à base du taux de comptage des arrêts de la zone choisie"
+                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR et du TICE à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     unit="montées + descentes"
                     idField="label"
                     fromYear={2020}
