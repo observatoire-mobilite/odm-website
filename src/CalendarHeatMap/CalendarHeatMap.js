@@ -67,7 +67,7 @@ function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.v
 
 function SVGcanvas({children, width='100%', height=undefined, vertical=false, ...rest}) {
   return (
-        <svg width={width} height={height} viewBox="0 -150 5450 950" {...rest} >
+        <svg width={width} height={height} viewBox="0 -150 5450 1000" {...rest} >
             {children}
         </svg>
     )
