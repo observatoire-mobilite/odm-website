@@ -8,7 +8,7 @@ import SingleStat from "../../DataGrids/SingleStat";
 import HourlyTraffic from "../HourlyTraffic";
 import TrafficEvolution from "../TrafficEvolution";
 
-export default function TrafficData({vehicleTypeLabel='véhicules', displayData, currentYear}) {
+export default function TrafficData({vehicleTypeLabel='véhicules', displayData}) {
       
       return (
         <Fragment>
@@ -34,7 +34,7 @@ export default function TrafficData({vehicleTypeLabel='véhicules', displayData,
             <Grid item xs={12}>
             <Paper sx={{p: 2}}>
                 <Typography variant="h6" color="primary">
-                {`Trafic moyen par heure dans les deux sens en ${currentYear}`}
+                {`Trafic moyen par heure dans les deux sens`}
                 </Typography>
                 <Typography variant="subtitle" color="primary">en semaine (lu-ve)</Typography>
                 <Typography variant="subtitle"> et </Typography>
