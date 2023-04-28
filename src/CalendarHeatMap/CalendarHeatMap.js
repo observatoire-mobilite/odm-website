@@ -1,57 +1,52 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext, Fragment } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext, Fragment, forwardRef } from 'react';
 import { animated, useSpring, useSprings, to } from '@react-spring/web'
 import { DateTime } from "luxon";
 import { getContrastRatio, styled } from '@mui/material/styles'
 import './CalendarHeatMap.css'
-import HeatMapCircles from './HeatMapCircles';
-import Tooltip from './Tooltip';
-
+import HeatMapCircles, {useCircleData} from './HeatMapCircles';
+import { Paper, Grid, Typography, Container } from '@mui/material';
+import Tooltip, {useTooltip} from './Tooltip'
 
 const WEEKDAYS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'sept.', 'octobre', 'nov.','décembre']
 
   
 
-
-function TooltipWrapper({children}) {
-
-  const [info, setInfo] = useState(null)
-  
-  const [spring, api] = useSpring(() => ({
-    opacity: 0,
-    x: 0,
-    y: 0,
-    display: 'block'
-  }))
-
-  return (<Fragment>{children}<Tooltip style={spring} /></Fragment>)
-
-}
-
-
-export default function CalendarHeatMap({data, year=2023, yOffset=0, getDate, getValue, offsetDay=0}) {
+export default function CalendarHeatMap({
+  data, year=2023, yOffset=0, getDate, getValue, offsetDay=0,
+  viewBox={x: 0, y: -150, width: 5450, height: 950}
+}) {
     /* Displays the daily variation of some quantity throughout a year.*/
-    
-    const handleClick = (info) => {
-      console.log(info)
-    }
-
+    console.count('calendarheatmap')
     const [intYear, values] = useMemo(() => {
       const intYear = parseInt(year)  // just a precaution: if `year` is passed as a string, the component fails miserably (with misleading error messages)
       return [intYear, (getDate && getValue) ? objectsToArray(intYear, data, getDate, getValue) : data]
     }, [year, data])
-    return (<TooltipWrapper>
-      <SVGcanvas>
-          <HeatMapMonths year={intYear} xOffset={150} yOffset={yOffset}/>
-          <HeatMapDayLabels />
-          <HeatMapCircles year={intYear} xOffset={150} yOffset={yOffset} values={values} offsetDay={offsetDay} onClick={handleClick} />
-          <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
-          <HeatMapWeekBars year={intYear} xOffset={150} values={values} offsetDay={offsetDay} />
-      </SVGcanvas>
+    const displayData = useCircleData({year: intYear, values})
+    return (
+      <TooltipWrapper displayData={displayData} viewBox={viewBox}>
+        <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
+        <HeatMapDayLabels />
+        <HeatMapCircles displayData={displayData} xOffset={150} />
+        <line x1="150" y1="0" x2="5450" y2="0" stroke="black" fill="none" />
+        <HeatMapWeekBars year={year} xOffset={150} values={values} offsetDay={offsetDay} />
       </TooltipWrapper>
     )
-        
 }
+
+function TooltipWrapper({children, displayData, viewBox}){
+  // this wrapper splits the tooltip's state form the expensive circles and bars
+  const [ref, info, spring] = useTooltip({displayData, viewBox})
+  return (
+    <Container sx={{position: 'relative'}}>
+      <SVGcanvas ref={ref} viewBox={viewBox}>
+        {children}
+      </SVGcanvas>
+      <Tooltip {...info} style={spring} />
+    </Container>
+  )    
+}
+
 
 
 function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.value) {
@@ -65,16 +60,20 @@ function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.v
 }
 
 
-function SVGcanvas({children, width='100%', height=undefined, vertical=false, ...rest}) {
-  return (
-        <svg width={width} height={height} viewBox="0 -150 5450 950" {...rest} >
-            {children}
-        </svg>
+const SVGcanvas = forwardRef(
+  ({children, viewBox, ...rest}, ref) => {
+    return (
+      <svg ref={ref} {...rest} viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} >
+        {children}
+      </svg>
     )
-}
+  }
+)
+
 
 
 function HeatMapMonths({year, xOffset=0, yOffset=0}) {
+  console.count('heatmap-months')
   const janfirst =  DateTime.local(year, 1, 1);
   let firstday = janfirst;
   
@@ -113,6 +112,7 @@ function HeatMapDayLabels({yOffset=0, fontSize=60}) {
 
 
 function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, offsetDay=0}) {
+  console.count('heatmap-weekbars')
   const circleDiameter = 2 * maxRadius
   const displayData = useMemo(() => {
     if (! values) return
@@ -157,15 +157,4 @@ function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, off
     )
   })}</g>)
 
-}
-
-
-function HeatMapDayTooltip({day, value}) {
-    return (
-        <>
-            <p color="inherit">{day.toLocaleString(DateTime.DATE_HUGE)}</p>
-            <p>Boardings: {value === undefined ? '(no data)' : value}</p>
-        </>
-    )
-    
 }

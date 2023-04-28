@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react' 
+import { useCallback, useState, useEffect, useRef } from 'react' 
 import Paper from '@mui/material/Paper'
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
@@ -9,44 +9,55 @@ import FancyNumber from '../../DataGrids/FancyNumber'
 
 const TooltipContainer = styled(animated('div'))(({theme}) => ({
     position: 'absolute', 
-    left: 0,
-    top: 0,
+    left: '1rem',
+    top: '1rem',
     pointerEvents: 'none',
     width: '15rem'
 }))
 
 
-export function useTooltip({ref, displayData, xlabels}) {
-    const [pointer, act] = useSpring(() => ({to: {x: 0, y: 0}, config: config.stiff }))
+export function useTooltip({displayData, viewBox}) {
+    const ref = useRef(null)
     const [info, setInfo] = useState(null)
-
-    const onMouseMove = useCallback(({clientX, clientY}) => {
-        if (! ref?.current) return
-        const {x, y, width, height}= ref.current.getBoundingClientRect()
-        const [rx, ry] = [(clientX - x) / width, (clientY - y) / height]
-        
-        const i = Math.floor(rx * xlabels.length)
-        const chosen = displayData.find(({upper, lower}) => ((1 - ry >= lower[i]) && (1 - ry <= upper[i]))) ?? displayData.at(-1)
-        
-        act.start({
-            x: i * 1000 / chosen.data.length, 
-            y1: (1 - chosen.lower[i]) * 620,
-            y2: (1 - chosen.upper[i]) * 620,
-            x_t: i / chosen.data.length * width, 
-            name: chosen.name
-        })
-        setInfo({
-            caption: xlabels[i],
-            value: chosen.data[i],
-            title: chosen.name, 
-            percent: Math.round(chosen.relative[i] * 1000) / 10
-        })
+    const [spring, act] = useSpring(() => {})
+    
+    // do the actual tooltip-updating
+    const handleHover = useCallback(({clientX, clientY}) => {
+      if (! ref?.current) return
+      const {x, y, width, height}= ref.current.getBoundingClientRect()
+      const [rx, ry] = [(clientX - x) / width, (clientY - y) / height]
+      
+      const svgpos = [viewBox.x + rx * viewBox.width, viewBox.y + ry * viewBox.height]
+      const i = Math.floor((svgpos[0] - 150) / 100)
+      const j = Math.ceil((svgpos[1]) / 100)
+      act.start({
+          x: rx * width,
+          y: ry * height,
+          display: i >= 0 && i <= 53 && j >= 0 && j < 7 ? 'block' : 'none'
+      })
+      const janfirst = displayData.janfirst
+      const ordinal = i * 7 + j - janfirst.weekday
+      const day = janfirst.plus({days: ordinal})
+      
+      setInfo({
+          caption: day.toFormat('cccc, dd LLLL yyyy'),
+          title: 'Data',
+          value: displayData.data[ordinal] ?? '(no data)',
+      })
     })
-
-    const onMouseLeave = useCallback((evt) => setInfo(null))
-
-    return {onMouseMove, onMouseLeave, pointer, info, act}
-
+    
+    // attach it to the reference
+    useEffect(() => {
+        if (ref && ref.current) {
+            ref.current.addEventListener("mouseover", handleHover, false)
+            return function cleanup() {
+                ref.current.removeEventListener("mouseover", handleHover, false);
+           };
+        }
+    }, [ref])
+    
+    return [ref, info, spring]
+  
 }
 
 
@@ -54,7 +65,6 @@ export default function Tooltip({style, caption, value, title, percent=43}) {
     return (<TooltipContainer style={style}>
         <Paper sx={{
             p: 2,
-            position: 'absolute',
             display: 'flex',
             flexDirection: 'column',
             minHeight: '100px',
