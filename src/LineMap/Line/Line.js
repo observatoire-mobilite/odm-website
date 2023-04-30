@@ -15,7 +15,8 @@ const LineTrace = styled('g')(({theme}) => ({
     stroke: theme.palette.primary.main,
     strokeWidth: 2,
     '&.selected': {
-        stroke: theme.palette.secondary.main
+        stroke: theme.palette.secondary.main,
+        strokeWidth: 2
     }
 }))
 
@@ -33,6 +34,7 @@ const LineUIOverlay = styled('g')(({theme}) => ({
         opacity: 1, 
         strokeWidth: 5
     }
+
 }))
 
 
@@ -46,8 +48,8 @@ export default function Line({line}) {
         <LineUnderlay>
             {line.d.map((d, idx) => <path key={`${key}-underlay-${idx}`} d={d} />)}
         </LineUnderlay>
-        <LineTrace>
-            {line.d.map((d, idx) => <path key={`${key}-itinerary-${idx}`} d={d} className={line.id == currentId ? 'selected' : null}/>)}
+        <LineTrace className={line.id == currentId ? 'selected' : null}>
+            {line.d.map((d, idx) => <path key={`${key}-itinerary-${idx}`} d={d} />)}
         </LineTrace>
         <LineUIOverlay onClick={iAmTheChosenOne}>
             {line.d.map((d, idx) => <path key={`${key}-uioverlay-${idx}`} d={d} />)}
