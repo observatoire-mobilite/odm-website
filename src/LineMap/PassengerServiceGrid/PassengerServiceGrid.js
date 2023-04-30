@@ -2,13 +2,7 @@ import { useState, useCallback, Fragment } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { styled } from '@mui/material/styles';
-import { useErrorBoundary } from 'react-error-boundary';
 
-import Dialog from '@mui/material/Dialog';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
 
 import Box from '@mui/material/Box';
@@ -40,12 +34,11 @@ const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet'
 export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year, noDataComment="", showNoDataHint=false}) {
     const { currentYear, setCurrentYear, data } = useLineMapCurrentStats(url, statsLabel, idField)
     const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
-          day_offset=0, monthly=null, daily=null} = data ?? {}
+          day_offset=0, monthly=null, daily=null, noData=false, availableYears=null} = data ?? {}
     const [ currentTab, setCurrentTab] = useState('monthly')
     const handleChangeYear = useCallback((evt) => setCurrentYear(parseInt(evt.target.value) ?? currentYear), [])
     const theme = useTheme();
     const screenMD = useMediaQuery(theme.breakpoints.up('md'));
-    console.log(screenMD)
     
     return (
         <Grid container direction="row" justifyContent="space-between" alignItems="stretch" spacing={2}>
@@ -53,14 +46,15 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                 <Typography textAlign="center" variant="caption">{comment}</Typography>
             </Grid>}
             <Grid item xs={12}>
-                <YearToggle from={fromYear} to={toYear} currentYear={currentYear} onChange={handleChangeYear}  />
+                <YearToggle from={fromYear} to={toYear} currentYear={currentYear} availableYears={availableYears} onChange={handleChangeYear}  />
             </Grid>
-            {(showNoDataHint && ! data) ? <NoData comment={noDataComment} /> : <Fragment>
+            {(showNoDataHint && noData) ? <NoData comment={noDataComment} statsLabel={statsLabel} /> : <Fragment>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
                 <SingleStat 
                     title="Moyenne journalière (lu-ve)"
                     caption={`${unit} par jour en ${currentYear}`}
                     value={annual_daily_average_corrected}
+                    ymin={1}
                 />
             </Grid>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
@@ -68,14 +62,16 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                     title="Total annuel"
                     caption={`${unit} en ${currentYear}`}
                     value={annual_total_corrected}
+                    ymin={1}
                 />
             </Grid>
-            {counting_ratio && <Grid item md={4} sm={12} xs={12}>
+            {counting_ratio !== null && <Grid item md={4} sm={12} xs={12}>
                 <SingleStat 
                     title="Taux de comptage"
                     caption="rapport entre haltes comptées et haltes observées"
                     value={counting_ratio}
                     unit="%"
+                    ymin={1}
                 />
             </Grid>
             }
@@ -113,13 +109,16 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
 
 
 
-function NoData({comment}) {
+function NoData({comment, error, statsLabel="Stop"}) {
+    
     return (
       <Container sx={{m: 6}}>
         <Alert severity="info" sx={{p: 2}}>
-          <AlertTitle>Pas de données pour l'arrêt et l'année choisis.</AlertTitle>
-          <Typography>Astuce: essayez un autre arrêt, ou une année plus récente.</Typography>
-          {comment && <Typography>{comment}</Typography>}
+          <AlertTitle>{error?.years && error.years.length > 0 ? "Pas de données pour l'année choisie." : "Aucune information disponible"}</AlertTitle>
+          {(error?.years && error.years.length > 0) 
+            ? <Typography>Astuce: des données sont enregistrées pour les années: {error.years.join(', ')}.</Typography>
+            : <Typography>L'ODM n'a pas encore reçu de données pour {statsLabel=="Stop" ? "cet arrêt" : "cette ligne"}.</Typography>
+          }
         </Alert>
       </Container>  
     )

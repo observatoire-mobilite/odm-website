@@ -28,28 +28,30 @@ export default function BusMap() {
 
     return (
         <Grid container spacing={2} sx={{mt: 1}}>
-            <Grid item md={4} xs={12}>
+            <Grid item md={4} sm={6} xs={12}>
                 <Paper sx={{height: 1, p: 1}}>
                     <LineMap url='data/publictransport/busmap.json' svgClass={screenMD ? "fullheight": "halfscreen"} />
                 </Paper>
             </Grid>
-            <Grid item md={8} xs={12}>
-                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : currentLine.label }</Typography>
+            <Grid item md={8} sm={6} xs={12}>
+                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : `RGTR ligne ${currentLine.label}` }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url="data/publictransport/busstats-lines.json"
-                    statsLabel="Stop"
-                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR et du TICE à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
+                    statsLabel="Line"
+                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     unit="passagers (montées + descentes divisées par 2)"
-                    idField="line"
-                    fromYear={2020}
+                    idField="label"
+                    fromYear={2022}
+                    showNoDataHint
                 />}
                 {currentStop && <PassengerServiceGrid 
                     url="data/publictransport/busstats.json"
                     statsLabel="Stop"
-                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR et du TICE à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
+                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     unit="montées + descentes"
                     idField="label"
-                    fromYear={2020}
+                    fromYear={2021}
+                    showNoDataHint
                 />}
             </Grid>
         </Grid>

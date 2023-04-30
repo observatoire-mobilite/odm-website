@@ -32,8 +32,17 @@ const ExpandMore = styled((props) => {
 
 
 
-export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined, info=null}) {
-
+export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined, info=null, ymin=null, ymax=null}) {
+    const displayData = useMemo(() => {
+      const suffix = (unit === undefined || value === undefined) ? null : `\u202F${unit}`
+      if (ymin !== null && value !== null && value <= ymin)
+        return {value: ymin, clip: '\u2264', suffix}
+      
+      if (ymax !== null && value !== null && value >= ymax)
+        return {value: ymax, clip: '\u2265', suffix}
+        
+      return {value, clip: null, suffix}
+    }, [value, ymin, ymax, unit])
     return (
         <Paper sx={{
             p: 2,
@@ -51,7 +60,9 @@ export default function SingleStat({title, subtitle=null, caption=null, value, a
                         {subtitle}
                     </Typography>}
                     <Typography variant="h4">
-                        <FancyNumber count={value} /><small>{unit === undefined || value === undefined ? '' : `\u202F${unit}`}</small>
+                        {displayData.clip && <small>{displayData.clip}</small>}
+                        <FancyNumber count={displayData.value} />
+                        {displayData.suffix && <small>{displayData.suffix}</small>}
                     </Typography>
                     {caption && <Typography variant="caption">
                         {caption}

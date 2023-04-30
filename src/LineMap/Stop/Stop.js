@@ -15,7 +15,7 @@ const [StopMarkerCircle, StopMarkerPath] = ['circle', 'path'].map((k) => styled(
     strokeWidth: 1,
     fill: 'none',
     '&.selected': {
-        stroke: theme.palette.secondary.main,
+        stroke: theme.palette.secondary.light,
         strokeWidth: 3
     }
 })))
@@ -28,7 +28,7 @@ const [StopMarkerCircleOverlay, StopMarkerPathOverlay] = ['circle', 'path'].map(
     opacity: 0,
     transition: 'opacity 0.5s',
     '&:hover': {
-        opacity: 1
+        opacity: 1,
     }
 })))
 
@@ -65,7 +65,7 @@ function stopmarker(stop, handleClick, selected) {
         >{stop.label}</StopLabel>
     )
 
-    if (stop.id == 407) {
+    if (stop.id == 1119) {
         return (<Fragment>
             <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} className={selected ? "selected" : null} />
             {label}
