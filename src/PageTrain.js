@@ -26,7 +26,7 @@ export default function PageTrain() {
             <Grid item md={8} xs={12}>
                 <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : `CFL linge ${currentLine.line}` }</Typography>
                 {currentLine && <PassengerServiceGrid
-                    url='data/publictransport/trainstats-line.json'
+                    url='data/publictransport/trainstats-lines.json'
                     comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
                     statsLabel="Line"
                     unit="voyageurs (montées + descentes divisées par 2)"
