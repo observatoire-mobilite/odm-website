@@ -7,7 +7,6 @@ import IconButton from '@mui/material/IconButton'
 import YearToggle from './YearToggle'
 import CalendarHeatMap from './CalendarHeatMap'
 import BarChart from './BarChart';
-import { MONTHS } from './RoadTraffic';
 
 import DeckGL from '@deck.gl/react';
 import {Map} from 'react-map-gl';
@@ -37,6 +36,9 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 import { useTheme } from '@mui/material/styles';
 import { StationMapIsolated } from './RoadTraffic/StationMap'
+
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
+
 
 export default function PageChargy() {
 
