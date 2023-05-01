@@ -40,7 +40,7 @@ function Layout({comment, children}) {
       <Grid item xs={12} md={6} lg={7}>
         <Grid container spacing={2} sx={{p: 2}}>
           <Grid item xs={12}>
-            <Typography variant="h4">{currentStation ? `${currentStation?.ROUTE} ${currentStation?.LOCALITE}` : 'choisir un compteur sur la carte'}</Typography>
+            <Typography variant="h4">{currentStation ? `${currentStation?.ROUTE} ${currentStation?.LOCALITE}` : 'Choisir un compteur sur la carte'}</Typography>
           </Grid>
           <Grid item xs={12}>
             <YearToggle from={Math.min(...YEARS)} to={Math.max(...YEARS)} currentYear={currentYear} onChange={handleChangeCurrentYear} />

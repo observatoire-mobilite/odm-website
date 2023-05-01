@@ -34,7 +34,7 @@ export default function BusMap() {
                 </Paper>
             </Grid>
             <Grid item md={8} sm={6} xs={12}>
-                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'choisir un arrêt ou une ligne sur la carte' : currentStop.label : `RGTR ligne ${currentLine.label}` }</Typography>
+                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'Choisir un arrêt ou une ligne sur la carte' : currentStop.label : `RGTR ligne ${currentLine.label}` }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url="data/publictransport/busstats-lines.json"
                     statsLabel="Line"
