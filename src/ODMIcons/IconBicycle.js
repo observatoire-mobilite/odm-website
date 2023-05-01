@@ -10,6 +10,7 @@ export function SVGBicycle({color, style}) {
 export default function IconBicycle({color='white', height='100%'}) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" height={height} preserveAspectRatio="xMidYMid meet" viewBox="0 0 264.731 155.121">
+      <title>vélo</title>
       <SVGBicycle color={color} />
     </svg>
   )
