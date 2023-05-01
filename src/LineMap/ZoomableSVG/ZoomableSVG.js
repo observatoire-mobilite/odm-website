@@ -58,8 +58,10 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     // handler: zoom to a specific point on the map
     const resetZoom = () => {
         const box = mapRef.current.getBoundingClientRect()
-        const apparent_width = svgSize.height * box.width / box.height
-        setViewBox({x: -(apparent_width / 2 - box.width / 2), y: 0, ...svgSize})
+        //const apparent_width = svgSize.height * box.width / box.height
+        //setViewBox({x: -(apparent_width / 2 - box.width / 2), y: 0, ...svgSize})
+        const apparent_height = svgSize.width * box.height / box.width
+        setViewBox({x: 0, y: 0, ...svgSize})  // don't know why, but this works in the current, portrait-style display
     }
 
     useLayoutEffect(() => resetZoom(), [])
