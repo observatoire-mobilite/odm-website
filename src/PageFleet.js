@@ -99,12 +99,13 @@ export default function Fleet() {
         })
     }, [])
 
-    const dates = useMemo(() => {
+    const {dates, xticks} = useMemo(() => {
         if (stats === null) return []
-        return stats['refdates'].map((d) => {
-            const date = DateTime.fromISO(d)
-            return `${MONTHS[date.month - 1]} ${date.year}`
-        })
+        const dates = stats['refdates'].map((d) => DateTime.fromISO(d))
+        return {
+            dates: dates.map((date) => `${MONTHS[date.month - 1]} ${date.year}`),
+            xticks: dates.map((date, i) => ({label: date.year, i, visible: date.month == 1})).filter((l) => l.visible)
+        }
     }, [stats])
     
     if (! statsLoaded) return
@@ -150,7 +151,7 @@ export default function Fleet() {
                                 </Grid>
                             </Grid>
                             <Grid item xs={12}>
-                                <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} />
+                                <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} xticks={xticks} />
                             </Grid>
                         </Grid>
 

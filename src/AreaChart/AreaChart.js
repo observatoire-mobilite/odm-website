@@ -10,10 +10,10 @@ import FancyNumber from '../DataGrids/FancyNumber.js';
 import { DateTime } from 'luxon';
 
 
-export default function AreaChart({xlabels, data}) {
+export default function AreaChart({xlabels, data, xticks}) {
     console.count('area-chart')
     
-    const displayData = useMemo(() => {
+    const [displayData, xTickLabels] = useMemo(() => {
         const keys = Object.keys(data)
         const n = data[keys[0]].length
         const cumsum = keys.reduce((kv, group) => {
@@ -26,7 +26,7 @@ export default function AreaChart({xlabels, data}) {
         const dx = 1000 / n
         const dy = 620
         
-        return keys.map((group, i) => {
+        const dispData = keys.map((group, i) => {
             const lower = rcumsum[i]
             const upper = rcumsum[i + 1]
             const points = [
@@ -48,10 +48,23 @@ export default function AreaChart({xlabels, data}) {
                 label_y: delta_mid > 0.05 ? (1 - (delta_mid / 2 + lower[mid])) * dy : null,
             }
         })
-    }, [data])
+
+        const first = xlabels[0]
+        const xTickLabels = xticks.map(({i, label}) => ({
+           x: i * dx,
+           y: dy,
+           label
+        }))
+
+        return [dispData, xTickLabels]
+
+    }, [data, xlabels, xticks])
 
     return(<AreaPlot displayData={displayData} xlabels={xlabels}>
             <AreaCurves displayData={displayData} />
+            {xTickLabels.map(({x, y, label}, i) => {
+                return (<text textAnchor="middle" x={x} y={y + 15} fontSize="15">{label}</text>)
+            })}
         </AreaPlot>)
 
 }
@@ -145,7 +158,7 @@ export function AreaPlot({children, displayData, xlabels, viewBox={x: 0, y: 0, w
         
 
     return (<Box style={{position: 'relative'}}>
-        <svg ref={canvasRef} width="100%" viewBox="0 0 1000 620" onMouseMove={locateMouse} onMouseLeave={(evt) => setInfo(null)}>
+        <svg ref={canvasRef} width="100%" viewBox="0 0 1000 640" onMouseMove={locateMouse} onMouseLeave={(evt) => setInfo(null)}>
             {children}
             <animated.line x1={pointer.x} x2={pointer.x} y1={0} y2={620} stroke="black" strokeDasharray="1, 5" />
             <animated.line x1={pointer.x} x2={pointer.x} y1={pointer.y1} y2={pointer.y2} stroke={theme.palette.secondary.main} strokeWidth="4" />
