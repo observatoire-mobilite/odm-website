@@ -45,14 +45,10 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import IconCar from './ODMIcons/IconCar.js';
 import IconTruck from './ODMIcons/IconTruck.js';
 import IconBus from './ODMIcons/IconBus.js';
-import IconEngine from './ODMIcons/IconEngine.js';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheelerOutlined';
 import VanIcon from '@mui/icons-material/AirportShuttle';
-import AgeIcon from '@mui/icons-material/CakeOutlined';
-import ColorIcon from '@mui/icons-material/ColorLensOutlined';
 import AreaChart from './AreaChart'
 import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel'
 import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
 import Tooltip from '@mui/material/Tooltip'
@@ -110,8 +106,7 @@ export default function Fleet() {
             return `${MONTHS[date.month - 1]} ${date.year}`
         })
     }, [stats])
-    console.log(currentStat)
-
+    
     if (! statsLoaded) return
 
     return (
