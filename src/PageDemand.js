@@ -1,4 +1,4 @@
-import {useMemo, useState, useEffect, useCallback, Fragment, lazy, Suspense } from 'react';
+import {useMemo, useRef, useState, useEffect, useCallback, Fragment, lazy, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
 import FormGroup from '@mui/material/FormGroup';
@@ -47,7 +47,7 @@ export default function PageDemand() {
     
     return (<Container maxWidth="lg" sx={{mt: 2}}>
         <Grid container spacing={2} direction="row" justifyContent="space-evenly" alignItems="stretch">
-            <Grid item xs={12} sm={6} md={4} height="90vh">
+            <Grid item xs={12} sm={6} md={4} sx={{height: {xs: "50vh", md: "90vh"}}}>
                 <Paper sx={{p: 2, width: '100%', height: '100%'}}>
                     {currentZone === null ? 
                         <Fragment>
@@ -55,12 +55,12 @@ export default function PageDemand() {
                             <Typography sx={{mt: '1rem'}} textAlign="center">Choisissez (= cliquez sur) une zone sur la carte pour commencer</Typography> 
                         </Fragment>
                     : 
-                        <ZoneInfo screenMD={screenMD} displayData={displayData} currentScenario={currentScenario} currentZone={currentZone} handleChangeScenario={handleChangeScenario} />
+                        <ZoneInfo svgHeight={screenMD ? 1618 : 404} displayData={displayData} currentScenario={currentScenario} currentZone={currentZone} handleChangeScenario={handleChangeScenario} />
                     }
                 </Paper>
 
             </Grid>
-            <Grid item xs={12} sm={6} md={8} height="90vh">
+            <Grid item xs={12} sm={6} md={8} sx={{height: {xs: "50vh", md: "90vh"}}}>
                 <Suspense fallback={fallback}>
                     <ZonalFlowMap height="100%" />
                 </Suspense>
@@ -80,7 +80,7 @@ const fallback = () => {
     )
 }
 
-function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}) {
+function ZoneInfo({displayData, currentScenario, handleChangeScenario, svgHeight=1618}) {
     return (
         <Grid container direction="column" justifyContent="flex-start" alignItems="stretch" sx={{height: 1}}>
             <Grid item>
@@ -105,13 +105,15 @@ function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid item><Container>
+            <Grid item sx={{mt: 1}}>
+                <Typography variant='caption'>Déplacements par jour ouvrable (lu-ve) ayant leur origine ou destination dans la zone choisie</Typography>
+            </Grid>
+            <Grid item><Container sx={{mb: 2}}>
                 {displayData && <BarChart 
                     svgWidth={1000}
-                    svgHeight={screenMD ? 1618 : 500}
+                    svgHeight={svgHeight}
                     data={displayData?.byMode}
-                    width="100%"
-                    height="auto"
+                    height="100%"
                     icons={[
                         <SVGCar style={{transform: 'matrix(0.25, 0, 0, 0.25, -27, 0)'}} />,
                         <SVGPublicTransport style={{transform: 'matrix(0.2, 0, 0, 0.2, -75, -20)'}} />,
@@ -121,9 +123,7 @@ function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}
                     ymin="0"
                     ymax={null}    
                 />}
-            </Container></Grid>
-            <Grid item>
-                <Typography variant='caption'>Déplacements par jour ouvrable (lu-ve) ayant leur origine ou destination dans la zone choisie</Typography>
+            </Container>
             </Grid>
         </Grid>
     )
