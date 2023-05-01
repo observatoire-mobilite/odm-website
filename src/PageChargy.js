@@ -29,7 +29,7 @@ import { StationMapIsolated } from './RoadTraffic/StationMap'
 
 export default function PageChargy() {
 
-    const [stationList, setStationList] = useState([])
+    const [stationList, setStationList] = useState(null)
     const [currentStation, setCurrentStation] = useState(null)
     
     useEffect(() => {
@@ -46,7 +46,7 @@ export default function PageChargy() {
               getPosition={({x, y}) => [x, y]}
               setCurrentStation={setCurrentStation}
               currentStation={currentStation}
-              compare={(a, b) => a.name == b.name}
+              compare={(a, b) => a?.name == b?.name}
             />
         </Grid>
         <Grid item xs={12} lg={6} xl={7}>
