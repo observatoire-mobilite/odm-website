@@ -11,7 +11,7 @@ import Skeleton from '@mui/material/Skeleton';
 import {SVGPedestrian} from './ODMIcons/IconPedestrian.js';
 import {SVGCar} from './ODMIcons/IconCar.js';
 import {SVGBicycle} from './ODMIcons/IconBicycle.js';
-import {SVGTramway} from './ODMIcons/IconTramway.js';
+import {SVGPublicTransport} from './ODMIcons/IconPublicTransport.js';
 
 import { useTheme } from '@mui/material/styles';
 import BarChart from './BarChart'
@@ -47,14 +47,12 @@ export default function PageDemand() {
     
     return (<Container maxWidth="lg" sx={{mt: 2}}>
         <Grid container spacing={2} direction="row" justifyContent="space-evenly" alignItems="stretch">
-            <Grid item xs={12} sm={6} md={4}>
-                <Paper sx={{p: 2, width: '100%', minHeight: '50vh'}}>
+            <Grid item xs={12} sm={6} md={4} height="90vh">
+                <Paper sx={{p: 2, width: '100%', height: '100%'}}>
                     {currentZone === null ? 
                         <Fragment>
-                            <Container sx={{mt: '50%'}}>
-                            <Typography variant="caption" textAlign="center">Ce module visualise les flux entre différentes régions du Grand-Duché et de ses voisins.</Typography> 
-                            <Typography textAlign="center">Choisissez (= cliquez sur) une zone sur la carte pour commencer</Typography> 
-                            </Container>
+                            <Typography sx={{mt: '50%'}} textAlign="center">Cette application visualise les flux entre différentes régions du Grand-Duché et de ses voisins.</Typography> 
+                            <Typography sx={{mt: '1rem'}} textAlign="center">Choisissez (= cliquez sur) une zone sur la carte pour commencer</Typography> 
                         </Fragment>
                     : 
                         <ZoneInfo screenMD={screenMD} displayData={displayData} currentScenario={currentScenario} currentZone={currentZone} handleChangeScenario={handleChangeScenario} />
@@ -62,9 +60,9 @@ export default function PageDemand() {
                 </Paper>
 
             </Grid>
-            <Grid item xs={12} sm={6} md={8} maxHeight="95vh">
+            <Grid item xs={12} sm={6} md={8} height="90vh">
                 <Suspense fallback={fallback}>
-                    <ZonalFlowMap height="auto" width="100%" />
+                    <ZonalFlowMap height="100%" />
                 </Suspense>
             </Grid>
         </Grid>
@@ -91,18 +89,21 @@ function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}
             <Grid item>
                 <Typography>Total: <FancyNumber count={displayData?.total ?? '??'} />&nbsp;<small>déplacements / jour</small></Typography>
                 {displayData?.internal !== null && <Typography>Déplacements internes: <FancyNumber count={displayData?.internal} />&nbsp;<small>%</small></Typography>}
-                <FormGroup>
-                    <Typography>LuxMobil 2017</Typography>
-                    <FormControlLabel 
-                        control={
-                            <Switch 
-                                checked={currentScenario == 1}
-                                onChange={handleChangeScenario} 
-                            />
-                        }
-                        label="Projection PNM 2035" 
-                    />
-                </FormGroup>
+                <Grid container direction="row" alignItems="center">
+                    <Grid item>
+                        <Typography variant="caption" color={currentScenario == 0 ? 'primary' : 'text'}>LuxMobil 2017</Typography>
+                    </Grid>
+                    <Grid item>
+                        <Switch 
+                            aria-label="visualiser le scénario PNM2035 au lieu des données LuxMobil 2017"
+                            checked={currentScenario == 1}
+                            onChange={handleChangeScenario} 
+                        />
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="caption" color={currentScenario == 1 ? 'primary' : 'text'}>PNM 2035</Typography>
+                    </Grid>
+                </Grid>
             </Grid>
             <Grid item><Container>
                 {displayData && <BarChart 
@@ -113,7 +114,7 @@ function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}
                     height="auto"
                     icons={[
                         <SVGCar style={{transform: 'scale(0.25)'}} />,
-                        <SVGTramway style={{transform: 'scale(0.2)'}} />,
+                        <SVGPublicTransport style={{transform: 'scale(0.2)'}} />,
                         <SVGBicycle style={{transform: 'scale(0.3)'}} />,
                         <SVGPedestrian style={{transform: 'scale(0.25)'}} />,
                     ]}
