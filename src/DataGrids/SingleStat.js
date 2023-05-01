@@ -34,7 +34,7 @@ const ExpandMore = styled((props) => {
 
 export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined, info=null, ymin=null, ymax=null}) {
     const displayData = useMemo(() => {
-      const suffix = (unit === undefined || value === undefined) ? null : `\u202F${unit}`
+      const suffix = (! unit  || ! value) ? null : `\u202F${unit}`
       if (ymin !== null && value !== null && value <= ymin)
         return {value: ymin, clip: '\u2264', suffix}
       

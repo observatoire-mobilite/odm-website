@@ -139,7 +139,7 @@ export function StationMapIsolated({currentStation, setCurrentStation, compare=(
         autoHighlight={true}
         onClick={({object}, evt) => { setCurrentStation(object ?? currentStation); }}
         updateTriggers={{
-          getFillColor: [currentStation]
+          getFillColor: [data]
         }}
       />}
       <Stack style={{right: '0', position: 'absolute'}}>
