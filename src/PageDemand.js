@@ -113,10 +113,10 @@ function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}
                     width="100%"
                     height="auto"
                     icons={[
-                        <SVGCar style={{transform: 'scale(0.25)'}} />,
-                        <SVGPublicTransport style={{transform: 'scale(0.2)'}} />,
-                        <SVGBicycle style={{transform: 'scale(0.3)'}} />,
-                        <SVGPedestrian style={{transform: 'scale(0.25)'}} />,
+                        <SVGCar style={{transform: 'matrix(0.25, 0, 0, 0.25, -27, 0)'}} />,
+                        <SVGPublicTransport style={{transform: 'matrix(0.2, 0, 0, 0.2, -75, -20)'}} />,
+                        <SVGBicycle style={{transform: 'matrix(0.3, 0, 0, 0.3, -35, 0)'}} />,
+                        <SVGPedestrian style={{transform: 'matrix(0.25, 0, 0, 0.25, -20, 0)'}} />,
                     ]}
                     ymin="0"
                     ymax={null}    
