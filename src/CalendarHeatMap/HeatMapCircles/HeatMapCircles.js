@@ -21,7 +21,7 @@ const DataCircleOverlay = styled('rect')(({theme}) => ({
 
 
 const DataCircleContainer = styled('g')(({theme}) => ({
-  stroke: 'black'
+  stroke: 'none'
 }))
 
 const DataCircleArea = styled('g')(({theme}) => ({
