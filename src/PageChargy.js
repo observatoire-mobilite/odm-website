@@ -53,12 +53,10 @@ export default function PageChargy() {
     const screenMD = useMediaQuery(theme.breakpoints.up('md'));
 
     useEffect(() => {
-        setStationList(null)
         fetch('data/chargy/stationmap.json')
         .then(res => res.json())
         .then(res => setStationList(res))
 
-        setStats(null)
         fetch('data/chargy/chargystats.json')
         .then(res => res.json())
         .then(res => setStats(res))
