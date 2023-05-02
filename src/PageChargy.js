@@ -117,7 +117,7 @@ export default function PageChargy() {
             </Grid>
             <Grid item xs={12} md={4}>
               <SingleStat 
-                  title="Electricité vendue"
+                  title="Electricité rechargée"
                   unit="kWh"
                   value={displayData?.energy_annual ?? null}
                   caption={`énergie rechargée en ${currentYear}`}
