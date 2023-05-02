@@ -26,6 +26,7 @@ export default function BusMap() {
     const [currentLine, currentStop] = useLineMapStore((state) => [state.currentLine, state.currentStop], shallow)
     const theme = useTheme()
     const screenMD = useMediaQuery(theme.breakpoints.up('md'));
+    const fullLabel = ({label=null}) => parseInt(label) < 100 ? `TICE ligne ${label}` : `RGTR ligne ${label}`
 
     return (
         <Grid container spacing={2} sx={{mt: 1}}>
@@ -35,7 +36,7 @@ export default function BusMap() {
                 </Paper>
             </Grid>
             <Grid item md={8} sm={6} xs={12}>
-                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'Choisir un arrêt ou une ligne sur la carte' : currentStop.label : `RGTR ligne ${currentLine.label}` }</Typography>
+                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'Choisir un arrêt ou une ligne sur la carte' : currentStop.label : fullLabel(currentLine) }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url="data/publictransport/busstats-lines.json"
                     statsLabel="Line"
