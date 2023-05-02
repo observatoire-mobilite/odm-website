@@ -152,6 +152,7 @@ export default function Fleet() {
                             </Grid>
                             <Grid item xs={12}>
                                 <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} xticks={xticks} />
+                                <Typography variant="caption">Dernière mise à jour des données: février 2023</Typography>
                             </Grid>
                         </Grid>
 

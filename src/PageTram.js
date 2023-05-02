@@ -55,11 +55,12 @@ export default function PageTram() {
                 <LineGraph stops={data.stops} currentStop={currentStop} onSelection={handleSelect} />
             </Drawer>
             <Grid container direction="row" justifyContent="flex-start" alignItems="center" spacing={2} sx={{p: 2}}>
+                <Grid item></Grid>
                 <Grid item><Typography variant="h4">{currentStop?.label}</Typography></Grid>
                 <Grid item justifyContent="middle"><Button onClick={(evt) => setOpen(! open)} variant="outlined">choisir un autre arrêt</Button></Grid>
             </Grid>
             <Container sx={{ mb: 2}}>
-                <Typography variant="caption" textAlign="center">Données du comptage automatique LUXTRAM corrigées pour le taux de comptage &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</Link></Typography>
+                <Typography variant="caption" textAlign="center">Données du comptage automatique LUXTRAM corrigées pour le taux de comptage &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Typography>
             </Container>
             <PassengerServiceGrid
                 url='data/publictransport/tramstats.json'
@@ -71,6 +72,7 @@ export default function PageTram() {
                 showNoDataHint
                 noDataComment=" Le réseau LUXTRAM a connu plusieurs extensions; il n'existe des données pour un arrêt que depuis l'année de son ouverture."
             />
+            <Typography variant="caption">Dernière mise à jour des données: 14 février 2023</Typography>
     </Container>        
     )
 }

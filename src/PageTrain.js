@@ -9,6 +9,8 @@ import { useLineMapStore } from './LineMap/store'
 import { shallow } from 'zustand/shallow' 
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import Link from '@mui/material/Link';
+
 
 export default function PageTrain() {
 
@@ -27,7 +29,7 @@ export default function PageTrain() {
                 <Typography variant="h4">{currentLine === null ? currentStop === null ? 'Choisir un arrêt ou une ligne sur la carte' : currentStop.label : `CFL linge ${currentLine.line}` }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url='data/publictransport/trainstats-lines.json'
-                    comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
+                    comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Fragment>}
                     statsLabel="Line"
                     unit="voyageurs (montées + descentes divisées par 2)"
                     idField="line"
@@ -36,13 +38,14 @@ export default function PageTrain() {
                 />}
                 {currentStop && <PassengerServiceGrid 
                     url='data/publictransport/trainstats.json'
-                    comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
+                    comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Fragment>}
                     statsLabel="Stop"
                     unit="montées + descentes"
                     idField="label"
                     fromYear={2017}
                     hideWhileNoData={true}
                 />}
+                <Typography variant="caption">Dernière mise à jour des données: janvier 2023</Typography>
             </Grid>
         </Grid>
 

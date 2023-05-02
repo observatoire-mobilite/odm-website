@@ -149,6 +149,7 @@ export default function PageChargy() {
                         <CalendarHeatMap year={currentYear} data={displayData.energy_daily} />
                     </Box>}
                 </ComplexStat>
+                <Typography variant="caption">Dernière mise à jour des données: 28 mars 2023</Typography>
             </Grid>
         </Grid>  
       </Grid>

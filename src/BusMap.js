@@ -6,6 +6,7 @@ import PassengerServiceGrid from './LineMap/PassengerServiceGrid'
 import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
+import Link from '@mui/material/Link'
 import { useLineMapStore } from './LineMap/store'
 import { shallow } from 'zustand/shallow' 
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -38,7 +39,7 @@ export default function BusMap() {
                 {currentLine && <PassengerServiceGrid
                     url="data/publictransport/busstats-lines.json"
                     statsLabel="Line"
-                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
+                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Fragment>}
                     unit="passagers (montées + descentes divisées par 2)"
                     idField="label"
                     fromYear={2022}
@@ -47,14 +48,16 @@ export default function BusMap() {
                 {currentStop && <PassengerServiceGrid 
                     url="data/publictransport/busstats.json"
                     statsLabel="Stop"
-                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <a href="https://transports.public.lu/dam-assets/planifier/observatoire/note2301.pdf">Note 23/01</a></Fragment>}
+                    comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Fragment>}
                     unit="montées + descentes"
                     idField="label"
                     fromYear={2021}
                     showNoDataHint
                 />}
+                <Typography variant="caption">Dernière mise à jour des données: 23 avril 2023</Typography>
             </Grid>
         </Grid>
+
 
     )
 }
