@@ -26,7 +26,7 @@ export default function PageTrain() {
                 </Paper>
             </Grid>
             <Grid item md={8} xs={12}>
-                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'Choisir un arrêt ou une ligne sur la carte' : currentStop.label : `CFL linge ${currentLine.line}` }</Typography>
+                <Typography variant="h4">{currentLine === null ? currentStop === null ? 'Choisir un arrêt ou une ligne sur la carte' : currentStop.label : `CFL ligne ${currentLine.line}` }</Typography>
                 {currentLine && <PassengerServiceGrid
                     url='data/publictransport/trainstats-lines.json'
                     comment={<Fragment>Compilation des données des comptages périodiques des CFL &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Fragment>}
