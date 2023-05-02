@@ -22,7 +22,7 @@ const SVGBox = styled('svg')(({theme}) => ({
     cursor: 'grab',
     userSelect: 'none',
     '&.fullscreen': {
-        height: 'calc(100vh - 150px)'
+        height: 'calc(100vh - 200px)'
     },
     '&.halfscreen': {
         height: 'calc(50vh)'
