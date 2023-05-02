@@ -101,21 +101,21 @@ export default function PageChargy() {
             <Grid item xs={12}>
                 <YearToggle from={2022} to={2023} currentYear={currentYear} onChange={handleChangeYear}  />
             </Grid>
-            <Grid item xs={12} md={4}>
+            {/*<Grid item xs={12} md={4}>
               <SingleStat 
                   title="Puissance installée"
                   value={currentStation?.connectors ?? null}
                   unit={`x ${currentStation?.power ?? '(inconnue)'} kW`}
                 />
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Grid>*/}
+            <Grid item xs={12} md={6}>
               <SingleStat 
                   title="Véhicles rechargés"
                   value={displayData?.charged_annual ?? null}
                   caption={`recharges effectuées en ${currentYear}`}
                 />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <SingleStat 
                   title="Electricité rechargée"
                   unit="kWh"
@@ -148,6 +148,7 @@ export default function PageChargy() {
                     {displayData?.energy_daily && currentTab == 'daily' && <Box sx={{p: 2}}>
                         <CalendarHeatMap year={currentYear} data={displayData.energy_daily} />
                     </Box>}
+                    {! displayData?.energy_monthly && ! displayData?.energy_daily && <Typography variant="h4"><span style={{color: 'gray', fontStyle: 'italic'}}>(pas de données)</span></Typography>}
                 </ComplexStat>
                 <Typography variant="caption">Dernière mise à jour des données: 28 mars 2023</Typography>
             </Grid>
