@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, crea
 import { animated, useSpring, useSprings, to } from '@react-spring/web'
 import { DateTime } from "luxon";
 import { getContrastRatio, styled } from '@mui/material/styles'
-import './CalendarHeatMap.css'
 import HeatMapCircles, {useCircleData} from './HeatMapCircles';
+import HeatMapWeekBars from './HeatMapWeekBars';
 import { Paper, Grid, Typography, Container } from '@mui/material';
 import Tooltip, {useTooltip} from './Tooltip'
 
@@ -36,13 +36,13 @@ export default function CalendarHeatMap({
 
 function TooltipWrapper({children, displayData, viewBox}){
   // this wrapper splits the tooltip's state form the expensive circles and bars
-  const [ref, info, spring] = useTooltip({displayData, viewBox})
+  const {ref, info, spring, tooltipRef} = useTooltip({displayData, viewBox})
   return (
     <Container sx={{position: 'relative'}}>
       <SVGcanvas ref={ref} viewBox={viewBox}>
         {children}
       </SVGcanvas>
-      <Tooltip {...info} style={spring} />
+      <Tooltip {...info} style={spring} ref={tooltipRef} />
     </Container>
   )    
 }
@@ -106,55 +106,4 @@ function HeatMapDayLabels({yOffset=0, fontSize=60}) {
           <text key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100} style={{'fontSize': fontSize, 'alignmentBaseline': 'middle'}}>{WEEKDAYS[i]}</text>
       )}</g> 
   )
-}
-
-
-
-
-function HeatMapWeekBars({year, values, maxRadius=50, height=100, xOffset=0, offsetDay=0}) {
-  console.count('heatmap-weekbars')
-  const circleDiameter = 2 * maxRadius
-  const displayData = useMemo(() => {
-    if (! values) return
-    const janfirst = DateTime.local(year, 1, 1)
-    let max = 0
-    return Object.entries([...Array(janfirst.daysInYear).keys()].reduce((kv, i) => {
-    
-      // first step: group daily  values by week 
-      // `x` serves as proxy - no dealing with weekyear
-      const value = i < offsetDay ? null : (values[i - offsetDay] === undefined ? null : values[i - offsetDay])
-      if (value === null) return kv
-      const x = xOffset + Math.floor((i + janfirst.weekday - 1) / 7) * circleDiameter
-      kv[x] = kv[x] ?? []
-      kv[x].push(value)
-      return kv
-    
-    }, {})).map(([x,vals]) => {
-      // second step step: calculate average day per week
-      // and retain its maximum at the same time
-      const value = vals.reduce((kv, v) => kv + v, 0) / vals.length
-      max = Math.max(value, max)
-      return {x, value}
-    
-    }).map((week) => { 
-      // finally, scale by max (assuming minimum is zero)
-      return {...week, scaledValue: week.value / max, category: Math.floor(week.value / max * 10)}
-    })
-  
-
-  }, [year, values])
-
-  if (! displayData) return
-
-  return (<g id="heatmap-week">{displayData.map((week, i) => {
-    return (
-      <rect key={`heatmap-week-${i}-rect`}
-        x={parseInt(week.x) + circleDiameter * .2} y={-height * week.scaledValue}
-        width={circleDiameter * .6} height={height * week.scaledValue}
-        className="heatmap"
-        data-scaledvalue={week.category}
-      />
-    )
-  })}</g>)
-
 }

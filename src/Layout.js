@@ -104,6 +104,9 @@ const themeVars = {
     secondary: {
       main: '#ffbb1c',
     },
+    colormap: ['#ffbb1c', '#ccc01d', '#9bbf36', '#69bb52', '#2db46d',
+      '#00aa84', '#009f96', '#0093a1', '#0085a3', '#05779c', 
+      '#05779c']  // last color twice -> category 10 -> anything that would exactly map to 9
   },
 }
 themeVars.palette.primary.main_rgb = hexToRgb(themeVars.palette.primary.main)
