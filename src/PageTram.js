@@ -5,35 +5,17 @@ import { animated, useSpring, config } from '@react-spring/web'
 
 
 import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import Slider from '@mui/material/Slider';
-import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-
 import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Container from '@mui/material/Container';
-import Chip from '@mui/material/Chip';
 import Drawer from '@mui/material/Drawer';
+import Link from '@mui/material/Link';
 import { useTheme } from '@mui/material/styles';
-
-import SingleStat from './DataGrids/SingleStat.js'
-import ComplexStat from './DataGrids/ComplexStat.js'
-import YearToggle from './YearToggle'
-
-import FAQList from './FAQ/List'
-import FAQEntry from './FAQ/Entry'
 import PassengerServiceGrid from './LineMap/PassengerServiceGrid';
 import { styled } from '@mui/material/styles';
 import { useLineMapStore } from './LineMap/store';
-
+import { shallow } from "zustand/shallow";
+import Container from '@mui/material/Container';
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
+
 
 export default function PageTram() {
     const data = {
@@ -58,9 +40,8 @@ export default function PageTram() {
         ]
     }
 
-    const [setCurrentStop, currentStop, fetchStats] = useLineMapStore((state) => [state.setCurrentStop, state.currentStop, state.fetchStopStats])
+    const [setCurrentStop, currentStop] = useLineMapStore((state) => [state.setCurrentStop, state.currentStop], shallow)
     const [open, setOpen] = useState(currentStop === null)
-    const handleClick = useCallback((evt) => setOpen(! open))
     const handleSelect = useCallback((stop) => { setCurrentStop(stop); setOpen(false) })
     useEffect(() => {
         setCurrentStop(data.stops[0])
@@ -69,25 +50,30 @@ export default function PageTram() {
     
 
     return (<Container maxWidth="lg">
-        <Drawer open={open} variant="persistent" anchor="right">
-            <Offset />
-            <LineGraph stops={data.stops} currentStop={currentStop} onSelection={handleSelect} />
-        </Drawer>
-        <Typography variant="caption">Données du comptage automatique LUXTRAM corrigées pour le taux de comptage</Typography>
-        <Grid container>
-            <Grid item><Typography variant="h4">{currentStop?.label}</Typography></Grid>
-            <Grid item justifyContent="middle"><Button onClick={(evt) => setOpen(! open)}>choisir un autre arrêt</Button></Grid>
-        </Grid>
-        <PassengerServiceGrid 
-            url='data/publictransport/tramstats.json'
-            statsLabel="Stop"
-            comment=""
-            unit="montées + descentes"
-            idField="id"
-            fromYear={2018}
-        />
-        </Container>
-        
+            <Drawer open={open} variant="persistent" anchor="right" sx={{maxWidth: '100vw'}} PaperProps={{sx: {p: 2}}} hideBackdrop={false}>
+                <Offset />
+                <LineGraph stops={data.stops} currentStop={currentStop} onSelection={handleSelect} />
+            </Drawer>
+            <Grid container direction="row" justifyContent="flex-start" alignItems="center" spacing={2} sx={{p: 2}}>
+                <Grid item></Grid>
+                <Grid item><Typography variant="h4">{currentStop?.label}</Typography></Grid>
+                <Grid item justifyContent="middle"><Button onClick={(evt) => setOpen(! open)} variant="outlined">choisir un autre arrêt</Button></Grid>
+            </Grid>
+            <Container sx={{ mb: 2}}>
+                <Typography variant="caption" textAlign="center">Données du comptage automatique LUXTRAM corrigées pour le taux de comptage &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Typography>
+            </Container>
+            <PassengerServiceGrid
+                url='data/publictransport/tramstats.json'
+                statsLabel="Stop"
+                comment=""
+                unit="montées + descentes"
+                idField="id"
+                fromYear={2018}
+                showNoDataHint
+                noDataComment=" Le réseau LUXTRAM a connu plusieurs extensions; il n'existe des données pour un arrêt que depuis l'année de son ouverture."
+            />
+            <Typography variant="caption">Dernière mise à jour des données: 14 février 2023</Typography>
+    </Container>        
     )
 }
 
@@ -97,7 +83,7 @@ function LineGraph({stops, currentStop, onSelection=(evt) => undefined}) {
     const [mouseOverStop, setMouseOverStop] = useState()
     
     return (
-        <svg height="640px" viewBox={`0 -30 ${30 * 20} ${stops.length * 60 + 30}`}>
+        <svg width="100%" viewBox={`0 -30 ${30 * 15} ${stops.length * 60 + 30}`}>
             <LineGraphTrunk height={(stops.length - 1) * 60}/>
             {stops.map((stop, i) => 
                 <LineGraphStop 
@@ -114,6 +100,34 @@ function LineGraph({stops, currentStop, onSelection=(evt) => undefined}) {
     )
 }
 
+
+const LineGraphInnerCircle = styled(animated('circle'))(({theme}) => ({
+    fill: theme.palette.primary.main,
+    stroke: theme.palette.text.primary,
+    strokeWidth: 0.5
+}))
+
+const LineGraphOuterCircle = styled(animated('circle'))(({theme}) => ({
+    fill: theme.palette.primary.main,
+    stroke: theme.palette.primary.contrastText,
+    strokeWidth: 4
+}))
+
+const LineGraphLabel = styled(animated('text'))(({theme}) => ({
+    dominantBaseline: 'middle',
+    fontSize: 20,
+    fontWeight: 'normal',
+}))
+
+
+const LineGraphUIOverlay = styled('rect')(({theme}) => ({
+    fill: 'none',
+    stroke: 'none',
+    cursor: 'pointer',
+    pointerEvents: 'visible'
+}))
+
+
 function LineGraphStop({
     stop, 
     pos=0,
@@ -127,7 +141,7 @@ function LineGraphStop({
     const theme = useTheme()
     const fill = theme.palette.primary.main
     const radius = selected ? 30 : (highlighted ? 20 : 10)
-    const fontSize = (selected ? 20 : (highlighted ? 15 : 10)) * 2
+    const fontSize = (selected ? 35 : (highlighted ? 25 : 20))
                     
     const springs = useSpring({
         r_outer: radius,
@@ -141,20 +155,18 @@ function LineGraphStop({
         onMouseEnter={(evt) => onHover(stop)}
         onMouseLeave={(evt) => onHover()}
     >
-        <animated.circle cx={xOffset} cy={20 + pos} r={springs.r_outer} style={{fill, stroke: 'black', strokeWidth: 0.5}} />
-        <animated.circle cx={xOffset} cy={20 + pos} r={springs.r_inner} style={{fill, stroke: 'white', strokeWidth: 4}} />
-        <animated.text 
+        <LineGraphInnerCircle cx={xOffset} cy={20 + pos} r={springs.r_outer} />
+        <LineGraphOuterCircle cx={xOffset} cy={20 + pos} r={springs.r_inner} />
+        <LineGraphLabel
             x={springs.x_text} y={20 + pos}
             style={{
-                dominantBaseline: 'middle',
                 fontSize: springs.fontSize,
-                fontWeight: stop.cat > 0 ? 'bold' : 'normal',
-                cursor: 'pointer', pointerEvents: 'visible'
+                fontWeight: stop.cat > 0 ? 'bold' : 'normal'
             }}
         >
             {stop.label}
-        </animated.text>
-        <rect x={xOffset} y={pos} width={200} height={40} style={{fill: 'none', stroke: 'none', cursor: 'pointer', pointerEvents: 'visible'}}/>
+        </LineGraphLabel>
+        <LineGraphUIOverlay x={xOffset} y={pos} width={200} height={40}/>
     </g>)
 }
 

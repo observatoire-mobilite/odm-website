@@ -10,6 +10,7 @@ export function SVGCar({color, style={}}) {
 export default function IconCar({color='white', height='100%'}) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" height={height} preserveAspectRatio="xMidYMid meet" viewBox="0 0 222.362 188.439">
+      <title>voiture</title>
       <SVGCar color={color} />
     </svg>
   )

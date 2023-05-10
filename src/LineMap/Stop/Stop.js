@@ -14,6 +14,10 @@ const [StopMarkerCircle, StopMarkerPath] = ['circle', 'path'].map((k) => styled(
     stroke: theme.palette.grey[900],
     strokeWidth: 1,
     fill: 'none',
+    '&.selected': {
+        stroke: theme.palette.secondary.light,
+        strokeWidth: 3
+    }
 })))
 
 const [StopMarkerCircleOverlay, StopMarkerPathOverlay] = ['circle', 'path'].map((k) => styled(k)(({theme}) => ({
@@ -24,7 +28,7 @@ const [StopMarkerCircleOverlay, StopMarkerPathOverlay] = ['circle', 'path'].map(
     opacity: 0,
     transition: 'opacity 0.5s',
     '&:hover': {
-        opacity: 1
+        opacity: 1,
     }
 })))
 
@@ -42,16 +46,16 @@ const StopMarkerAnnularOverlay = styled('circle')(({theme}) => ({
 }))
 
 export default function Stop({stop}) {
-    const [ setCurrentStop ] = useLineMapCurrent('Stop')
+    const [ setCurrentStop, currentId ] = useLineMapCurrent('Stop', ['id'])
     const handleClick = useCallback((evt) => { setCurrentStop(stop) }, [stop])
-
+    
     return (<g id={`stop-${stop.id}`}>
-        {stopmarker(stop, handleClick)}
+        {stopmarker(stop, handleClick, currentId == stop.id)}
     </g>)
 
 }
 
-function stopmarker(stop, handleClick) {
+function stopmarker(stop, handleClick, selected) {
 
     const label = (
         <StopLabel
@@ -61,9 +65,9 @@ function stopmarker(stop, handleClick) {
         >{stop.label}</StopLabel>
     )
 
-    if (stop.id == 407) {
+    if (stop.id == 1119) {
         return (<Fragment>
-            <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} />
+            <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} className={selected ? "selected" : null} />
             {label}
             <StopMarkerAnnularOverlay cx={stop.cx} cy={stop.cy} r={stop.r} onClick={handleClick} /> 
         </Fragment>)
@@ -71,14 +75,14 @@ function stopmarker(stop, handleClick) {
 
     if (stop.path)
         return(<Fragment>
-            <StopMarkerPath d={stop.path} />
+            <StopMarkerPath d={stop.path} className={selected ? "selected" : null} />
             {label}
             <StopMarkerPathOverlay d={stop.path} onClick={handleClick}/>
         </Fragment>)
     
     if (stop.cx && stop.cy && stop.r)
         return (<Fragment>
-            <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} />
+            <StopMarkerCircle cx={stop.cx} cy={stop.cy} r={stop.r} className={selected ? "selected" : null} />
             {label}
             <StopMarkerCircleOverlay cx={stop.cx} cy={stop.cy} r={stop.r + 5} onClick={handleClick} /> 
         </Fragment>)

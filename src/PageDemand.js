@@ -1,4 +1,4 @@
-import {useMemo, useState, useEffect, useCallback, Fragment, lazy, Suspense } from 'react';
+import {useMemo, useRef, useState, useEffect, useCallback, Fragment, lazy, Suspense } from 'react';
 import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
 import FormGroup from '@mui/material/FormGroup';
@@ -11,7 +11,7 @@ import Skeleton from '@mui/material/Skeleton';
 import {SVGPedestrian} from './ODMIcons/IconPedestrian.js';
 import {SVGCar} from './ODMIcons/IconCar.js';
 import {SVGBicycle} from './ODMIcons/IconBicycle.js';
-import {SVGTramway} from './ODMIcons/IconTramway.js';
+import {SVGPublicTransport} from './ODMIcons/IconPublicTransport.js';
 
 import { useTheme } from '@mui/material/styles';
 import BarChart from './BarChart'
@@ -23,7 +23,6 @@ import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery';
 import FancyNumber from './DataGrids/FancyNumber'
 const ZonalFlowMap = lazy(() => import('./ZonalFlowMap'))
-
 
 
 export default function PageDemand() {
@@ -48,24 +47,22 @@ export default function PageDemand() {
     
     return (<Container maxWidth="lg" sx={{mt: 2}}>
         <Grid container spacing={2} direction="row" justifyContent="space-evenly" alignItems="stretch">
-            <Grid item xs={12} sm={6} md={4}>
-                <Paper sx={{p: 2, width: '100%', minHeight: '50vh'}}>
+            <Grid item xs={12} sm={6} md={4} sx={{height: {xs: "50vh", md: "90vh"}}}>
+                <Paper sx={{p: 2, width: '100%', height: '100%'}}>
                     {currentZone === null ? 
                         <Fragment>
-                            <Container sx={{mt: '50%'}}>
-                            <Typography variant="caption" textAlign="center">Ce module visualise les flux entre différentes régions du Grand-Duché et de ses voisins.</Typography> 
-                            <Typography textAlign="center">Choisissez (= cliquez sur) une zone sur la carte pour commencer</Typography> 
-                            </Container>
+                            <Typography sx={{mt: '50%'}} textAlign="center">Cette application visualise les flux entre différentes régions du Grand-Duché et de ses voisins.</Typography> 
+                            <Typography sx={{mt: '1rem'}} textAlign="center">Choisissez (= cliquez sur) une zone sur la carte pour commencer</Typography> 
                         </Fragment>
                     : 
-                        <ZoneInfo screenMD={screenMD} displayData={displayData} currentScenario={currentScenario} currentZone={currentZone} handleChangeScenario={handleChangeScenario} />
+                        <ZoneInfo svgHeight={screenMD ? 1618 : 404} displayData={displayData} currentScenario={currentScenario} currentZone={currentZone} handleChangeScenario={handleChangeScenario} />
                     }
                 </Paper>
 
             </Grid>
-            <Grid item xs={12} sm={6} md={8} maxHeight="95vh">
+            <Grid item xs={12} sm={6} md={8} sx={{height: {xs: "50vh", md: "90vh"}}}>
                 <Suspense fallback={fallback}>
-                    <ZonalFlowMap height="auto" width="100%" />
+                    <ZonalFlowMap height="100%" />
                 </Suspense>
             </Grid>
         </Grid>
@@ -83,7 +80,7 @@ const fallback = () => {
     )
 }
 
-function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}) {
+function ZoneInfo({displayData, currentScenario, handleChangeScenario, svgHeight=1618}) {
     return (
         <Grid container direction="column" justifyContent="flex-start" alignItems="stretch" sx={{height: 1}}>
             <Grid item>
@@ -92,38 +89,41 @@ function ZoneInfo({displayData, currentScenario, handleChangeScenario, screenMD}
             <Grid item>
                 <Typography>Total: <FancyNumber count={displayData?.total ?? '??'} />&nbsp;<small>déplacements / jour</small></Typography>
                 {displayData?.internal !== null && <Typography>Déplacements internes: <FancyNumber count={displayData?.internal} />&nbsp;<small>%</small></Typography>}
-                <FormGroup>
-                    <Typography>LuxMobil 2017</Typography>
-                    <FormControlLabel 
-                        control={
-                            <Switch 
-                                checked={currentScenario == 1}
-                                onChange={handleChangeScenario} 
-                            />
-                        }
-                        label="Projection PNM 2035" 
-                    />
-                </FormGroup>
+                <Grid container direction="row" alignItems="center">
+                    <Grid item>
+                        <Typography variant="caption" color={currentScenario == 0 ? 'primary' : 'text'}>LuxMobil 2017</Typography>
+                    </Grid>
+                    <Grid item>
+                        <Switch 
+                            aria-label="visualiser le scénario PNM2035 au lieu des données LuxMobil 2017"
+                            checked={currentScenario == 1}
+                            onChange={handleChangeScenario} 
+                        />
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="caption" color={currentScenario == 1 ? 'primary' : 'text'}>PNM 2035</Typography>
+                    </Grid>
+                </Grid>
             </Grid>
-            <Grid item><Container>
+            <Grid item sx={{mt: 1}}>
+                <Typography variant='caption'>Déplacements par jour ouvrable (lu-ve) ayant leur origine ou destination dans la zone choisie</Typography>
+            </Grid>
+            <Grid item><Container sx={{mb: 2}}>
                 {displayData && <BarChart 
                     svgWidth={1000}
-                    svgHeight={screenMD ? 1618 : 500}
+                    svgHeight={svgHeight}
                     data={displayData?.byMode}
-                    width="100%"
-                    height="auto"
+                    height="100%"
                     icons={[
-                        <SVGCar style={{transform: 'scale(0.25)'}} />,
-                        <SVGTramway style={{transform: 'scale(0.2)'}} />,
-                        <SVGBicycle style={{transform: 'scale(0.3)'}} />,
-                        <SVGPedestrian style={{transform: 'scale(0.25)'}} />,
+                        <SVGCar style={{transform: 'matrix(0.25, 0, 0, 0.25, -27, 0)'}} />,
+                        <SVGPublicTransport style={{transform: 'matrix(0.2, 0, 0, 0.2, -75, -20)'}} />,
+                        <SVGBicycle style={{transform: 'matrix(0.3, 0, 0, 0.3, -35, 0)'}} />,
+                        <SVGPedestrian style={{transform: 'matrix(0.25, 0, 0, 0.25, -20, 0)'}} />,
                     ]}
                     ymin="0"
                     ymax={null}    
                 />}
-            </Container></Grid>
-            <Grid item>
-                <Typography variant='caption'>Déplacements par jour ouvrable (lu-ve) ayant leur origine ou destination dans la zone choisie</Typography>
+            </Container>
             </Grid>
         </Grid>
     )

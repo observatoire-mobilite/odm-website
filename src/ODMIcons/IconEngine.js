@@ -1,6 +1,7 @@
 export default function IconEngine({color='white', height='100%', width=undefined}) {
     return (
         <svg height={height} viewBox="0 0 50 50" width={width} xmlns="http://www.w3.org/2000/svg">
+            <title>motorisation</title>
             <rect fill="none" height="50" width="50"/>
             <polyline fill="none" points="30,14 30,10   35,10 35,6 21,6 21,10 26,10 26,14 " stroke={color} stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"/>
             <polyline fill="none" points="9,27 5,27 5,21   1,21 1,37 5,37 5,31 9,31 " stroke={color} stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"/>

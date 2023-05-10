@@ -1,13 +1,8 @@
-import { useState, forwardRef, useEffect, useRef, useCallback, useMemo, memo, Suspense, createContext, useContext } from 'react';
+import { useState, useCallback, Fragment } from 'react';
 import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { styled } from '@mui/material/styles';
-import { useErrorBoundary } from 'react-error-boundary';
 
-import Dialog from '@mui/material/Dialog';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
 
 import Box from '@mui/material/Box';
@@ -26,31 +21,40 @@ import BarChart from '../../BarChart'
 import { DateTime } from "luxon";
 import { useLineMapCurrentStats } from '../store'
 
+import Container from '@mui/material/Container';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+
+
 
 const capitalize = (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
 
 
-export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year}) {
+export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year, noDataComment="", showNoDataHint=false}) {
     const { currentYear, setCurrentYear, data } = useLineMapCurrentStats(url, statsLabel, idField)
     const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
-          day_offset=0, monthly=null, daily=null} = data ?? {}
+          day_offset=0, monthly=null, daily=null, noData=false, availableYears=null} = data ?? {}
     const [ currentTab, setCurrentTab] = useState('monthly')
     const handleChangeYear = useCallback((evt) => setCurrentYear(parseInt(evt.target.value) ?? currentYear), [])
-
+    const theme = useTheme();
+    const screenMD = useMediaQuery(theme.breakpoints.up('md'));
+    
     return (
         <Grid container direction="row" justifyContent="space-between" alignItems="stretch" spacing={2}>
             {comment && <Grid item xs={12}>
                 <Typography textAlign="center" variant="caption">{comment}</Typography>
             </Grid>}
             <Grid item xs={12}>
-                <YearToggle from={fromYear} to={toYear} currentYear={currentYear} onChange={handleChangeYear}  />
+                <YearToggle from={fromYear} to={toYear} currentYear={currentYear} availableYears={availableYears} onChange={handleChangeYear}  />
             </Grid>
+            {(showNoDataHint && noData) ? <NoData comment={noDataComment} statsLabel={statsLabel} /> : <Fragment>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
                 <SingleStat 
                     title="Moyenne journalière (lu-ve)"
                     caption={`${unit} par jour en ${currentYear}`}
                     value={annual_daily_average_corrected}
+                    ymin={1}
                 />
             </Grid>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
@@ -58,14 +62,16 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                     title="Total annuel"
                     caption={`${unit} en ${currentYear}`}
                     value={annual_total_corrected}
+                    ymin={1}
                 />
             </Grid>
-            {counting_ratio && <Grid item md={4} sm={12} xs={12}>
+            {counting_ratio !== null && <Grid item md={4} sm={12} xs={12}>
                 <SingleStat 
                     title="Taux de comptage"
-                    caption="rapport entre haltes comtpées et haltes observées"
+                    caption="rapport entre haltes comptées et haltes observées"
                     value={counting_ratio}
                     unit="%"
+                    ymin={1}
                 />
             </Grid>
             }
@@ -82,13 +88,38 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                         {daily && <Tab icon={<CalendarMonthIcon />} label="par jour" value="daily" />}
                     </Tabs>
                     {monthly && currentTab == 'monthly' && <Box sx={{p: 2}}>
-                        <BarChart data={Array.from({length: 12}, (_, i) => monthly[i] ?? null)} svgWidth={1618 * 3} svgHeight={1000} labels={MONTHS} ymax={null} width="100%" />
+                        <BarChart 
+                            data={Array.from({length: 12}, (_, i) => monthly[i] ?? null)}
+                            svgWidth={screenMD ? 1618 * 3 : 1000}
+                            svgHeight={screenMD ? 1000 : 620 }
+                            labels={MONTHS}
+                            ymax={null}
+                            width="100%" 
+                        />
                     </Box>}
                     {daily && currentTab == 'daily' && <Box sx={{p: 2}}>
                         <CalendarHeatMap year={currentYear} data={daily} offsetDay={day_offset} />
                     </Box>}
                 </ComplexStat>
             </Grid>
+            </Fragment>}
         </Grid>
     )
 }
+
+
+
+function NoData({comment, error, statsLabel="Stop"}) {
+    
+    return (
+      <Container sx={{m: 6}}>
+        <Alert severity="info" sx={{p: 2}}>
+          <AlertTitle>{error?.years && error.years.length > 0 ? "Pas de données pour l'année choisie." : "Aucune information disponible"}</AlertTitle>
+          {(error?.years && error.years.length > 0) 
+            ? <Typography>Astuce: des données sont enregistrées pour les années: {error.years.join(', ')}.</Typography>
+            : <Typography>L'ODM n'a pas encore reçu de données pour {statsLabel=="Stop" ? "cet arrêt" : "cette ligne"}.</Typography>
+          }
+        </Alert>
+      </Container>  
+    )
+  }

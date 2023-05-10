@@ -59,8 +59,6 @@ function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.v
   return Array.from({length: janfirst.daysInYear}, (_, i) => lookup[i])
 }
 
-
-
 function HeatMapMonths({year, xOffset=0, yOffset=0}) {
   console.count('heatmap-months')
   const janfirst =  DateTime.local(year, 1, 1);

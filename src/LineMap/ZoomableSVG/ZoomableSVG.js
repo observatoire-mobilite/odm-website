@@ -15,13 +15,21 @@ import { shallow } from 'zustand/shallow';
 
 const SVGBox = styled('svg')(({theme}) => ({
     width: '100%',
-    height: 'calc(100vh - 150px)',
     touchAction: 'none',
     backgroundColor: theme.palette.background.default,
     willChange: 'transform',
     transformOrigin: 'center',
     cursor: 'grab',
     userSelect: 'none',
+    '&.fullscreen': {
+        height: 'calc(100vh - 200px)'
+    },
+    '&.halfscreen': {
+        height: 'calc(50vh)'
+    },
+    '&.fullheight': {
+        height: '100%'
+    }
 }))
 
 
@@ -29,7 +37,7 @@ const SVGBox = styled('svg')(({theme}) => ({
 const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
 
 
-export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5}) {
+export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5, svgClass="fullscreen"}) {
     /* A SVG tag with the ability of dynamimc pan and zoom in its viewbox */
     
     const mapRef = useRef()
@@ -50,8 +58,10 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     // handler: zoom to a specific point on the map
     const resetZoom = () => {
         const box = mapRef.current.getBoundingClientRect()
-        const apparent_width = svgSize.height * box.width / box.height
-        setViewBox({x: -(apparent_width / 2 - box.width / 2), y: 0, ...svgSize})
+        //const apparent_width = svgSize.height * box.width / box.height
+        //setViewBox({x: -(apparent_width / 2 - box.width / 2), y: 0, ...svgSize})
+        const apparent_height = svgSize.width * box.height / box.width
+        setViewBox({x: 0, y: 0, ...svgSize})  // don't know why, but this works in the current, portrait-style display
     }
 
     useLayoutEffect(() => resetZoom(), [])
@@ -85,7 +95,7 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
             onPinch: ({ origin: [ox, oy], offset: [s, a], movement: [ms], event}) => {
                 event.preventDefault()
                 console.log(ox, oy, s, a, ms)
-                const zl = 1 + (ms - 1) * .1
+                const zl = 1 + (ms - 1) * .025
                 zoom({zl, origin: [ox, oy]})
             },
             onWheel: ({movement: [_, my], event: {clientX: ox, clientY: oy}, event, pinching, cancel}) => {
@@ -135,6 +145,7 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
     
     return (<Box style={{position: 'relative', height: '100%'}}>
         <SVGBox ref={mapRef} 
+            className={svgClass}
             preserveAspectRatio="xMinYMid meet"
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} 
         >

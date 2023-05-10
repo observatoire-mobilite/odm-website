@@ -28,7 +28,7 @@ export default function useRoadTrafficData({countsByDayPath, countsByHourPath, g
       const monthly = stats.daily.reduce((kv, {date, count}) => {
         kv[date.month] = (kv[date.month] ?? 0) + (count ?? 0)
         return kv
-      }, {})
+      }, Object.fromEntries(Array.from({length: 12}, (_, i) => [i + 1, null])))
       return {
         ...stats,
         weekdayAverage: stats.hourly.reduce((kv, v) => kv + v.count_weekday ?? 0, 0),

@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
 import { useMemo, useEffect } from 'react'
-import { useErrorBoundary } from 'react-error-boundary'
+import { useErrorBoundary } from 'react-error-boundary' 
 
 
-export const useLineMapStore = create((set) => ({
+export const useLineMapStore = create((set, get) => ({
     viewBox: {x: 0, y: 0, width: 100, height: 100},
     setViewBox: (viewBox) => set({ viewBox }),
     zoomTo: ({x, y, z}) => set(({ viewBox }) => {
@@ -15,10 +15,29 @@ export const useLineMapStore = create((set) => ({
             height: viewBox.height
         }}
     }),
+    getFirstValidYear: (id, stat="Stop") => {
+      let year = get().currentYear
+      const stats = get()[`stats${stat}`]
+      if (stats !== null && id !== null) {
+        const data = stats[id]
+        if (! data) return year
+        if (! data[year]) {
+          year = (Object.keys(data).find((year) => data[year] !== undefined) ?? null) 
+          year = year === null ? null : parseInt(year)
+        }
+      }
+      return year
+    },
     currentStop: null,
-    setCurrentStop: (currentStop) => set({ currentStop }),
+    setCurrentStop: (currentStop) => set({ 
+      currentStop, currentLine: null, 
+      currentYear: get().getFirstValidYear(currentStop.id, 'Stop') 
+    }),
     currentLine: null,
-    setCurrentLine: (currentLine) => set({ currentLine }),
+    setCurrentLine: (currentLine) => set({ 
+      currentLine, currentStop: null, 
+      currentYear: get().getFirstValidYear(currentLine.label, 'Line') 
+    }),
     currentYear: 2023,
     setCurrentYear: (currentYear) => set({ currentYear }),
     lineMap: null,
@@ -26,7 +45,7 @@ export const useLineMapStore = create((set) => ({
       const resp = await fetch(url)
       set({ lineMap: await resp.json() })
     },
-    stopStats: null,
+    statsStop: null,
     fetchStopStats: async (url) => {
       const resp = await fetch(url)
       set({ statsStop: await resp.json() })
@@ -52,7 +71,6 @@ export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[])
       state.currentYear, state.setCurrentYear],
     shallow
   )
-console.log(stats)
   const {showBoundary} = useErrorBoundary()
   useEffect(() => {
       fetchStats(url)
@@ -61,10 +79,17 @@ console.log(stats)
 
   const data = useMemo(() => {
     if (! current || ! currentYear || ! stats) return {}
-    if (stats[current[idField]] === undefined) {
-      throw new Error(`No such ${statsLabel.toLowerCase()} "${current[idField]}"`)
+    if (! current[idField])
+      throw new Error(`This is a bug! The ${statsLabel}-description given to LineMap lacks the "${idField}" property.`)
+    if (! stats[current[idField]]) {
+      //throw new Error(`No such ${statsLabel.toLowerCase()} "${current[idField]}" in the data-file.`)
+      return {noData: true, availableYears: []}
     }
-    return stats[current[idField]][currentYear]
+    const availableYears = Object.keys(stats[current[idField]]).map((v) => parseInt(v))
+    if (! stats[current[idField]][currentYear]) {
+      return {noData: true, availableYears}
+    } 
+    return {...stats[current[idField]][currentYear], noData: false, availableYears}
   }, [stats, current, currentYear])
   const props = useMemo(() => {
     if (current === null) return fields.map((_) => null)
@@ -97,9 +122,10 @@ export function useLineMapCurrent(statsLabel, fields=[]) {
 
 export function useLineMap(url) {
   const {showBoundary} = useErrorBoundary()
-  const [lineMap, fetchLineMap] = useLineMapStore((state) => [state.lineMap, state.fetchLineMap], shallow)
+  const [lineMap, fetchLineMap, reset] = useLineMapStore((state) => [state.lineMap, state.fetchLineMap, state.reset], shallow)
 
   useEffect(() => {
+      reset()
       fetchLineMap(url).catch((e) => showBoundary(e));
   }, [url])
 

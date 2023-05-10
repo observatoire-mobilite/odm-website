@@ -1,6 +1,7 @@
 export default function IconTruck({color='white', height='100%'}) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" height={height} preserveAspectRatio="xMidYMid meet" viewBox="0 0 282.454 251.898">
+      <title>camion</title>
       <g style={{fill: color, stroke: 'none'}}>
         <path d="m234.624,213.606H51.708c-3.313,0-6-2.687-6-6V6.268c0-3.313,2.687-6,6-6h182.916c3.313,0,6,2.687,6,6v201.339c0,3.313-2.687,6-6,6Zm-176.916-12h170.916V12.268H57.708v189.339Z"/>
         <path d="m264.148,100.237h-29.524c-3.313,0-6-2.687-6-6s2.687-6,6-6h23.524v-39.995H28.435v39.995h23.272c3.313,0,6,2.687,6,6s-2.687,6-6,6h-29.272c-3.313,0-6-2.687-6-6v-51.995c0-3.313,2.687-6,6-6h241.713c3.313,0,6,2.687,6,6v51.995c0,3.313-2.687,6-6,6Z"/>

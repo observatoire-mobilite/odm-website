@@ -45,13 +45,13 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import IconCar from './ODMIcons/IconCar.js';
 import IconTruck from './ODMIcons/IconTruck.js';
 import IconBus from './ODMIcons/IconBus.js';
-import IconEngine from './ODMIcons/IconEngine.js';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheelerOutlined';
 import VanIcon from '@mui/icons-material/AirportShuttle';
-import AgeIcon from '@mui/icons-material/CakeOutlined';
-import ColorIcon from '@mui/icons-material/ColorLensOutlined';
 import AreaChart from './AreaChart'
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import Tooltip from '@mui/material/Tooltip'
 
 
 
@@ -61,7 +61,7 @@ const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet'
 export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval) => null}) {
     return (<ToggleButtonGroup exclusive value={current} aria-label="aggregation level" onChange={onChange}>
         {labels.map((label, i) => {
-            return (<ToggleButton key={label} value={label} aria-label={label}>{icons[i] ?? label}</ToggleButton>)
+            return (<Tooltip title={label} describeChild={true}><ToggleButton key={label} value={label}>{icons[i] ?? label}</ToggleButton></Tooltip>)
         })}
      </ToggleButtonGroup>
     )
@@ -69,8 +69,8 @@ export function AggLevel({labels, icons=[], current=null, onChange=(evt, newval)
 
 
 export function AggLevelDropdown({labels, displayLabels=[], current=null, onChange=(evt, newval) => null}) {
-    return (<FormControl sx={{ m: 1, minWidth: 120 }}>
-            <Select aria-label="caractéristique à visualiser" id="select-year-small" value={current} label="Year" onChange={onChange} >
+    return (<FormControl sx={{ minWidth: 120 }}>
+            <Select value={current} aria-label="caractéristique à visualiser" onChange={onChange} >
                 { labels.map((value, i) => <MenuItem key={value} value={value}>{displayLabels[i] ?? value}</MenuItem>)}
             </Select>
         </FormControl>
@@ -99,15 +99,15 @@ export default function Fleet() {
         })
     }, [])
 
-    const dates = useMemo(() => {
+    const {dates, xticks} = useMemo(() => {
         if (stats === null) return []
-        return stats['refdates'].map((d) => {
-            const date = DateTime.fromISO(d)
-            return `${MONTHS[date.month - 1]} ${date.year}`
-        })
+        const dates = stats['refdates'].map((d) => DateTime.fromISO(d))
+        return {
+            dates: dates.map((date) => `${MONTHS[date.month - 1]} ${date.year}`),
+            xticks: dates.map((date, i) => ({label: date.year, i, visible: date.month == 1})).filter((l) => l.visible)
+        }
     }, [stats])
-    console.log(currentStat)
-
+    
     if (! statsLoaded) return
 
     return (
@@ -122,30 +122,37 @@ export default function Fleet() {
                     >
                         <Grid container direction="row" justifyContent="space-between" sx={{p: 2}}>
                             <Grid item xs={12}>
-                                <AggLevel 
-                                    current={currentCat} 
-                                    onChange={(evt, newval) => setCurrentCat(newval ?? currentCat)}
-                                    labels={['Voitures', 'Motos', 'Camionnettes', 'Camions', 'Autobus']}
-                                    icons={[<IconCar color={theme.palette.text.secondary} width="1.2rem" height="1.2rem" />, 
-                                            <TwoWheelerIcon />,
-                                            <VanIcon />, 
-                                            <IconTruck color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />,
-                                            <IconBus color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
-                                />
-                                <AggLevelDropdown
-                                    displayLabels={[
-                                        'motorisation',
-                                        <span>année de 1<sup>ère</sup> immatriculation</span>,
-                                        'constructeurs (top 7)',
-                                        'couleur'
-                                    ]} 
-                                    current={currentStat} 
-                                    onChange={(evt) => setCurrentStat(evt.target.value ?? currentStat)}
-                                    labels={['carburant', 'année', 'marque', 'couleur']}
-                                />
+                                <Grid container direction="row" justifyContent="flex-start" alignItems="center" spacing={2}>
+                                    <Grid item>
+                                        <AggLevel 
+                                            current={currentCat} 
+                                            onChange={(evt, newval) => setCurrentCat(newval ?? currentCat)}
+                                            labels={['Voitures', 'Motos', 'Camionnettes', 'Camions', 'Autobus']}
+                                            icons={[<IconCar color={theme.palette.text.secondary} width="1.2rem" height="1.2rem" />, 
+                                                    <TwoWheelerIcon />,
+                                                    <VanIcon />, 
+                                                    <IconTruck color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />,
+                                                    <IconBus color={theme.palette.text.secondary} width="1.5rem" height="1.5rem" />]}
+                                        />
+                                    </Grid>
+                                    <Grid item>
+                                        <AggLevelDropdown
+                                            displayLabels={[
+                                                'motorisation',
+                                                <span>année de 1<sup>ère</sup> immatriculation</span>,
+                                                'constructeurs (top 7)',
+                                                'couleur'
+                                            ]} 
+                                            current={currentStat} 
+                                            onChange={(evt) => setCurrentStat(evt.target.value ?? currentStat)}
+                                            labels={['carburant', 'année', 'marque', 'couleur']}
+                                        />
+                                    </Grid>
+                                </Grid>
                             </Grid>
-                            <Grid item xs={12} sx={{m: 2}}>
-                                <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} />
+                            <Grid item xs={12}>
+                                <AreaChart data={stats[currentCat][currentStat]} xlabels={dates} xticks={xticks} />
+                                <Typography variant="caption">Dernière mise à jour des données: février 2023</Typography>
                             </Grid>
                         </Grid>
 
