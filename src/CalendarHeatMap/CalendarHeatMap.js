@@ -22,7 +22,7 @@ export default function CalendarHeatMap({
       const intYear = parseInt(year)  // just a precaution: if `year` is passed as a string, the component fails miserably (with misleading error messages)
       return [intYear, (getDate && getValue) ? objectsToArray(intYear, data, getDate, getValue) : data]
     }, [year, data])
-    const displayData = useCircleData({year: intYear, values})
+    const displayData = useCircleData({year: intYear, values, offsetDay})
     return (
       <TooltipWrapper displayData={displayData} viewBox={viewBox}>
         <HeatMapMonths year={year} xOffset={150} yOffset={yOffset}/>
@@ -48,7 +48,6 @@ function TooltipWrapper({children, displayData, viewBox}){
 }
 
 
-
 function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.value) {
   const janfirst =  DateTime.local(year, 1, 1);
   const lookup = values.reduce((kv, v) => {
@@ -58,6 +57,16 @@ function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.v
   }, {})
   return Array.from({length: janfirst.daysInYear}, (_, i) => lookup[i])
 }
+
+
+const MonthUnderlay = styled('path')(({theme}) => ({
+  fill: 'none',
+  stroke: 'none',
+  '&.banded': {
+    fill: theme.palette.grey[300]
+  }
+}))
+
 
 function HeatMapMonths({year, xOffset=0, yOffset=0}) {
   console.count('heatmap-months')
@@ -74,9 +83,9 @@ function HeatMapMonths({year, xOffset=0, yOffset=0}) {
       const y0 = yOffset + lastday.weekday * 100
       const y1 = yOffset + firstday.weekday * 100
       const ret = (<g key={`heatmap-month-${i}`}>
-        <path 
+        <MonthUnderlay 
           d={`M ${x_firstmonday},${yOffset} L${x1+100},${yOffset} l0,${y0} l-100,0 l0,${700-y0} L${x0},700 l0,${y1 - 700 - 100} L${x_firstmonday},${y1 - 100} z`}
-          style={{fill: i % 2 == 1 ? 'lightgray' : 'none', stroke: 'none'}} 
+          className={i % 2 == 1 ? 'banded' : null} 
         />
         <text x={x0} y={800} style={{fontSize: '100px'}}>{MONTHS[firstday.month - 1] ?? '(ERROR)'}</text>
       </g>)
@@ -87,10 +96,16 @@ function HeatMapMonths({year, xOffset=0, yOffset=0}) {
 }
 
 
-function HeatMapDayLabels({yOffset=0, fontSize=60}) {
+const DayLabel = styled('text')(({theme}) => ({
+  fontSize: 60,
+  alignmentBaseline: 'middle'
+}))
+
+
+function HeatMapDayLabels({yOffset=0}) {
   return (
       <g>{[...Array(7).keys()].map((i) =>
-          <text key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100} style={{'fontSize': fontSize, 'alignmentBaseline': 'middle'}}>{WEEKDAYS[i]}</text>
+          <DayLabel key={`heatmap-daylabel-${i}`} x={0} y={yOffset + 50 + i * 100}>{WEEKDAYS[i]}</DayLabel>
       )}</g> 
   )
 }

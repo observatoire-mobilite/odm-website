@@ -121,16 +121,11 @@ export function useCircleData({
     }, [year, values])
 }
 
-
-
-const colors = ['#ffbb1c', '#ccc01d', '#9bbf36', '#69bb52', '#2db46d',
-                '#00aa84', '#009f96', '#0093a1', '#0085a3', '#05779c', 
-                '#05779c']  // last color twice -> category 10 -> anything that would exactly map to 9
 const DataCircle = styled('circle')(({theme}) => ({
   stroke: 'black',
   strokeWidth: 1,
   fill: theme.palette.grey[400],
-  ...Object.fromEntries(colors.map((fill, i) => ([`&[data-scaledvalue="${i}"]`, { fill }])))
+  ...Object.fromEntries(theme.palette.colormap.map((fill, i) => ([`&[data-scaledvalue="${i}"]`, { fill }])))
 }))
 
 const DataCircleOverlay = styled('rect')(({theme}) => ({
@@ -141,8 +136,6 @@ const DataCircleOverlay = styled('rect')(({theme}) => ({
     strokeWidth: 10
   }
 }))
-
-
 
 const DataCircleContainer = styled('g')(({theme}) => ({
   stroke: 'none'
