@@ -36,7 +36,7 @@ export default function LineMap({url, children, svgClass}) {
             </g>
             <g id="stations">
                 {lineMap.stations.map((station, idx) => 
-                    <StationCircle key={`station-marker-${idx}`} cx={station.cx} cy={station.cy} r={station.r} />
+                    <StationCircle key={`station-marker-${idx}`} cx={station.cx} cy={station.cy} r={station.rx} />
                 )}
             </g>
             <g id="stops">
