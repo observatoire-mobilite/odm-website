@@ -26,9 +26,9 @@ import { NavLink, useLocation } from "react-router-dom";
 
 function NavItem({to, title, icon, ...props}) {
     return (
-      <ListItemButton component={NavLink} to={to} selected={useLocation().pathname === to} >
+      <ListItemButton aria-label={`${title} page`} component={NavLink} to={to} selected={useLocation().pathname === to} >
         <ListItemAvatar>
-            <Avatar>
+            <Avatar alt={title}>
               {icon}
             </Avatar>
         </ListItemAvatar>
