@@ -39,9 +39,9 @@ function TooltipWrapper({children, displayData, viewBox}){
   const {ref, info, spring, tooltipRef} = useTooltip({displayData, viewBox})
   return (
     <Container sx={{position: 'relative'}}>
-      <SVGcanvas ref={ref} viewBox={viewBox}>
+      <svg ref={ref} viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} >
         {children}
-      </SVGcanvas>
+      </svg>
       <Tooltip {...info} style={spring} ref={tooltipRef} />
     </Container>
   )    
@@ -58,17 +58,6 @@ function objectsToArray(year, values, getDate=(x) => x.date, getValue=(x) => x.v
   }, {})
   return Array.from({length: janfirst.daysInYear}, (_, i) => lookup[i])
 }
-
-
-const SVGcanvas = forwardRef(
-  ({children, viewBox, ...rest}, ref) => {
-    return (
-      <svg ref={ref} {...rest} viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`} >
-        {children}
-      </svg>
-    )
-  }
-)
 
 
 
