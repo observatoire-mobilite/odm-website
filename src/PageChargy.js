@@ -223,7 +223,9 @@ function OverviewStats() {
           </FormControl>        
   */}</Grid>
         <Grid item xs={5}>
-          <Gauge data={[{value: data.stations['power'].DC, label: 'DC'}, {value: data.stations['power'].AC, label: 'AC'}]} />
+          <Paper sx={{p: 2}}>
+            <Gauge data={[{value: data.stations['power'].AC, label: 'AC'}, {value: data.stations['power'].DC, label: 'DC'}]} />
+          </Paper>
         </Grid>
         <Grid item xs={5}>
           <SingleStat title="points de recharge DC" value={data.stations[indicator].DC} />
@@ -279,19 +281,23 @@ const SVGBox = styled('svg')(({theme}) => ({
 
 
 function Gauge({data=null}) {
-  const theme = useTheme();
   const displayData = useMemo(() => {
     const sum = data.reduce((kv, {value}) => kv + (value ?? 0), 0)
-    return data.map(({value, label}) => ({value, label, share: value / sum}))
+    let cumsum = 0
+    return data.map(({value, label}) => {
+      const extent = [cumsum, (cumsum + value)].map((e) => e / sum * Math.PI)
+      const ret = {value, label, extent}
+      cumsum += value
+      return ret
+    })
   }, [data])
-  console.log(displayData)
 
   return (
     <SVGBox viewBox="0 0 1000 500">
-      {displayData && displayData.map(({label, value, share}) => (
-        <HalfCircle className="filled" alpha={Math.PI * share} label={label} value={value} />
+      {displayData && displayData.map(({label, value, extent: [alpha, beta]}, i) => (
+        <HalfCircle className="filled" opacity={1 - i / 7} alpha={beta} beta={alpha} label={label} value={value} />
       ))}
-      <HalfCircle className="outline" />
+      <HalfCircle className="filled3" r={380} x0={120} thickness={20} alpha={Math.PI * .4} label="cible UE" />
       <text x="500" y="500" fontSize="150" textAnchor="middle">89 MW</text>
     </SVGBox> 
   )
@@ -314,21 +320,33 @@ const HalfCirclePath = styled('path')(({theme}) => ({
   '&.filled2': {
     fill: theme.palette.primary.light
   },
+  '&.filled3': {
+    fill: theme.palette.grey[500]
+  },
 
 }))
 
 
-function HalfCircle({r=500, x0=0, y0=500, alpha=Math.PI, thickness=100, ...rest}) {
+function HalfCircle({r=500, x0=0, y0=500, alpha=Math.PI, beta=0, thickness=100, label=null, ...rest}) {
+  const rot = (x0, y0, r, angle) => [x0 + (1 - Math.cos(angle)) * r, y0 - Math.sin(angle) * r]
+  const translate = (dr, angle) => [Math.cos(angle) * dr, Math.sin(angle) * dr] 
 
-  const [x1, y1] = [x0 + (1 - Math.cos(alpha)) * r, y0 - Math.sin(alpha) * r]
-  const [dx2, dy2] = [Math.cos(alpha) * thickness, Math.sin(alpha) * thickness]
+  const [x3, y3] = rot(x0, y0, r, beta)
+  const [dx4, dy4] = translate(thickness, beta)
+  const [x1, y1] = rot(x0, y0, r, alpha)
+  const [dx2, dy2] = translate(thickness, alpha)
+  const [x5, y5] = rot(x0, y0, r, (alpha + beta) / 2)
+  const [dx5, dy5] = translate(thickness / 2, (alpha + beta) / 2)
 
-  return (<HalfCirclePath
-    d={`M ${x0},${y0}
-        A ${r} ${r} 0 0 1 ${x1} ${y1}
-        l ${dx2},${dy2}
-        A ${r-thickness} ${r-thickness} 0 0 0 ${x0+thickness} ${y0}
-        z`} 
-    {...rest} 
-  />)
+  return (<Fragment>
+    <HalfCirclePath
+      d={`M ${x3},${y3}
+          A ${r} ${r} 0 0 1 ${x1} ${y1}
+          l ${dx2},${dy2}
+          A ${r-thickness} ${r-thickness} 0 0 0 ${x3+dx4} ${y3+dy4}
+          z`} 
+      {...rest}
+    />
+    {label && <text x={x5+dx5} y={y5+dy5} fontSize={thickness * .5} alignmentBaseline="central" textAnchor="middle">{label}</text>}
+  </Fragment>)
 }
