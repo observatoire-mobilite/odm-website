@@ -77,26 +77,24 @@ export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[])
       .catch((e) => {showBoundary(new Error('Failed to retrieve data from server'))});
   }, [url])
 
-  const data = useMemo(() => {
-    if (! current || ! currentYear || ! stats) return {}
+  const [availableStats, availableYears] = useMemo(() => {
+    if (! current | ! stats ) return [[], []]
     if (! current[idField])
       throw new Error(`This is a bug! The ${statsLabel}-description given to LineMap lacks the "${idField}" property.`)
-    if (! stats[current[idField]]) {
-      //throw new Error(`No such ${statsLabel.toLowerCase()} "${current[idField]}" in the data-file.`)
-      return {noData: true, availableYears: []}
-    }
-    const availableYears = Object.keys(stats[current[idField]]).map((v) => parseInt(v))
-    if (! stats[current[idField]][currentYear]) {
-      return {noData: true, availableYears}
-    } 
-    return {...stats[current[idField]][currentYear], noData: false, availableYears}
-  }, [stats, current, currentYear])
-  const props = useMemo(() => {
-    if (current === null) return fields.map((_) => null)
-    return fields.map((field) => current[field] ?? null)
-  }, [current])
-
-
+    const currentLabel = current[idField]
+    const availableStats = stats.filter(({label}) => (label.substr(0, currentLabel.length) == currentLabel))
+    //const availableStats = binarySearch(stats, currentLabel)
+    const availableYears = availableStats.map(({year}) => year)
+    return [availableStats, availableYears]
+  }, [current, stats])
+  
+  const data = useMemo(() => {
+    if (! currentYear) return {}
+    if (! availableStats) return {noData: true, availableYears: []}
+    const data = availableStats.find(({year}) => (year == currentYear))
+    if (data === undefined) return {noData: true, availableYears}
+    return {noData:false, availableYears, ...data}
+  }, [availableStats, currentYear])
   return ({currentYear, data, current, setCurrentYear, setCurrent})
 }
 
