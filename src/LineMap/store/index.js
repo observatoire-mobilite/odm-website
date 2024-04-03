@@ -15,89 +15,105 @@ export const useLineMapStore = create((set, get) => ({
             height: viewBox.height
         }}
     }),
-    getFirstValidYear: (id, stat="Stop") => {
-      let year = get().currentYear
-      const stats = get()[`stats${stat}`]
-      if (stats !== null && id !== null) {
-        const data = stats[id]
-        if (! data) return year
-        if (! data[year]) {
-          year = (Object.keys(data).find((year) => data[year] !== undefined) ?? null) 
-          year = year === null ? null : parseInt(year)
-        }
-      }
-      return year
-    },
-    currentStop: null,
-    setCurrentStop: (currentStop) => set({ 
-      currentStop, currentLine: null, 
-      //currentYear: get().getFirstValidYear(currentStop.id, 'Stop') 
-    }),
-    currentLine: null,
-    setCurrentLine: (currentLine) =>  set({ 
-        currentLine,
-        currentStop: null,  // kill any pre-selected stop
-    }),
-    currentYear: 2023,
-    setCurrentYear: (currentYear) => set({ currentYear }),
     lineMap: null,
-    fetchLineMap: async (url) => {
-      const resp = await fetch(url)
-      set({ lineMap: await resp.json() })
-    },
+    lineMapLoaded: false,
+    fetchLineMap: async (url) => loadFromWeb(url, set, 'lineMap'),
+    currentStop: null,
+    setCurrentStop: (currentStop) => set({ currentStop, currentLine: null}),
+    currentLine: null,
+    setCurrentLine: (currentLine) => set({ currentLine, currentStop: null}),
+    currentYear: 2023,
+    setCurrentYear: (year) => set({currentYear: truncateYear(year, get().availableYears)}),
     statsStop: null,
-    fetchStopStats: async (url) => {
-      const resp = await fetch(url)
-      set({ statsStop: await resp.json() })
-    },
+    statsStopLoaded: false,
+    fetchStopStats: async (url) => loadFromWeb(url, set, 'statsStop'),
     statsLine: null,
-    fetchLineStats: async (url) => {
-      const resp = await fetch(url)
-      set({ statsLine: await resp.json() })
-    },
-    reset: () => set({statsStop: null, statsLine: null, currentStop: null, currentLine: null, currentYear: 2023})
+    statsLineLoaded: false,
+    fetchLineStats: async (url) => loadFromWeb(url, set, 'statsLine'),
+    reset: () => set({statsStop: [], statsLine: [], currentStop: null, currentLine: null, currentYear: 2023})
   }))
+
+async function loadFromWeb(url, set, target='lineMap') {
+  const obj = {}
+  obj[target] = null
+  obj[`${target}Loaded`] = false
+  await set(obj)
+  const resp = await fetch(url)
+  obj[target] = await resp.json()
+  obj[`${target}Loaded`] = true
+  await set(obj)
+}
+
+
+function truncateYear(year, availableYears) {
+  if (! availableYears) return year
+  var currentYear = availableYears.find((y) => y >= year)  // find first element of `availableYears` that's equal or larger than `year`
+  if (currentYear == -1) return availableYears.slice(-1)  // if there was no match before, assume the most recent
+  return currentYear
+}
 
 
 export function useLineMapCurrentStats(url, statsLabel, idField='id', fields=[]) {
-  const [
-    fetchStats, stats,
-    current, setCurrent,
-    currentYear, setCurrentYear
-  ] = useLineMapStore(
+  // get handler to a whole bunch of methods and propos we'll need
+  const [fetchStats, stats, statsLoaded, current, setCurrent, currentYear, setCurrentYear] = useLineMapStore(
     (state) => [
-      state[`fetch${statsLabel}Stats`], state[`stats${statsLabel}`], 
+      state[`fetch${statsLabel}Stats`], state[`stats${statsLabel}`], state[`stats${statsLabel}Loaded`],
       state[`current${statsLabel}`], state[`setCurrent${statsLabel}`], 
-      state.currentYear, state.setCurrentYear],
-    shallow
+      state.currentYear, state.setCurrentYear
+    ], shallow
   )
+
+  // load data every time the URL changes
   const {showBoundary} = useErrorBoundary()
   useEffect(() => {
       fetchStats(url)
       .catch((e) => {showBoundary(new Error('Failed to retrieve data from server'))});
   }, [url])
 
-  const [availableStats, availableYears] = useMemo(() => {
-    if (! current | ! stats ) return [[], []]
-    if (! current[idField])
-      throw new Error(`This is a bug! The ${statsLabel}-description given to LineMap lacks the "${idField}" property.`)
-    const currentLabel = current[idField]
-    const availableStats = stats.filter(({label}) => (label.substr(0, currentLabel.length) == currentLabel))
-    //const availableStats = binarySearch(stats, currentLabel)
-    const availableYears = availableStats.map(({year}) => year)
-    return [availableStats, availableYears]
-  }, [current, stats])
-  
-  const data = useMemo(() => {
-    if (! currentYear) return {}
-    if (! availableStats) return {noData: true, availableYears: []}
-    const data = availableStats.find(({year}) => (year == currentYear))
-    if (data === undefined) return {noData: true, availableYears}
-    return {noData:false, availableYears, ...data}
-  }, [availableStats, currentYear])
-  return ({currentYear, data, current, setCurrentYear, setCurrent})
-}
+  // I initially tried to have this in the store
+  // however, this causes problems with the delayed loading through the `useEffect` above
+  // so instead I use two memos: the first calculates `firstAvailableStateIndex`, which
+  // is the position of the first line/stop info object in `stats`. For any given line/bus,
+  // there will be several such objects for different years, one for every `availableYears`.
+  // The advantage of using a memo is simple: when loading is done, `stats` gets reset
+  // and then this memo knows to recalculate.
+  const [firstAvailableStatIndex, availableYears] = useMemo(
+    () => {
+      if (stats === null) return [null, []]
 
+      // find the first index in the stats-Array whose `label` matches `currentLabel`
+      const currentLabel = current.label
+      const filterfunc = ({label}) => (label.substr(0, currentLabel.length) == currentLabel)
+      const firstAvailableStatIndex = stats.findIndex(filterfunc)
+      if (firstAvailableStatIndex == -1) {
+        console.log(`found no stats for label "${currentLabel}"`)
+        return [null, []]
+      }
+      // presuming stats is sorted by `label` and `year`, go check the rows following `pos`
+      var availableYears = []
+      for(var i=firstAvailableStatIndex; i<stats.length; i++) {
+        if (! filterfunc(stats[i])) break
+        availableYears.push(stats[i].year)
+      }
+
+      return [firstAvailableStatIndex, availableYears]
+    }, [stats, current]
+  )
+
+  // this seemingly trivial bit went into a separate memo simply because it avoids us recalculating
+  // `firstAvailableStatIndex` and `availableYears` if all that changed is `currentYear`.
+  // the "nullish coalescing operator" (??) ensures that we output `null` if there (a) were
+  // no data because `fetchStats` is still loading, or (b) the current label is unknown. 
+  const data = useMemo(
+    () => {
+      if (stats == null || firstAvailableStatIndex == null) return null
+      const yearIndex = availableYears.indexOf(currentYear)
+      if (yearIndex == -1) return null
+      return stats[firstAvailableStatIndex + yearIndex] ?? null
+    }, [firstAvailableStatIndex, availableYears, currentYear]
+  )
+  return {currentYear, data, dataLoaded: statsLoaded, current, setCurrentYear, setCurrent, availableYears}
+}
 
 export function useLineMapReset() {
   return useLineMapStore((state) => state.reset)
