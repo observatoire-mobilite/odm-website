@@ -25,23 +25,24 @@ const StationCircle = styled('circle')(({theme}) => ({
 export default function LineMap({url, children, svgClass}) {
     
     const theme = useTheme()
-    const lineMap = useLineMap(url)
+    const [lineMap, lineMapLoaded] = useLineMap(url)
     
-    if (lineMap === null) return
     return (<Fragment>
-        <ZoomableSVG svgClass={svgClass}>
-            <g id='frontier'><BorderLine d={lineMap.frontier} /></g>
-            <g id='lines'>
-                {lineMap.lines.map((line, idx) => <Line key={`line-${idx}`} line={line} />)}
-            </g>
-            <g id="stations">
-                {lineMap.stations.map((station, idx) => 
-                    <StationCircle key={`station-marker-${idx}`} cx={station.cx} cy={station.cy} r={station.rx} />
-                )}
-            </g>
-            <g id="stops">
-                {lineMap.stops.map((stop, idx) => <Stop key={`stop-marker-${idx}`} stop={stop}/>)}
-            </g>
+        <ZoomableSVG svgClass={svgClass} loading={! lineMapLoaded}>
+            {lineMapLoaded && (<Fragment>
+                <g id='frontier'><BorderLine d={lineMap.frontier} /></g>
+                <g id='lines'>
+                    {lineMap.lines.map((line, idx) => <Line key={`line-${idx}`} line={line} />)}
+                </g>
+                <g id="stations">
+                    {lineMap.stations.map((station, idx) => 
+                        <StationCircle key={`station-marker-${idx}`} cx={station.cx} cy={station.cy} r={station.rx} />
+                    )}
+                </g>
+                <g id="stops">
+                    {lineMap.stops.map((stop, idx) => <Stop key={`stop-marker-${idx}`} stop={stop}/>)}
+                </g>
+            </Fragment>)}
         </ZoomableSVG>
         {children}
     </Fragment>)

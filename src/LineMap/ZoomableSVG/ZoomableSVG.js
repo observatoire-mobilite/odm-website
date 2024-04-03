@@ -8,10 +8,12 @@ import Box from '@mui/material/Box';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import CropFreeIcon from '@mui/icons-material/CropFree';
+import CircularProgress from '@mui/material/CircularProgress';
 import LockIcon from '@mui/icons-material/Lock';
 import { styled } from '@mui/material/styles'
 import { useLineMapStore } from '../store';
 import { shallow } from 'zustand/shallow';
+
 
 const SVGBox = styled('svg')(({theme}) => ({
     width: '100%',
@@ -37,7 +39,7 @@ const SVGBox = styled('svg')(({theme}) => ({
 const useGesture = createUseGesture([dragAction, pinchAction, scrollAction, wheelAction])
 
 
-export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5, svgClass="fullscreen"}) {
+export default function ZoomableSVG({children, svgSize={width: 1472.387, height: 2138.5}, step=1000, maxZoomLevel=5, svgClass="fullscreen", loading=false}) {
     /* A SVG tag with the ability of dynamimc pan and zoom in its viewbox */
     
     const mapRef = useRef()
@@ -151,7 +153,9 @@ export default function ZoomableSVG({children, svgSize={width: 1472.387, height:
         >
             {children}
         </SVGBox>
-
+        {loading && <Stack style={{left: 'calc(50% - 2rem)', position: 'absolute', top: 'calc(50% - 2rem)'}}>
+            <CircularProgress size='4rem' />
+        </Stack>}
         <Stack style={{right: '0', position: 'absolute', top: '0'}}>
             <IconButton onClick={(evt) => zoom({zl: 1.1, relative: true, origin: [0.5, 0.5]})} color="primary" title="zoom in on map"><ZoomInIcon /></IconButton>
             <IconButton onClick={(evt) => zoom({zl: 0.9, relative: true, origin: [0.5, 0.5]})} color="primary" title="zoom out of map"><ZoomOutIcon /></IconButton>

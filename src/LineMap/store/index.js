@@ -136,12 +136,13 @@ export function useLineMapCurrent(statsLabel, fields=[]) {
 
 export function useLineMap(url) {
   const {showBoundary} = useErrorBoundary()
-  const [lineMap, fetchLineMap, reset] = useLineMapStore((state) => [state.lineMap, state.fetchLineMap, state.reset], shallow)
+  const [lineMap, fetchLineMap, reset, lineMapLoaded] = useLineMapStore(
+    (state) => [state.lineMap, state.fetchLineMap, state.reset, state.lineMapLoaded], shallow)
 
   useEffect(() => {
       reset()
       fetchLineMap(url).catch((e) => showBoundary(e));
   }, [url])
 
-  return lineMap
+  return [lineMap, lineMapLoaded]
 }
