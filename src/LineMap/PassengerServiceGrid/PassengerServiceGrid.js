@@ -33,8 +33,8 @@ const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet'
 
 export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year, noDataComment="", showNoDataHint=false}) {
     const { currentYear, setCurrentYear, data, dataLoaded, availableYears } = useLineMapCurrentStats(url, statsLabel, idField)
-    const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
-          day_offset=0, month_offset=0, monthly=null, daily=null, noData=false, availableYears=null} = data ?? {}
+    const {counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
+          day_offset=0, month_offset=0, monthly=null, daily=null, noData=false} = data ?? {}
     const [ currentTab, setCurrentTab] = useState('monthly')
     const handleChangeYear = useCallback((evt) => setCurrentYear(parseInt(evt.target.value) ?? currentYear), [])
     const theme = useTheme();
@@ -46,7 +46,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                 <Typography textAlign="center" variant="caption">{comment}</Typography>
             </Grid>}
             <Grid item xs={12}>
-                <YearToggle from={fromYear} to={toYear} currentYear={currentYear} availableYears={availableYears} onChange={handleChangeYear}  />
+                <YearToggle from={2021} to={DateTime.now().year} currentYear={currentYear} availableYears={availableYears} onChange={handleChangeYear}  />
             </Grid>
             {(showNoDataHint && noData) ? <NoData comment={noDataComment} statsLabel={statsLabel} /> : <Fragment>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
