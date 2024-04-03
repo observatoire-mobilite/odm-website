@@ -34,7 +34,7 @@ const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet'
 export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year, noDataComment="", showNoDataHint=false}) {
     const { currentYear, setCurrentYear, data } = useLineMapCurrentStats(url, statsLabel, idField)
     const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
-          day_offset=0, monthly=null, daily=null, noData=false, availableYears=null} = data ?? {}
+          day_offset=0, month_offset=0, monthly=null, daily=null, noData=false, availableYears=null} = data ?? {}
     const [ currentTab, setCurrentTab] = useState('monthly')
     const handleChangeYear = useCallback((evt) => setCurrentYear(parseInt(evt.target.value) ?? currentYear), [])
     const theme = useTheme();
@@ -89,7 +89,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                     </Tabs>
                     {monthly && currentTab == 'monthly' && <Box sx={{p: 2}}>
                         <BarChart 
-                            data={Array.from({length: 12}, (_, i) => monthly[i] ?? null)}
+                            data={Array.from({length: 12}, (_, i) => monthly[i - month_offset] ?? null)}
                             svgWidth={screenMD ? 1618 * 3 : 1000}
                             svgHeight={screenMD ? 1000 : 620 }
                             labels={MONTHS}
