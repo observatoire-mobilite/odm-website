@@ -31,12 +31,12 @@ export const useLineMapStore = create((set, get) => ({
     currentStop: null,
     setCurrentStop: (currentStop) => set({ 
       currentStop, currentLine: null, 
-      currentYear: get().getFirstValidYear(currentStop.id, 'Stop') 
+      //currentYear: get().getFirstValidYear(currentStop.id, 'Stop') 
     }),
     currentLine: null,
-    setCurrentLine: (currentLine) => set({ 
-      currentLine, currentStop: null, 
-      currentYear: get().getFirstValidYear(currentLine.label, 'Line') 
+    setCurrentLine: (currentLine) =>  set({ 
+        currentLine,
+        currentStop: null,  // kill any pre-selected stop
     }),
     currentYear: 2023,
     setCurrentYear: (currentYear) => set({ currentYear }),
