@@ -32,7 +32,7 @@ const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet'
 
 
 export default function PassengerServiceGrid({url, comment, unit="voyageurs", statsLabel="Stop", idField="id", fromYear=2017, toYear=DateTime.now().year, noDataComment="", showNoDataHint=false}) {
-    const { currentYear, setCurrentYear, data } = useLineMapCurrentStats(url, statsLabel, idField)
+    const { currentYear, setCurrentYear, data, dataLoaded, availableYears } = useLineMapCurrentStats(url, statsLabel, idField)
     const{counting_ratio=null, annual_daily_average_corrected=null, annual_total_corrected=null, 
           day_offset=0, month_offset=0, monthly=null, daily=null, noData=false, availableYears=null} = data ?? {}
     const [ currentTab, setCurrentTab] = useState('monthly')
@@ -55,6 +55,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                     caption={`${unit} par jour en ${currentYear}`}
                     value={annual_daily_average_corrected}
                     ymin={1}
+                    loading={! dataLoaded}
                 />
             </Grid>
             <Grid item md={counting_ratio === null ? 6 : 4} sm={6} xs={12}>
@@ -63,6 +64,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                     caption={`${unit} en ${currentYear}`}
                     value={annual_total_corrected}
                     ymin={1}
+                    loading={! dataLoaded}
                 />
             </Grid>
             {counting_ratio !== null && <Grid item md={4} sm={12} xs={12}>
@@ -72,12 +74,14 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                     value={counting_ratio}
                     unit="%"
                     ymin={1}
+                    loading={! dataLoaded}
                 />
             </Grid>
             }
             <Grid item xs={12}>
                 <ComplexStat
                     title={`${capitalize(unit)} ${currentTab == 'monthly' ? 'par mois' : 'par jour'} en ${currentYear}`}
+
                 >
                     <Tabs
                         value={currentTab}
@@ -87,7 +91,7 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                         {monthly && <Tab icon={<BarChartIcon />} label="par mois" value="monthly" />}
                         {daily && <Tab icon={<CalendarMonthIcon />} label="par jour" value="daily" />}
                     </Tabs>
-                    {monthly && currentTab == 'monthly' && <Box sx={{p: 2}}>
+                    {monthly && currentTab == 'monthly' && dataLoaded && <Box sx={{p: 2}}>
                         <BarChart 
                             data={Array.from({length: 12}, (_, i) => monthly[i - month_offset] ?? null)}
                             svgWidth={screenMD ? 1618 * 3 : 1000}
@@ -97,9 +101,10 @@ export default function PassengerServiceGrid({url, comment, unit="voyageurs", st
                             width="100%" 
                         />
                     </Box>}
-                    {daily && currentTab == 'daily' && <Box sx={{p: 2}}>
+                    {daily && currentTab == 'daily' && dataLoaded && <Box sx={{p: 2}}>
                         <CalendarHeatMap year={currentYear} data={daily} offsetDay={day_offset} />
                     </Box>}
+                    {dataLoaded || <Box sx={{p: 2}}>Loading...</Box>}
                 </ComplexStat>
             </Grid>
             </Fragment>}
