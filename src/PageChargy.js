@@ -22,7 +22,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
 import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
+import Tooltip from '@mui/material/Tooltip'
 
 import SingleStat from './DataGrids/SingleStat.js';
 
@@ -44,6 +44,7 @@ import { StationMapIsolated } from './RoadTraffic/StationMap'
 
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import FancyNumber from './DataGrids/FancyNumber';
 
 
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre','décembre']
@@ -100,9 +101,10 @@ export default function PageChargy() {
     
     return(<Grid container spacing={2}>
         <Grid item xs={12}>
-          
-          <Typography variant="h4">Apperçu national</Typography>
+          <Typography variant="h4">Points de charge accessibles au public</Typography>
+          <Typography variant="caption">Source des données: <a target="_blank" href="https://www.eco-movement.com/">eco-movement.com</a> et MMTP/<a target="_blank" href="https://chargy.lu/">Chargy</a>. Localisation des points de charge et leur occupation en temps-réel disponible sur <a target="_blank" href="https://g-o.lu/emobility">geoportail.lu</a></Typography>
           <OverviewStats />
+          <hr />
         </Grid>
         
         <Grid item xs={12} lg={5} sx={{height: {xs: '50vh', lg: '80vh'}}}>
@@ -116,7 +118,7 @@ export default function PageChargy() {
             />
         </Grid>
         <Grid item xs={12} lg={7}>
-          <Typography variant="h4">{currentStation?.name ?? 'Vue régionale - (veuillez choisir une station sur la carte)'}</Typography>
+          <Typography variant="h6">{currentStation?.name ?? 'En détail - (veuillez choisir une station sur la carte)'}</Typography>
           <Grid container spacing={2} sx={{p: 2}}>
             <Grid item xs={12}>
                 <YearToggle from={2022} to={2023} currentYear={currentYear} onChange={handleChangeYear}  />
@@ -185,91 +187,65 @@ function OverviewStats() {
   const data = {
     stations: {
       count: {
-        AC: 1990,
-        DC: 172
+        AC: 1954,
+        DC: 218
       },
       power: {
-        AC: 42.6,
-        DC: 39.0
-      }
+        AC: 41.448,
+        DC: 52.970,
+      },
+      AFIR_target: 43.7416
     }
   }
 
 
   return (<Fragment>
-    <Grid container spacing={4} sx={{maxWidth: "md",  margin: 'auto',}}>
-      <Grid container item spacing={1}> 
-        <Grid item xs={8}>
-          <Typography variant="h5">Points de charge publics</Typography>
-        </Grid>
-        <Grid item xs={4}>
-          <ToggleButtonGroup value={indicator} onChange={handleIndicatorChange}>
-            <ToggleButton value="count">nombre absolu</ToggleButton>
-            <ToggleButton value="power">puissance (kW)</ToggleButton>
-          </ToggleButtonGroup>
-        </Grid>
-        <Grid item xs={2} alignItems="center">{/*
-          <FormControl fullWidth>
-            <InputLabel id="select-label">aggrégation</InputLabel>
-            <Select
-              labelId="select-label"
-              id="demo-simple-select"
-              label="aggrégation"
-            >
-              <MenuItem value={10}>nombre</MenuItem>
-              <MenuItem value={20}>par habitant</MenuItem>
-              <MenuItem value={30}>par km de route</MenuItem>
-            </Select>
-          </FormControl>        
-  */}</Grid>
-        <Grid item xs={5}>
-          <Paper sx={{p: 2}}>
-            <Gauge data={[{value: data.stations['power'].AC, label: 'AC'}, {value: data.stations['power'].DC, label: 'DC'}]} />
-          </Paper>
-        </Grid>
-        <Grid item xs={5}>
-          <SingleStat title="points de recharge DC" value={data.stations[indicator].DC} />
-        </Grid>
+    <Grid container spacing={2} sx={{maxWidth: "md",  margin: 'auto',}}>
+      <Grid item xs={12}>
+        <Typography variant="h6">Apperçu national: l'ensemble des points de charge disponibles</Typography>
       </Grid>
-      <Grid container item spacing={1}>
-        <Grid item xs={8}>
-          <Typography variant="h5">Véhicules électriques par point de recharge</Typography>
-        </Grid>
-        <Grid item xs={4}>
-          <ToggleButtonGroup value="count">
-            <ToggleButton value="count">nombre absolu</ToggleButton>
-            <ToggleButton value="power">puissance (kW)</ToggleButton>
-          </ToggleButtonGroup>
-        </Grid>
-        <Grid item xs={2} alignItems="center">
-          véhicules 100% électriques  
-        </Grid>
-        <Grid item xs={5}>
-          <SingleStat title="points de recharge AC" value={10.0} unit="véh./point" />
-        </Grid>
-        <Grid item xs={5}>
-          <SingleStat title="points de recharge DC" value={115.9} unit="véh./point" />
-        </Grid>
-        <Grid item xs={2}>
-          hybrides "plug-in"
-        </Grid>
-        <Grid item xs={5}>
-          <SingleStat title="points de recharge AC" value={7.1} unit="véh./point" />
-        </Grid>
-        <Grid item xs={5}>
-          <SingleStat title="points de recharge DC" value={82.7} unit="véh./point" />      
-        </Grid>
+      <Grid item xs={12} md={6}>
+        <Paper sx={{p: 2}}>
+          <Typography variant="h6" color="primary">Puissance électrique</Typography>
+          <Gauge data={[{value: data.stations['power'].AC, label: 'AC'}, {value: data.stations['power'].DC, label: 'DC'}]} style={{maxHeight: "10rem"}} />
+        </Paper>
+      </Grid>
+      <Grid item xs={12} md={6} sx={{maxHeight: 'md'}}>
+        <Paper sx={{p: 2}}>
+          <Typography variant="h6" color="primary">Nombre de points de charge</Typography>
+          <Stat title="points de charge &le; 22&nbsp;kW" value={data.stations[indicator].AC}  round={indicator == 'power' ? 1 : 0} unit={indicator == 'power' ? 'MW' : null} />
+          <Stat title="points de charge &ge; 50&nbsp;kW" value={data.stations[indicator].DC}  round={indicator == 'power' ? 1 : 0} unit={indicator == 'power' ? 'MW' : null} />
+        </Paper>
+      </Grid>
+      <Grid item xs={12}>
+        <Typography variant="caption">Les chiffres concernent l'ensemble de tous les points de charge accessibles au public. 
+        La "cible UE" correspond au <a target="_blank" href="http://data.europa.eu/eli/reg/2023/1804/oj">règlement 2023/1804</a> concernant le déploiement d’une infrastructure pour carburants alternatifs. Selon le règlement, chaque pays membre doit offrir une capacité minimale de recharge de 1.3 kW pour chaque véhicule 100% électrique plus 0.8 kW par plug-in hybride immatriculé - voir <a target="_blank" href="https://transports.public.lu/fr/planifier/odm/parc-automobile.html">parc automobile</a>.</Typography>
+        <br/>
+        <Typography variant="caption"><i>Dernière mise à jour: 12 janvier 2024</i></Typography>
       </Grid>
     </Grid>
-    &nbsp;
-    <hr />
+    
 </Fragment>)
 }
 
 
+const Stat = ({title, value, unit=null, round=0}) => { 
+  return (
+    <Fragment>
+      <Typography variant="h8" color="primary">
+        {title}
+      </Typography>
+      <Typography variant="h4">
+        <FancyNumber count={value} round={round} />
+        {unit && <small>&nbsp;{unit}</small>}
+      </Typography>
+    </Fragment>)
+  }
+
 
 const SVGBox = styled('svg')(({theme}) => ({
   width: '100%',
+  height: '10rem',
   touchAction: 'none',
   backgroundColor: theme.palette.background.default,
   willChange: 'transform',
@@ -280,7 +256,7 @@ const SVGBox = styled('svg')(({theme}) => ({
 }))
 
 
-function Gauge({data=null}) {
+function Gauge({data=null, ...rest}) {
   const displayData = useMemo(() => {
     const sum = data.reduce((kv, {value}) => kv + (value ?? 0), 0)
     let cumsum = 0
@@ -293,12 +269,12 @@ function Gauge({data=null}) {
   }, [data])
 
   return (
-    <SVGBox viewBox="0 0 1000 500">
+    <SVGBox viewBox="0 0 1000 500" {...rest}>
       {displayData && displayData.map(({label, value, extent: [alpha, beta]}, i) => (
         <HalfCircle className="filled" opacity={1 - i / 7} alpha={beta} beta={alpha} label={label} value={value} />
       ))}
-      <HalfCircle className="filled3" r={380} x0={120} thickness={20} alpha={Math.PI * .4} label="cible UE" />
-      <text x="500" y="500" fontSize="150" textAnchor="middle">89 MW</text>
+      <HalfCircle className="highlighted" r={380} x0={120} thickness={20} alpha={Math.PI * .457341} endmarker="cible UE" />
+      <text x="500" y="450" fontSize="150" textAnchor="middle">89 MW</text>
     </SVGBox> 
   )
 }
@@ -323,11 +299,14 @@ const HalfCirclePath = styled('path')(({theme}) => ({
   '&.filled3': {
     fill: theme.palette.grey[500]
   },
+  '&.highlighted': {
+    fill: theme.palette.secondary.main
+  }
 
 }))
 
 
-function HalfCircle({r=500, x0=0, y0=500, alpha=Math.PI, beta=0, thickness=100, label=null, ...rest}) {
+function HalfCircle({r=500, x0=0, y0=500, alpha=Math.PI, beta=0, thickness=100, label=null, endmarker=null, value=null, ...rest}) {
   const rot = (x0, y0, r, angle) => [x0 + (1 - Math.cos(angle)) * r, y0 - Math.sin(angle) * r]
   const translate = (dr, angle) => [Math.cos(angle) * dr, Math.sin(angle) * dr] 
 
@@ -347,6 +326,10 @@ function HalfCircle({r=500, x0=0, y0=500, alpha=Math.PI, beta=0, thickness=100, 
           z`} 
       {...rest}
     />
-    {label && <text x={x5+dx5} y={y5+dy5} fontSize={thickness * .5} alignmentBaseline="central" textAnchor="middle">{label}</text>}
+    <g transform={`translate(${x5+dx5} ${y5+dy5})`}>
+      {label && <text x={0} y={-15} fontSize="3rem" alignmentBaseline="central" textAnchor="middle" fill="white">{label}</text>}
+      {value && <text x={0} y={15} fontSize="1.5rem" alignmentBaseline="central" textAnchor="middle" fill="white">{Math.round(value)}&nbsp;MW</text>}
+    </g>
+    {endmarker && <text x={x1+thickness*.5} y={y1} fontSize="2rem" alignmentBaseline="hanging" textAnchor="right">{endmarker}</text>}
   </Fragment>)
 }
