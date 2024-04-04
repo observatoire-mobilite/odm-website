@@ -6,7 +6,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 
 
-export default function YearToggle({from=2020, to=2023, currentYear=2023, onChange=(evt, val) => null, special=null, availableYears=null}) {
+export default function YearToggle({from=2020, to=2024, currentYear=2023, onChange=(evt, val) => null, special=null, availableYears=null}) {
     return (<ToggleButtonGroup exclusive value={currentYear} aria-label="year to explore"  onChange={onChange}>
         {special && <ToggleButton value={special} aria-label={special}>{special}</ToggleButton>}
         {Array.from({length: to-from + 1}).map((_, i) => {

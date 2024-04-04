@@ -1,4 +1,4 @@
-import {useContext, forwardRef, useCallback, useMemo, useState, useEffect, useRef} from 'react';
+import {useContext, forwardRef, useCallback, useMemo, useState, useEffect, useRef, Fragment} from 'react';
 import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -32,7 +32,7 @@ const ExpandMore = styled((props) => {
 
 
 
-export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined, info=null, ymin=null, ymax=null}) {
+export default function SingleStat({title, subtitle=null, caption=null, value, avatar=<></>, unit=undefined, info=null, ymin=null, ymax=null, loading=false}) {
     const displayData = useMemo(() => {
       const suffix = (! unit  || ! value) ? null : `\u202F${unit}`
       if (ymin !== null && value !== null && value <= ymin)
@@ -60,9 +60,11 @@ export default function SingleStat({title, subtitle=null, caption=null, value, a
                         {subtitle}
                     </Typography>}
                     <Typography variant="h4">
+                      {loading ? <p>Loading...</p> : (<Fragment>
                         {displayData.clip && <small>{displayData.clip}</small>}
                         <FancyNumber count={displayData.value} />
                         {displayData.suffix && <small>{displayData.suffix}</small>}
+                        </Fragment>)}
                     </Typography>
                     {caption && <Typography variant="caption">
                         {caption}

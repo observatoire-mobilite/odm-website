@@ -47,7 +47,7 @@ export default function BusMap() {
                     showNoDataHint
                 />}
                 {currentStop && <PassengerServiceGrid 
-                    url="data/publictransport/busstats.json"
+                    url="data/publictransport/busstats-stops.json"
                     statsLabel="Stop"
                     comment={<Fragment>Extrapolation des données du comptage automatique du RGTR à partir du taux de comptage des arrêts de la zone choisie  &#x2014; voir <Link href="https://transports.public.lu/dam-assets/planifier/observatoire/odm-note-01-mai-2023.pdf" target="_blank">Note 23/01</Link></Fragment>}
                     unit="montées + descentes"
