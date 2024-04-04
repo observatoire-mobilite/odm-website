@@ -44,7 +44,7 @@ export default function PageTram() {
     const [open, setOpen] = useState(currentStop === null)
     const handleSelect = useCallback((stop) => { setCurrentStop(stop); setOpen(false) })
     useEffect(() => {
-        setCurrentStop(data.stops[0])
+        setCurrentStop(data.stops[14])
         setOpen(false)
     }, [])
     
